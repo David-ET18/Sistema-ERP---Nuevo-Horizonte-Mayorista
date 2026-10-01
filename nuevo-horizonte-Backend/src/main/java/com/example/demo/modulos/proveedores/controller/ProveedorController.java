@@ -1,5 +1,6 @@
 package com.example.demo.modulos.proveedores.controller;
 
+import com.example.demo.modulos.catalogo.dto.DestinoDTO;
 import com.example.demo.modulos.proveedores.dto.KpiProveedoresDTO;
 import com.example.demo.modulos.proveedores.dto.ProveedorDTO;
 import com.example.demo.modulos.proveedores.dto.ProveedorDetalleDTO;
@@ -69,6 +70,11 @@ public class ProveedorController {
 	@GetMapping("/activos")
 	public List<ProveedorDTO> activos() {
 		return proveedorService.listarActivos();
+	}
+
+	@GetMapping("/referencias/destinos")
+	public List<DestinoDTO> destinos() {
+		return proveedorService.destinos();
 	}
 
 	@GetMapping("/{id}")

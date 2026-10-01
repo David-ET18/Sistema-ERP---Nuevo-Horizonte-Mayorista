@@ -12,7 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.example.demo.modulos.catalogo.dto.DestinoDTO;
 import com.example.demo.modulos.catalogo.entity.Destino;
+import com.example.demo.modulos.catalogo.mapper.DestinoMapper;
 import com.example.demo.modulos.catalogo.repository.DestinoRepository;
 import com.example.demo.modulos.proveedores.dto.KpiProveedoresDTO;
 import com.example.demo.modulos.proveedores.dto.ProveedorDTO;
@@ -60,6 +62,12 @@ public class ProveedorService {
 
 	public List<String> condicionesComerciales() {
 		return ProveedorMapper.CONDICIONES_COMERCIALES;
+	}
+
+	public List<DestinoDTO> destinos() {
+		return destinoRepository.findAllByOrderByNombreAsc().stream()
+				.map(DestinoMapper::toDTO)
+				.toList();
 	}
 
 	public List<ProveedorDTO> listarActivos() {
