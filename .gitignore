@@ -1,0 +1,20 @@
+HELP.md
+target/
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### IDEs ###
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+### Node / frontend ###
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+### OS ###
+.DS_Store

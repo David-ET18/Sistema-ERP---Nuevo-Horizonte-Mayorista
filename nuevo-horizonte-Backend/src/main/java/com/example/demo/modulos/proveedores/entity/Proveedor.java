@@ -1,10 +1,14 @@
 package com.example.demo.modulos.proveedores.entity;
 
 import jakarta.persistence.Column;
+import com.example.demo.modulos.catalogo.entity.Destino;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.LocalDateTime;
@@ -30,14 +34,41 @@ public class Proveedor {
 	@Column(name = "tipo_proveedor", length = 50)
 	private String tipoProveedor;
 
+	@Column(name = "contacto_nombre", length = 100)
+	private String contactoNombre;
+
+	@Column(name = "contacto_telefono", length = 20)
+	private String contactoTelefono;
+
 	@Column(name = "contacto_email", length = 100)
 	private String contactoEmail;
+
+	/**
+	 * Destino principal del proveedor. Es informativo: las tarifas que ofrece
+	 * pueden cubrir otros destinos, pero este es el que se usa para filtrar
+	 * en el listado antes de que existan tarifas cargadas.
+	 */
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "id_destino")
+	private Destino destino;
+
+	/**
+	 * Catalogo controlado (ver ProveedorMapper.CONDICIONES_COMERCIALES).
+	 */
+	@Column(name = "condiciones_comerciales", length = 50)
+	private String condicionesComerciales;
+
+	@Column(name = "observaciones", columnDefinition = "text")
+	private String observaciones;
 
 	@Column(name = "activo", nullable = false)
 	private boolean activo = true;
 
 	@Column(name = "fecha_creacion", nullable = false)
 	private LocalDateTime fechaCreacion = LocalDateTime.now();
+
+	@Column(name = "fecha_actualizacion", nullable = false)
+	private LocalDateTime fechaActualizacion = LocalDateTime.now();
 
 	public Long getId() {
 		return id;
@@ -79,12 +110,52 @@ public class Proveedor {
 		this.tipoProveedor = tipoProveedor;
 	}
 
+	public String getContactoNombre() {
+		return contactoNombre;
+	}
+
+	public void setContactoNombre(String contactoNombre) {
+		this.contactoNombre = contactoNombre;
+	}
+
+	public String getContactoTelefono() {
+		return contactoTelefono;
+	}
+
+	public void setContactoTelefono(String contactoTelefono) {
+		this.contactoTelefono = contactoTelefono;
+	}
+
 	public String getContactoEmail() {
 		return contactoEmail;
 	}
 
 	public void setContactoEmail(String contactoEmail) {
 		this.contactoEmail = contactoEmail;
+	}
+
+	public Destino getDestino() {
+		return destino;
+	}
+
+	public void setDestino(Destino destino) {
+		this.destino = destino;
+	}
+
+	public String getCondicionesComerciales() {
+		return condicionesComerciales;
+	}
+
+	public void setCondicionesComerciales(String condicionesComerciales) {
+		this.condicionesComerciales = condicionesComerciales;
+	}
+
+	public String getObservaciones() {
+		return observaciones;
+	}
+
+	public void setObservaciones(String observaciones) {
+		this.observaciones = observaciones;
 	}
 
 	public boolean isActivo() {
@@ -101,5 +172,13 @@ public class Proveedor {
 
 	public void setFechaCreacion(LocalDateTime fechaCreacion) {
 		this.fechaCreacion = fechaCreacion;
+	}
+
+	public LocalDateTime getFechaActualizacion() {
+		return fechaActualizacion;
+	}
+
+	public void setFechaActualizacion(LocalDateTime fechaActualizacion) {
+		this.fechaActualizacion = fechaActualizacion;
 	}
 }
