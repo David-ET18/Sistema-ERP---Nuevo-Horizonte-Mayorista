@@ -1,0 +1,46 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-brand: #0b6e4f;
+  --color-brand-dark: #084c38;
+
+  --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+  background: var(--color-gray-50);
+}
+
+/* Animación del check de éxito (pantalla de éxito) */
+.success-circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  animation: stroke-anim 0.65s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.success-check {
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: stroke-anim 0.35s cubic-bezier(0.65, 0, 0.45, 1) 750ms forwards;
+}
+
+.success-pop {
+  animation: pop-anim 0.45s cubic-bezier(0.68, -0.55, 0.265, 1.55) 200ms backwards;
+}
+
+@keyframes stroke-anim {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes pop-anim {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
