@@ -1,6 +1,7 @@
 package com.example.demo.modulos.ventas.repository;
 
 import com.example.demo.modulos.ventas.entity.Venta;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -52,4 +53,21 @@ public interface VentaRepository extends JpaRepository<Venta, Long>, JpaSpecific
 	LocalDateTime findUltimaCompra(@Param("agenciaId") Long agenciaId);
 
 	List<Venta> findTop10ByAgenciaIdOrderByFechaVentaDesc(Long agenciaId);
+
+	/** Consumido por el modulo de Reportes. */
+	@Query("select coalesce(sum(v.montoAPagar), 0) from Venta v "
+			+ "where v.estado <> 'ANULADA' and v.fechaVenta >= :desde and v.fechaVenta < :hasta")
+	BigDecimal sumMontoEntre(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
+
+	List<Venta> findByFechaVentaBetweenAndEstadoNot(LocalDateTime desde, LocalDateTime hasta, String estado);
+
+	@Query("select v.agencia as agencia, sum(v.montoAPagar) as total from Venta v "
+			+ "where v.estado <> 'ANULADA' group by v.agencia order by total desc")
+	List<RankingAgencia> rankingAgenciasPorVolumen(Pageable pageable);
+
+	interface RankingAgencia {
+		com.example.demo.modulos.gestionAgencias.entity.Agencia getAgencia();
+
+		BigDecimal getTotal();
+	}
 }

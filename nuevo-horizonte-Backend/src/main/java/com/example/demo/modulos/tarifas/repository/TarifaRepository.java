@@ -1,6 +1,8 @@
 package com.example.demo.modulos.tarifas.repository;
 
+import com.example.demo.modulos.proveedores.entity.Proveedor;
 import com.example.demo.modulos.tarifas.entity.Tarifa;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -32,4 +34,16 @@ public interface TarifaRepository extends JpaRepository<Tarifa, Long>, JpaSpecif
 
 	@Query("select distinct t.tipoTarifa from Tarifa t where t.tipoTarifa is not null and trim(t.tipoTarifa) <> '' order by t.tipoTarifa")
 	List<String> findTiposTarifa();
+
+	/** Consumido por el modulo de Reportes. */
+	@Query("select t.proveedor as proveedor, count(t) as cantidad from Tarifa t "
+			+ "where t.fechaHasta >= :hoy and t.fechaHasta <= :limite group by t.proveedor order by cantidad desc")
+	List<TarifasPorProveedor> porVencerAgrupadoPorProveedor(@Param("hoy") LocalDate hoy,
+			@Param("limite") LocalDate limite, Pageable pageable);
+
+	interface TarifasPorProveedor {
+		Proveedor getProveedor();
+
+		long getCantidad();
+	}
 }
