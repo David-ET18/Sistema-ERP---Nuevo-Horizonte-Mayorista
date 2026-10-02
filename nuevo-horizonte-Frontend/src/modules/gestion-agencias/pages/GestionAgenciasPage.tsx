@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import type { Agencia, AgenciaLista, FiltrosAgencias, KpisAgencias, PaginacionAgencias } from '../types'
 import {
@@ -142,11 +143,19 @@ export default function GestionAgenciasPage() {
 
   return (
     <section className="flex flex-col gap-5">
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900">Gestión de Agencias</h2>
-        <p className="mt-1 text-sm text-gray-500">
-          Administra el registro de agencias B2B, su información de contacto y categoría
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">Gestión de Agencias</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Administra el registro de agencias B2B, su información de contacto y categoría
+          </p>
+        </div>
+        <Link
+          to="/gestion-agencias/panel"
+          className="cursor-pointer rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          Panel comercial 360
+        </Link>
       </div>
 
       <div className="grid grid-cols-3 gap-4">

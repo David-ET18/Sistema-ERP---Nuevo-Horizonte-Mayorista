@@ -22,6 +22,8 @@ const VACIO: AgenciaFormState = {
   contactoNombre: '',
   contactoTelefono: '',
   contactoEmail: '',
+  ciudad: '',
+  ejecutivoAsignado: '',
   esPrioritaria: false,
   activo: true,
 }
@@ -47,6 +49,8 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
         contactoNombre: agencia.contactoNombre ?? '',
         contactoTelefono: agencia.contactoTelefono ?? '',
         contactoEmail: agencia.contactoEmail ?? '',
+        ciudad: agencia.ciudad ?? '',
+        ejecutivoAsignado: agencia.ejecutivoAsignado ?? '',
         esPrioritaria: agencia.esPrioritaria,
         activo: agencia.activo,
       })
@@ -127,6 +131,8 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
         contactoNombre: form.contactoNombre.trim() || null,
         contactoTelefono: form.contactoTelefono.trim() || null,
         contactoEmail: form.contactoEmail.trim() || null,
+        ciudad: form.ciudad.trim() || null,
+        ejecutivoAsignado: form.ejecutivoAsignado.trim() || null,
       }
 
       if (editando && agencia) {
@@ -276,6 +282,26 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
                   placeholder="O escribe otra categoría"
                 />
               </div>
+            </Campo>
+
+            <Campo label="Ciudad">
+              <input
+                type="text"
+                className={inputClase}
+                value={form.ciudad}
+                onChange={(e) => setCampo('ciudad', e.target.value)}
+                placeholder="Cusco"
+              />
+            </Campo>
+
+            <Campo label="Ejecutivo asignado">
+              <input
+                type="text"
+                className={inputClase}
+                value={form.ejecutivoAsignado}
+                onChange={(e) => setCampo('ejecutivoAsignado', e.target.value)}
+                placeholder="María López"
+              />
             </Campo>
 
             <div className="my-1 border-t border-gray-100" />

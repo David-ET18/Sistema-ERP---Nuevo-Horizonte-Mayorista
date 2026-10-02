@@ -62,6 +62,8 @@ public final class AgenciaMapper {
 				agencia.getContactoNombre(),
 				agencia.getContactoTelefono(),
 				agencia.getContactoEmail(),
+				agencia.getCiudad(),
+				agencia.getEjecutivoAsignado(),
 				agencia.getLogoUrl(),
 				agencia.isEsPrioritaria(),
 				agencia.isActivo(),
@@ -80,6 +82,8 @@ public final class AgenciaMapper {
 		agencia.setContactoNombre(Textos.sinEspacios(request.contactoNombre()));
 		agencia.setContactoTelefono(Textos.sinEspacios(request.contactoTelefono()));
 		agencia.setContactoEmail(Textos.sinEspacios(request.contactoEmail()));
+		agencia.setCiudad(Textos.sinEspacios(request.ciudad()));
+		agencia.setEjecutivoAsignado(Textos.sinEspacios(request.ejecutivoAsignado()));
 		if (request.esPrioritaria() != null) {
 			agencia.setEsPrioritaria(request.esPrioritaria());
 		}

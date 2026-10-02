@@ -7,6 +7,8 @@ export interface Agencia {
   contactoNombre: string | null
   contactoTelefono: string | null
   contactoEmail: string | null
+  ciudad: string | null
+  ejecutivoAsignado: string | null
   logoUrl: string | null
   esPrioritaria: boolean
   activo: boolean
@@ -36,6 +38,8 @@ export interface AgenciaPayload {
   contactoNombre: string | null
   contactoTelefono: string | null
   contactoEmail: string | null
+  ciudad: string | null
+  ejecutivoAsignado: string | null
   esPrioritaria: boolean
   activo: boolean
 }
@@ -50,6 +54,8 @@ export interface AgenciaFormState {
   contactoNombre: string
   contactoTelefono: string
   contactoEmail: string
+  ciudad: string
+  ejecutivoAsignado: string
   esPrioritaria: boolean
   activo: boolean
 }
