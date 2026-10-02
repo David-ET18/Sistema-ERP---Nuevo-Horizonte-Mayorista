@@ -40,6 +40,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: 'Producto',
     items: [
+      { to: '/catalogo', label: 'Catálogo Base', module: 'catalogo', Icon: BoxIcon },
       { to: '/proveedores', label: 'Proveedores', module: 'proveedores', Icon: BoxIcon },
       { to: '/tarifas', label: 'Tarifas', module: 'tarifas', Icon: BoxIcon },
       { to: '/paquetes', label: 'Paquetes Turísticos', module: 'paquetes', Icon: BoxIcon },
