@@ -1,5 +1,6 @@
 package com.example.demo.modulos.tarifas.entity;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import com.example.demo.modulos.catalogo.entity.Servicio;
 import com.example.demo.modulos.catalogo.entity.Destino;
@@ -11,11 +12,15 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "tarifa", schema = "catalogo")
@@ -38,6 +43,10 @@ public class Tarifa {
 	@JoinColumn(name = "id_destino", nullable = false)
 	private Destino destino;
 
+	/** Catalogo sugerido, no restringido (ver TarifaRepository.findTiposTarifa). */
+	@Column(name = "tipo_tarifa", length = 50)
+	private String tipoTarifa;
+
 	@Column(name = "precio", nullable = false, precision = 10, scale = 2)
 	private BigDecimal precio;
 
@@ -50,8 +59,24 @@ public class Tarifa {
 	@Column(name = "fecha_hasta", nullable = false)
 	private LocalDate fechaHasta;
 
+	@Column(name = "condiciones", columnDefinition = "text")
+	private String condiciones;
+
+	@Column(name = "observaciones", columnDefinition = "text")
+	private String observaciones;
+
+	@Column(name = "archivo_respaldo_url", length = 300)
+	private String archivoRespaldoUrl;
+
 	@Column(name = "fecha_creacion", nullable = false)
 	private LocalDateTime fechaCreacion = LocalDateTime.now();
+
+	@Column(name = "fecha_actualizacion", nullable = false)
+	private LocalDateTime fechaActualizacion = LocalDateTime.now();
+
+	@OneToMany(mappedBy = "tarifa", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+	@OrderBy("fechaCambio desc")
+	private List<TarifaHistorial> historial = new ArrayList<>();
 
 	public Long getId() {
 		return id;
@@ -83,6 +108,14 @@ public class Tarifa {
 
 	public void setDestino(Destino destino) {
 		this.destino = destino;
+	}
+
+	public String getTipoTarifa() {
+		return tipoTarifa;
+	}
+
+	public void setTipoTarifa(String tipoTarifa) {
+		this.tipoTarifa = tipoTarifa;
 	}
 
 	public BigDecimal getPrecio() {
@@ -117,11 +150,47 @@ public class Tarifa {
 		this.fechaHasta = fechaHasta;
 	}
 
+	public String getCondiciones() {
+		return condiciones;
+	}
+
+	public void setCondiciones(String condiciones) {
+		this.condiciones = condiciones;
+	}
+
+	public String getObservaciones() {
+		return observaciones;
+	}
+
+	public void setObservaciones(String observaciones) {
+		this.observaciones = observaciones;
+	}
+
+	public String getArchivoRespaldoUrl() {
+		return archivoRespaldoUrl;
+	}
+
+	public void setArchivoRespaldoUrl(String archivoRespaldoUrl) {
+		this.archivoRespaldoUrl = archivoRespaldoUrl;
+	}
+
 	public LocalDateTime getFechaCreacion() {
 		return fechaCreacion;
 	}
 
 	public void setFechaCreacion(LocalDateTime fechaCreacion) {
 		this.fechaCreacion = fechaCreacion;
+	}
+
+	public LocalDateTime getFechaActualizacion() {
+		return fechaActualizacion;
+	}
+
+	public void setFechaActualizacion(LocalDateTime fechaActualizacion) {
+		this.fechaActualizacion = fechaActualizacion;
+	}
+
+	public List<TarifaHistorial> getHistorial() {
+		return historial;
 	}
 }
