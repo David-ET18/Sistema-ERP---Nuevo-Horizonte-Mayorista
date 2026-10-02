@@ -1,4 +1,18 @@
 import { useEffect, useState } from 'react'
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 
 import type { Alerta, PeriodoRendimiento, PuntoSerie, RankingAgencia, ResumenEjecutivo, TarifasPorProveedor } from '../types'
 import {
@@ -17,6 +31,9 @@ const TABS: { label: string; valor: PeriodoRendimiento }[] = [
   { label: 'Mes', valor: 'MES' },
   { label: 'Año', valor: 'ANIO' },
 ]
+
+const COLOR_BRAND = '#1d4ed8'
+const COLOR_FONDO_DONUT = '#e5e7eb'
 
 export default function ReportesPage() {
   const [resumen, setResumen] = useState<ResumenEjecutivo | null>(null)
@@ -52,6 +69,10 @@ export default function ReportesPage() {
     return `S/ ${valor.toLocaleString('es-PE', { maximumFractionDigits: 0 })}`
   }
 
+  function formatMoneda2(valor: number) {
+    return `S/ ${(valor / 1000).toFixed(0)}K`
+  }
+
   function formatDelta(valor: number | null, invertido = false) {
     if (valor == null) return null
     const positivo = invertido ? valor < 0 : valor > 0
@@ -64,9 +85,12 @@ export default function ReportesPage() {
     )
   }
 
-  const maxRanking = Math.max(...ranking.map((r) => r.monto), 1)
-  const maxTarifas = Math.max(...tarifasPorVencer.map((t) => t.cantidad), 1)
-  const maxSerie = Math.max(...serie.map((p) => p.valor), 1)
+  const datosDonut = [
+    { name: 'Cerradas', value: resumen?.cotizacionesCerradasPct ?? 0 },
+    { name: 'Resto', value: 100 - (resumen?.cotizacionesCerradasPct ?? 0) },
+  ]
+
+  const rankingInvertido = [...ranking].reverse()
 
   return (
     <section className="flex flex-col gap-5">
@@ -87,7 +111,24 @@ export default function ReportesPage() {
                   {resumen?.cotizacionesCerradasPct.toFixed(0)}%
                 </p>
               </div>
-              <Donut porcentaje={resumen?.cotizacionesCerradasPct ?? 0} />
+              <div className="h-20 w-20 shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={datosDonut}
+                      dataKey="value"
+                      innerRadius={28}
+                      outerRadius={38}
+                      startAngle={90}
+                      endAngle={-270}
+                      stroke="none"
+                    >
+                      <Cell fill={COLOR_BRAND} />
+                      <Cell fill={COLOR_FONDO_DONUT} />
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             </div>
 
             <div className="rounded-xl bg-white p-5 shadow-sm">
@@ -128,46 +169,91 @@ export default function ReportesPage() {
                 ))}
               </div>
             </div>
-            <LineChart puntos={serie} max={maxSerie} formatValor={formatMoneda} />
+            {serie.length === 0 ? (
+              <p className="py-16 text-center text-sm text-gray-400">Sin datos en este periodo</p>
+            ) : (
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={serie} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <CartesianGrid vertical={false} stroke="#f1f5f9" />
+                    <XAxis
+                      dataKey="label"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fill: '#9ca3af' }}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fill: '#9ca3af' }}
+                      tickFormatter={formatMoneda2}
+                      width={56}
+                    />
+                    <Tooltip formatter={(valor) => formatMoneda(Number(valor))} labelClassName="text-gray-700" />
+                    <Line
+                      type="monotone"
+                      dataKey="valor"
+                      stroke={COLOR_BRAND}
+                      strokeWidth={2.5}
+                      dot={{ r: 3, fill: COLOR_BRAND }}
+                      activeDot={{ r: 5 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <div className="rounded-xl bg-white p-5 shadow-sm">
-              <h3 className="mb-4 text-base font-semibold text-gray-900">Ranking de agencias por volumen</h3>
-              <div className="flex flex-col gap-3">
-                {ranking.length === 0 && <p className="text-sm text-gray-400">Sin ventas registradas todavía</p>}
-                {ranking.map((r) => (
-                  <div key={r.agenciaId} className="flex items-center gap-3">
-                    <span className="w-24 shrink-0 truncate text-[13px] text-gray-700">{r.agencia}</span>
-                    <div className="h-3 flex-1 rounded-full bg-gray-100">
-                      <div
-                        className="h-3 rounded-full bg-brand"
-                        style={{ width: `${(r.monto / maxRanking) * 100}%` }}
+              <h3 className="mb-2 text-base font-semibold text-gray-900">Ranking de agencias por volumen</h3>
+              {ranking.length === 0 ? (
+                <p className="py-10 text-center text-sm text-gray-400">Sin ventas registradas todavía</p>
+              ) : (
+                <div className="h-56 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={rankingInvertido}
+                      layout="vertical"
+                      margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
+                    >
+                      <XAxis type="number" hide />
+                      <YAxis
+                        type="category"
+                        dataKey="agencia"
+                        axisLine={false}
+                        tickLine={false}
+                        width={90}
+                        tick={{ fontSize: 12, fill: '#374151' }}
                       />
-                    </div>
-                    <span className="w-20 shrink-0 text-right text-[13px] text-gray-600">
-                      {formatMoneda(r.monto)}
-                    </span>
-                  </div>
-                ))}
-              </div>
+                      <Tooltip formatter={(valor) => formatMoneda(Number(valor))} />
+                      <Bar dataKey="monto" fill={COLOR_BRAND} radius={[0, 4, 4, 0]} barSize={16} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </div>
 
             <div className="rounded-xl bg-white p-5 shadow-sm">
-              <h3 className="mb-4 text-base font-semibold text-gray-900">Tarifas próximas a vencer por proveedor</h3>
+              <h3 className="mb-2 text-base font-semibold text-gray-900">Tarifas próximas a vencer por proveedor</h3>
               {tarifasPorVencer.length === 0 ? (
-                <p className="text-sm text-gray-400">Sin tarifas por vencer esta semana</p>
+                <p className="py-10 text-center text-sm text-gray-400">Sin tarifas por vencer esta semana</p>
               ) : (
-                <div className="flex h-36 items-end justify-between gap-3">
-                  {tarifasPorVencer.map((t) => (
-                    <div key={t.proveedorId} className="flex flex-1 flex-col items-center gap-1">
-                      <div
-                        className="w-full max-w-10 rounded-t bg-brand"
-                        style={{ height: `${(t.cantidad / maxTarifas) * 100}%`, minHeight: '4px' }}
+                <div className="h-56 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={tarifasPorVencer} margin={{ top: 10, right: 0, left: -16, bottom: 0 }}>
+                      <XAxis
+                        dataKey="proveedor"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 11, fill: '#6b7280' }}
+                        interval={0}
                       />
-                      <span className="text-center text-[11px] text-gray-500">{t.proveedor}</span>
-                    </div>
-                  ))}
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9ca3af' }} allowDecimals={false} />
+                      <Tooltip />
+                      <Bar dataKey="cantidad" fill={COLOR_BRAND} radius={[4, 4, 0, 0]} barSize={32} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
               )}
             </div>
@@ -194,70 +280,5 @@ export default function ReportesPage() {
         </>
       )}
     </section>
-  )
-}
-
-function Donut({ porcentaje }: { porcentaje: number }) {
-  const radio = 32
-  const circunferencia = 2 * Math.PI * radio
-  const relleno = (porcentaje / 100) * circunferencia
-  return (
-    <svg width="80" height="80" viewBox="0 0 80 80" className="shrink-0 -rotate-90">
-      <circle cx="40" cy="40" r={radio} fill="none" stroke="#e5e7eb" strokeWidth="10" />
-      <circle
-        cx="40"
-        cy="40"
-        r={radio}
-        fill="none"
-        stroke="var(--color-brand, #1d4ed8)"
-        strokeWidth="10"
-        strokeDasharray={`${relleno} ${circunferencia - relleno}`}
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}
-
-function LineChart({
-  puntos,
-  max,
-  formatValor,
-}: {
-  puntos: PuntoSerie[]
-  max: number
-  formatValor: (v: number) => string
-}) {
-  if (puntos.length === 0) {
-    return <p className="py-10 text-center text-sm text-gray-400">Sin datos en este periodo</p>
-  }
-
-  const ancho = 1000
-  const alto = 240
-  const paso = puntos.length > 1 ? ancho / (puntos.length - 1) : 0
-  const puntosSvg = puntos.map((p, i) => {
-    const x = puntos.length > 1 ? i * paso : ancho / 2
-    const y = alto - (p.valor / max) * (alto - 20) - 10
-    return `${x},${y}`
-  })
-
-  return (
-    <div className="flex flex-col gap-2">
-      <svg viewBox={`0 0 ${ancho} ${alto}`} className="h-56 w-full" preserveAspectRatio="none">
-        <polyline
-          points={puntosSvg.join(' ')}
-          fill="none"
-          stroke="var(--color-brand, #1d4ed8)"
-          strokeWidth="3"
-          vectorEffect="non-scaling-stroke"
-        />
-      </svg>
-      <div className="flex justify-between text-[11px] text-gray-400">
-        {puntos.map((p, i) => (
-          <span key={i} title={formatValor(p.valor)}>
-            {p.label}
-          </span>
-        ))}
-      </div>
-    </div>
   )
 }
