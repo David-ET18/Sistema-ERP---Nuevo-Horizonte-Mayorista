@@ -7,6 +7,7 @@ public final class ModuloCatalogo {
 	private ModuloCatalogo() {
 	}
 
+	public static final String CATALOGO = "catalogo";
 	public static final String PROVEEDORES = "proveedores";
 	public static final String TARIFAS = "tarifas";
 	public static final String PAQUETES = "paquetes";
@@ -24,6 +25,8 @@ public final class ModuloCatalogo {
 	public static final String GESTION_USUARIOS_ROLES_PERMISOS = "gestion-usuarios-roles-permisos";
 
 	public static final List<Modulo> MODULOS = List.of(
+			new Modulo(CATALOGO, "Catalogo Base",
+					"Administracion de destinos y servicios que alimentan tarifas, paquetes y cotizaciones"),
 			new Modulo(PROVEEDORES, "Gestion de Proveedores",
 					"Registro y administracion de operadores turisticos (hoteles, transporte, operadores)"),
 			new Modulo(TARIFAS, "Gestion de Tarifas",

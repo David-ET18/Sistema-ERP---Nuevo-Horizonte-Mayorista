@@ -88,7 +88,7 @@ public class PaqueteService {
 	}
 
 	public List<DestinoDTO> destinos() {
-		return destinoRepository.findAllByOrderByNombreAsc().stream()
+		return destinoRepository.findByActivoTrueOrderByNombreAsc().stream()
 				.map(DestinoMapper::toDTO)
 				.toList();
 	}

@@ -102,11 +102,11 @@ public class TarifaService {
 	}
 
 	public List<DestinoDTO> destinos() {
-		return destinoRepository.findAllByOrderByNombreAsc().stream().map(DestinoMapper::toDTO).toList();
+		return destinoRepository.findByActivoTrueOrderByNombreAsc().stream().map(DestinoMapper::toDTO).toList();
 	}
 
 	public List<ServicioDTO> servicios() {
-		return servicioRepository.findAllByOrderByNombreAsc().stream().map(ServicioMapper::toDTO).toList();
+		return servicioRepository.findByActivoTrueOrderByNombreAsc().stream().map(ServicioMapper::toDTO).toList();
 	}
 
 	public List<com.example.demo.modulos.tarifas.dto.ProveedorRefDTO> proveedores() {

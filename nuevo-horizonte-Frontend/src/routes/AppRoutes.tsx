@@ -10,6 +10,7 @@ import DashboardPage from '@/modules/gestion-usuarios-roles-permisos/pages/Dashb
 import UsuariosPage from '@/modules/gestion-usuarios-roles-permisos/pages/UsuariosPage'
 import RolesPage from '@/modules/gestion-usuarios-roles-permisos/pages/RolesPage'
 
+import CatalogoPage from '@/modules/catalogo/pages/CatalogoPage'
 import ProveedoresPage from '@/modules/proveedores/pages/ProveedoresPage'
 import TarifasPage from '@/modules/tarifas/pages/TarifasPage'
 import PaquetesPage from '@/modules/paquetes/pages/PaquetesPage'
@@ -44,6 +45,7 @@ export default function AppRoutes() {
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="catalogo" element={<CatalogoPage />} />
         <Route path="proveedores" element={<ProveedoresPage />} />
         <Route path="tarifas" element={<TarifasPage />} />
         <Route path="paquetes" element={<PaquetesPage />} />
