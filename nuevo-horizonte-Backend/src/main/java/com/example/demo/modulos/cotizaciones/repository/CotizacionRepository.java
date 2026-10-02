@@ -29,4 +29,9 @@ public interface CotizacionRepository extends JpaRepository<Cotizacion, Long>, J
 	boolean existsByNumero(String numero);
 
 	long countByEstado(String estado);
+
+	/** Consumido por la ficha 360 de Agencias (resumen comercial / historial). */
+	long countByAgenciaId(Long agenciaId);
+
+	List<Cotizacion> findTop10ByAgenciaIdOrderByFechaCreacionDesc(Long agenciaId);
 }

@@ -30,6 +30,12 @@ public record AgenciaRequest(
 		@Size(max = 100, message = "El email es muy largo")
 		String contactoEmail,
 
+		@Size(max = 100, message = "La ciudad es muy larga")
+		String ciudad,
+
+		@Size(max = 150, message = "El nombre del ejecutivo es muy largo")
+		String ejecutivoAsignado,
+
 		Boolean esPrioritaria,
 
 		Boolean activo) {

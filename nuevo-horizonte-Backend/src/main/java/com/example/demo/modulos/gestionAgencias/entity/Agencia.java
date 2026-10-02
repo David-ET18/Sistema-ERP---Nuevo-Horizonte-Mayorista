@@ -42,6 +42,16 @@ public class Agencia {
 	@Column(name = "contacto_email", length = 100)
 	private String contactoEmail;
 
+	@Column(name = "ciudad", length = 100)
+	private String ciudad;
+
+	/**
+	 * Nombre del ejecutivo comercial a cargo de la cuenta. Texto libre porque
+	 * Usuario todavia no tiene un campo de nombre completo (solo username).
+	 */
+	@Column(name = "ejecutivo_asignado", length = 150)
+	private String ejecutivoAsignado;
+
 	@Column(name = "activo", nullable = false)
 	private boolean activo = true;
 
@@ -121,6 +131,22 @@ public class Agencia {
 
 	public void setContactoEmail(String contactoEmail) {
 		this.contactoEmail = contactoEmail;
+	}
+
+	public String getCiudad() {
+		return ciudad;
+	}
+
+	public void setCiudad(String ciudad) {
+		this.ciudad = ciudad;
+	}
+
+	public String getEjecutivoAsignado() {
+		return ejecutivoAsignado;
+	}
+
+	public void setEjecutivoAsignado(String ejecutivoAsignado) {
+		this.ejecutivoAsignado = ejecutivoAsignado;
 	}
 
 	public boolean isActivo() {

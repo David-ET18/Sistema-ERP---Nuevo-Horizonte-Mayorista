@@ -19,6 +19,7 @@ import VentasPage from '@/modules/ventas/pages/VentasPage'
 import ReservasPage from '@/modules/reservas/pages/ReservasPage'
 import PagosPage from '@/modules/pagos/pages/PagosPage'
 import GestionAgenciasPage from '@/modules/gestion-agencias/pages/GestionAgenciasPage'
+import AgenciaFichaPage from '@/modules/gestion-agencias/pages/AgenciaFichaPage'
 import SeguimientoComercialPage from '@/modules/seguimiento-comercial/pages/SeguimientoComercialPage'
 import MarketingPage from '@/modules/marketing/pages/MarketingPage'
 import ReportesPage from '@/modules/reportes/pages/ReportesPage'
@@ -51,6 +52,7 @@ export default function AppRoutes() {
         <Route path="reservas" element={<ReservasPage />} />
         <Route path="pagos" element={<PagosPage />} />
         <Route path="gestion-agencias" element={<GestionAgenciasPage />} />
+        <Route path="gestion-agencias/panel" element={<AgenciaFichaPage />} />
         <Route path="seguimiento-comercial" element={<SeguimientoComercialPage />} />
         <Route path="marketing" element={<MarketingPage />} />
         <Route path="reportes" element={<ReportesPage />} />

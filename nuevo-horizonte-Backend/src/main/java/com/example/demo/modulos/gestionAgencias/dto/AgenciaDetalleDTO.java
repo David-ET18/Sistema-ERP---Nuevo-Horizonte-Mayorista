@@ -11,6 +11,8 @@ public record AgenciaDetalleDTO(
 		String contactoNombre,
 		String contactoTelefono,
 		String contactoEmail,
+		String ciudad,
+		String ejecutivoAsignado,
 		String logoUrl,
 		boolean esPrioritaria,
 		boolean activo,
