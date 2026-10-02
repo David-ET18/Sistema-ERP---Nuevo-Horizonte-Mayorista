@@ -260,3 +260,21 @@ export function IconUpload(props: IconProps) {
     </svg>
   )
 }
+
+export function IconChevronDown(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" {...iconBase(props)}>
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  )
+}
+
+export function IconInfo(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" {...iconBase(props)}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 16v-4" />
+      <path d="M12 8h.01" />
+    </svg>
+  )
+}
