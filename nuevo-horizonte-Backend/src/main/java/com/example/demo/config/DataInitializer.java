@@ -55,7 +55,7 @@ public class DataInitializer implements CommandLineRunner {
 		sembrarRol("Area de Producto", "Gestion del inventario y catalogo de productos",
 				"#f59e0b",
 				permisos(leer("reportes"), leer("notificaciones"), lcr("documentos"),
-						lcr("proveedores"), lcr("tarifas"), lcr("paquetes"), lcr("promociones")));
+						lcr("catalogo"), lcr("proveedores"), lcr("tarifas"), lcr("paquetes"), lcr("promociones")));
 		sembrarRol("Area de Ventas", "Gestion de clientes, pedidos y facturacion",
 				"#10b981",
 				permisos(leer("reportes"), leer("notificaciones"), lcr("documentos"),
@@ -64,14 +64,14 @@ public class DataInitializer implements CommandLineRunner {
 		sembrarRol("Gerencia", "Reportes, indicadores y supervision general",
 				"#6366f1",
 				permisos(lcr("notificaciones"), lcr("reportes"), lcr("documentos"),
-						lcr("gestion-usuarios-roles-permisos"),
+						lcr("gestion-usuarios-roles-permisos"), lcr("catalogo"),
 						lcr("proveedores"), lcr("tarifas"), lcr("paquetes"), lcr("promociones"),
 						lcr("cotizaciones"), lcr("ventas"), lcr("reservas"), lcr("pagos"),
 						lcr("gestion-agencias"), lcr("seguimiento-comercial"), lcr("marketing")));
 		sembrarRol("Administración", "Acceso total a la administracion del sistema",
 				"#2563eb",
 				permisos(crud("notificaciones"), crud("reportes"), crud("documentos"),
-						crud("gestion-usuarios-roles-permisos"),
+						crud("gestion-usuarios-roles-permisos"), crud("catalogo"),
 						crud("proveedores"), crud("tarifas"), crud("paquetes"), crud("promociones"),
 						crud("cotizaciones"), crud("ventas"), crud("reservas"), crud("pagos"),
 						crud("gestion-agencias"), crud("seguimiento-comercial"), crud("marketing")));

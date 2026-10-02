@@ -7,6 +7,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "servicio", schema = "catalogo")
 public class Servicio {
@@ -21,6 +23,16 @@ public class Servicio {
 
 	@Column(name = "categoria", length = 50)
 	private String categoria;
+
+	@Column(name = "descripcion", columnDefinition = "text")
+	private String descripcion;
+
+	/** Un servicio inactivo deja de ofrecerse en los formularios pero conserva su historial. */
+	@Column(name = "activo", nullable = false, columnDefinition = "boolean not null default true")
+	private boolean activo = true;
+
+	@Column(name = "fecha_creacion", nullable = false, columnDefinition = "timestamp not null default now()")
+	private LocalDateTime fechaCreacion = LocalDateTime.now();
 
 	public Long getId() {
 		return id;
@@ -44,5 +56,29 @@ public class Servicio {
 
 	public void setCategoria(String categoria) {
 		this.categoria = categoria;
+	}
+
+	public String getDescripcion() {
+		return descripcion;
+	}
+
+	public void setDescripcion(String descripcion) {
+		this.descripcion = descripcion;
+	}
+
+	public boolean isActivo() {
+		return activo;
+	}
+
+	public void setActivo(boolean activo) {
+		this.activo = activo;
+	}
+
+	public LocalDateTime getFechaCreacion() {
+		return fechaCreacion;
+	}
+
+	public void setFechaCreacion(LocalDateTime fechaCreacion) {
+		this.fechaCreacion = fechaCreacion;
 	}
 }

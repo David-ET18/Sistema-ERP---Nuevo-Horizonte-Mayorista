@@ -7,6 +7,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "destino", schema = "catalogo")
 public class Destino {
@@ -21,6 +23,16 @@ public class Destino {
 
 	@Column(name = "pais", nullable = false, length = 100)
 	private String pais;
+
+	@Column(name = "descripcion", columnDefinition = "text")
+	private String descripcion;
+
+	/** Un destino inactivo deja de ofrecerse en los formularios pero conserva su historial. */
+	@Column(name = "activo", nullable = false, columnDefinition = "boolean not null default true")
+	private boolean activo = true;
+
+	@Column(name = "fecha_creacion", nullable = false, columnDefinition = "timestamp not null default now()")
+	private LocalDateTime fechaCreacion = LocalDateTime.now();
 
 	public Long getId() {
 		return id;
@@ -44,5 +56,29 @@ public class Destino {
 
 	public void setPais(String pais) {
 		this.pais = pais;
+	}
+
+	public String getDescripcion() {
+		return descripcion;
+	}
+
+	public void setDescripcion(String descripcion) {
+		this.descripcion = descripcion;
+	}
+
+	public boolean isActivo() {
+		return activo;
+	}
+
+	public void setActivo(boolean activo) {
+		this.activo = activo;
+	}
+
+	public LocalDateTime getFechaCreacion() {
+		return fechaCreacion;
+	}
+
+	public void setFechaCreacion(LocalDateTime fechaCreacion) {
+		this.fechaCreacion = fechaCreacion;
 	}
 }
