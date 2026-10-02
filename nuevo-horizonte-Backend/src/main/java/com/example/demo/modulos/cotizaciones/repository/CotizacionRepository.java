@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,4 +30,9 @@ public interface CotizacionRepository extends JpaRepository<Cotizacion, Long>, J
 	boolean existsByNumero(String numero);
 
 	long countByEstado(String estado);
+
+	/** Consumido por el modulo de Reportes. */
+	long countByEstadoIn(List<String> estados);
+
+	List<Cotizacion> findByFechaEnvioIsNotNullAndFechaCreacionBetween(LocalDateTime desde, LocalDateTime hasta);
 }

@@ -6,7 +6,11 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import org.springframework.data.domain.Pageable;
+
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface VentaRepository extends JpaRepository<Venta, Long>, JpaSpecificationExecutor<Venta> {
@@ -38,4 +42,23 @@ public interface VentaRepository extends JpaRepository<Venta, Long>, JpaSpecific
 	@Query("select coalesce(sum(v.montoAPagar), 0) from Venta v where v.estado <> 'ANULADA' "
 			+ "and year(v.fechaVenta) = year(current_date) and month(v.fechaVenta) = month(current_date)")
 	BigDecimal montoVendidoMes();
+
+	/** Consumido por el modulo de Reportes (resumen ejecutivo / rendimiento comercial). */
+	@Query("select coalesce(sum(v.montoAPagar), 0) from Venta v "
+			+ "where v.estado <> 'ANULADA' and v.fechaVenta >= :desde and v.fechaVenta < :hasta")
+	BigDecimal sumMontoEntre(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
+
+	/** Lista cruda para armar el grafico "Rendimiento comercial" agrupando en memoria
+	 *  (por dia, mes o anio segun el periodo elegido en el frontend). */
+	List<Venta> findByFechaVentaBetweenAndEstadoNot(LocalDateTime desde, LocalDateTime hasta, String estado);
+
+	@Query("select v.agencia as agencia, sum(v.montoAPagar) as total from Venta v "
+			+ "where v.estado <> 'ANULADA' group by v.agencia order by total desc")
+	List<RankingAgencia> rankingAgenciasPorVolumen(Pageable pageable);
+
+	interface RankingAgencia {
+		com.example.demo.modulos.gestionAgencias.entity.Agencia getAgencia();
+
+		BigDecimal getTotal();
+	}
 }
