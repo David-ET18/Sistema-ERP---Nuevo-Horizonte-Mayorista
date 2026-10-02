@@ -24,6 +24,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.example.demo.modulos.catalogo.entity.Destino;
 import com.example.demo.modulos.catalogo.repository.DestinoRepository;
+import com.example.demo.modulos.catalogo.repository.ServicioRepository;
 import com.example.demo.modulos.proveedores.dto.KpiProveedoresDTO;
 import com.example.demo.modulos.proveedores.dto.ProveedorDetalleDTO;
 import com.example.demo.modulos.proveedores.dto.ProveedorRequest;
@@ -39,11 +40,22 @@ class ProveedorServiceTest {
 	@Mock
 	private DestinoRepository destinoRepository;
 
+	@Mock
+	private ServicioRepository servicioRepository;
+
 	private ProveedorService service;
 
 	@BeforeEach
 	void setUp() {
-		service = new ProveedorService(proveedorRepository, destinoRepository);
+		service = new ProveedorService(proveedorRepository, destinoRepository, servicioRepository);
+	}
+
+	@Test
+	void tiposServicio_uneCategoriasDelCatalogoConLosTiposExistentesSinRepetir() {
+		when(servicioRepository.findCategoriasActivas()).thenReturn(List.of("Hotel", "Tour"));
+		when(proveedorRepository.findTiposServicio()).thenReturn(List.of("hotel", "Guia"));
+
+		assertThat(service.tiposServicio()).containsExactly("Guia", "Hotel", "Tour");
 	}
 
 	@Test

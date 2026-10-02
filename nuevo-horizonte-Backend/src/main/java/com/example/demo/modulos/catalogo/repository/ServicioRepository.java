@@ -21,4 +21,7 @@ public interface ServicioRepository extends JpaRepository<Servicio, Long>, JpaSp
 
 	@Query("select distinct s.categoria from Servicio s where s.categoria is not null and trim(s.categoria) <> '' order by s.categoria")
 	List<String> findCategorias();
+
+	@Query("select distinct s.categoria from Servicio s where s.activo = true and s.categoria is not null and trim(s.categoria) <> '' order by s.categoria")
+	List<String> findCategoriasActivas();
 }

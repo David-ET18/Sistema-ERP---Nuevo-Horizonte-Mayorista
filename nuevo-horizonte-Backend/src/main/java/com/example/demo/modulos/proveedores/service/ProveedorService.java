@@ -2,6 +2,7 @@ package com.example.demo.modulos.proveedores.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeSet;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +17,7 @@ import com.example.demo.modulos.catalogo.dto.DestinoDTO;
 import com.example.demo.modulos.catalogo.entity.Destino;
 import com.example.demo.modulos.catalogo.mapper.DestinoMapper;
 import com.example.demo.modulos.catalogo.repository.DestinoRepository;
+import com.example.demo.modulos.catalogo.repository.ServicioRepository;
 import com.example.demo.modulos.proveedores.dto.KpiProveedoresDTO;
 import com.example.demo.modulos.proveedores.dto.ProveedorDTO;
 import com.example.demo.modulos.proveedores.dto.ProveedorDetalleDTO;
@@ -37,10 +39,13 @@ public class ProveedorService {
 
 	private final ProveedorRepository proveedorRepository;
 	private final DestinoRepository destinoRepository;
+	private final ServicioRepository servicioRepository;
 
-	public ProveedorService(ProveedorRepository proveedorRepository, DestinoRepository destinoRepository) {
+	public ProveedorService(ProveedorRepository proveedorRepository, DestinoRepository destinoRepository,
+			ServicioRepository servicioRepository) {
 		this.proveedorRepository = proveedorRepository;
 		this.destinoRepository = destinoRepository;
+		this.servicioRepository = servicioRepository;
 	}
 
 	public Page<ProveedorListaDTO> listar(String q, String tipoProveedor, Boolean activo, Long destinoId,
@@ -56,8 +61,15 @@ public class ProveedorService {
 				proveedorRepository.countSinTarifas());
 	}
 
+	/**
+	 * Categorias de servicio activas del catalogo, mas los tipos que ya usan
+	 * proveedores existentes (para no perder valores historicos).
+	 */
 	public List<String> tiposServicio() {
-		return proveedorRepository.findTiposServicio();
+		TreeSet<String> tipos = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+		tipos.addAll(servicioRepository.findCategoriasActivas());
+		tipos.addAll(proveedorRepository.findTiposServicio());
+		return new ArrayList<>(tipos);
 	}
 
 	public List<String> condicionesComerciales() {
