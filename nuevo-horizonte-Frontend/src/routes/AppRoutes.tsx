@@ -13,6 +13,7 @@ import RolesPage from '@/modules/gestion-usuarios-roles-permisos/pages/RolesPage
 import ProveedoresPage from '@/modules/proveedores/pages/ProveedoresPage'
 import TarifasPage from '@/modules/tarifas/pages/TarifasPage'
 import PaquetesPage from '@/modules/paquetes/pages/PaquetesPage'
+import PaqueteFormPage from '@/modules/paquetes/pages/PaqueteFormPage'
 import PromocionesPage from '@/modules/promociones/pages/PromocionesPage'
 import CotizacionesPage from '@/modules/cotizaciones/pages/CotizacionesPage'
 import VentasPage from '@/modules/ventas/pages/VentasPage'
@@ -45,6 +46,8 @@ export default function AppRoutes() {
         <Route path="proveedores" element={<ProveedoresPage />} />
         <Route path="tarifas" element={<TarifasPage />} />
         <Route path="paquetes" element={<PaquetesPage />} />
+        <Route path="paquetes/nuevo" element={<PaqueteFormPage />} />
+        <Route path="paquetes/:id/editar" element={<PaqueteFormPage />} />
         <Route path="promociones" element={<PromocionesPage />} />
         <Route path="cotizaciones" element={<CotizacionesPage />} />
         <Route path="ventas" element={<VentasPage />} />

@@ -260,3 +260,43 @@ export function IconUpload(props: IconProps) {
     </svg>
   )
 }
+
+export function IconUsers(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" {...iconBase(props)}>
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  )
+}
+
+export function IconAlertTriangle(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" {...iconBase(props)}>
+      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+      <path d="M12 9v4" />
+      <path d="M12 17h.01" />
+    </svg>
+  )
+}
+
+export function IconSave(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" {...iconBase(props)}>
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />
+      <path d="M17 21v-8H7v8" />
+      <path d="M7 3v5h8" />
+    </svg>
+  )
+}
+
+export function IconSend(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" {...iconBase(props)}>
+      <path d="m22 2-7 20-4-9-9-4Z" />
+      <path d="M22 2 11 13" />
+    </svg>
+  )
+}
