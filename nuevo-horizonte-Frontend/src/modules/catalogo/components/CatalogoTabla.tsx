@@ -17,6 +17,8 @@ import {
   IconChevronDown,
   IconChevronLeft,
   IconChevronRight,
+  IconChevronsLeft,
+  IconChevronsRight,
   IconFilter,
   IconPencil,
   IconPlus,
@@ -554,8 +556,17 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
               <button
                 type="button"
                 disabled={paginaActual <= 1}
+                onClick={() => setPage(0)}
+                className="cursor-pointer rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Primera página"
+              >
+                <IconChevronsLeft />
+              </button>
+              <button
+                type="button"
+                disabled={paginaActual <= 1}
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
-                className="cursor-pointer rounded-lg border border-gray-200 p-1.5 text-gray-500 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                className="cursor-pointer rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
                 aria-label="Página anterior"
               >
                 <IconChevronLeft />
@@ -571,7 +582,7 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
                     type="button"
                     onClick={() => setPage(p - 1)}
                     aria-current={p === paginaActual ? 'page' : undefined}
-                    className={`h-8 min-w-8 cursor-pointer rounded-lg px-1.5 text-[13px] font-medium transition-colors ${
+                    className={`h-8 min-w-8 cursor-pointer rounded-lg px-1.5 text-[13px] font-semibold transition-colors ${
                       p === paginaActual ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'
                     }`}
                   >
@@ -583,34 +594,41 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
                 type="button"
                 disabled={paginaActual >= totalPaginas}
                 onClick={() => setPage((p) => p + 1)}
-                className="cursor-pointer rounded-lg border border-gray-200 p-1.5 text-gray-500 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                className="cursor-pointer rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
                 aria-label="Página siguiente"
               >
                 <IconChevronRight />
               </button>
+              <button
+                type="button"
+                disabled={paginaActual >= totalPaginas}
+                onClick={() => setPage(totalPaginas - 1)}
+                className="cursor-pointer rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Última página"
+              >
+                <IconChevronsRight />
+              </button>
+            </div>
 
-              {totalPaginas > 7 && (
-                <div className="ml-2 flex items-center gap-1.5 border-l border-gray-200 pl-3">
-                  <span className="text-[13px] text-gray-400">Ir a</span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={irAPagina}
-                    onChange={(e) => setIrAPagina(e.target.value.replace(/\D/g, ''))}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') irAPaginaInput()
-                    }}
-                    className="h-8 w-12 rounded-lg border border-gray-300 text-center text-[13px] focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
-                  />
-                  <button
-                    type="button"
-                    onClick={irAPaginaInput}
-                    className="cursor-pointer text-[13px] font-medium text-blue-600 hover:text-blue-700"
-                  >
-                    Ir
-                  </button>
-                </div>
-              )}
+            <div className="flex items-center gap-1.5 border-l border-gray-200 pl-3">
+              <span className="text-[13px] text-gray-400">Ir a página</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={irAPagina}
+                onChange={(e) => setIrAPagina(e.target.value.replace(/\D/g, ''))}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') irAPaginaInput()
+                }}
+                className="h-8 w-12 rounded-lg border border-gray-300 text-center text-[13px] focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+              />
+              <button
+                type="button"
+                onClick={irAPaginaInput}
+                className="inline-flex cursor-pointer items-center gap-0.5 text-[13px] font-semibold text-blue-600 hover:text-blue-700"
+              >
+                Ir <IconChevronRight className="h-3 w-3" />
+              </button>
             </div>
           </div>
         )}

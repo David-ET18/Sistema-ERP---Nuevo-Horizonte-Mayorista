@@ -202,6 +202,24 @@ export function IconChevronRight(props: IconProps) {
   )
 }
 
+export function IconChevronsLeft(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" {...iconBase(props)}>
+      <path d="m18 17-5-5 5-5" />
+      <path d="m11 17-5-5 5-5" />
+    </svg>
+  )
+}
+
+export function IconChevronsRight(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" {...iconBase(props)}>
+      <path d="m6 17 5-5-5-5" />
+      <path d="m13 17 5-5-5-5" />
+    </svg>
+  )
+}
+
 export function IconCalendar(props: IconProps) {
   return (
     <svg viewBox="0 0 24 24" width="16" height="16" {...iconBase(props)}>
