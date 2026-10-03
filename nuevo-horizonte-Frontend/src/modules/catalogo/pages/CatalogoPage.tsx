@@ -15,16 +15,10 @@ import {
   listarPaises,
   listarServicios,
 } from '../services/catalogoService'
-import { IconBriefcase, IconBuilding, IconInfo } from '@/components/icons'
+import { IconBriefcase, IconBuilding } from '@/components/icons'
 import { NavCatalogoIcon } from '@/components/navIcons'
 
 type Pestana = 'destinos' | 'servicios'
-
-/** Porcentaje de `parte` sobre `total`, redondeado; null si no hay base para calcularlo. */
-function porcentaje(parte: number, total: number): number | null {
-  if (total <= 0) return null
-  return Math.round((parte / total) * 100)
-}
 
 export default function CatalogoPage() {
   const [pestana, setPestana] = useState<Pestana>('destinos')
@@ -36,15 +30,17 @@ export default function CatalogoPage() {
 
   useEffect(cargarKpis, [])
 
-  const pctDestinosActivos = kpis ? porcentaje(kpis.destinosActivos, kpis.destinos) : null
-  const pctServiciosActivos = kpis ? porcentaje(kpis.serviciosActivos, kpis.servicios) : null
-
-  const cards = [
-    { etiqueta: 'Destinos', valor: kpis?.destinos ?? 0, nota: 'Total registrados', pct: null },
-    { etiqueta: 'Destinos activos', valor: kpis?.destinosActivos ?? 0, nota: 'vs. total', pct: pctDestinosActivos },
-    { etiqueta: 'Servicios', valor: kpis?.servicios ?? 0, nota: 'Total registrados', pct: null },
-    { etiqueta: 'Servicios activos', valor: kpis?.serviciosActivos ?? 0, nota: 'vs. total', pct: pctServiciosActivos },
-  ]
+  // Solo los 2 KPIs relevantes a la pestaña activa: total y activos de eso mismo.
+  const cards =
+    pestana === 'destinos'
+      ? [
+          { etiqueta: 'Destinos', valor: kpis?.destinos ?? 0, nota: 'Registrados en total' },
+          { etiqueta: 'Destinos activos', valor: kpis?.destinosActivos ?? 0, nota: 'Disponibles en los formularios' },
+        ]
+      : [
+          { etiqueta: 'Servicios', valor: kpis?.servicios ?? 0, nota: 'Registrados en total' },
+          { etiqueta: 'Servicios activos', valor: kpis?.serviciosActivos ?? 0, nota: 'Disponibles en los formularios' },
+        ]
 
   const TABS: { id: Pestana; etiqueta: string; Icon: typeof IconBuilding; total: number | undefined }[] = [
     { id: 'destinos', etiqueta: 'Destinos', Icon: IconBuilding, total: kpis?.destinos },
@@ -65,22 +61,12 @@ export default function CatalogoPage() {
         </div>
       </div>
 
-      <div className="flex divide-x divide-gray-100 overflow-x-auto rounded-xl border border-gray-200/70 bg-white shadow-sm">
+      <div className="flex w-fit divide-x divide-gray-100 overflow-x-auto rounded-xl border border-gray-200/70 bg-white shadow-sm">
         {cards.map((card) => (
-          <div key={card.etiqueta} className="flex min-w-[160px] flex-1 flex-col gap-2.5 px-5 py-4">
-            <div className="flex items-center gap-1.5 text-[13px] text-gray-500">
-              {card.etiqueta}
-              <IconInfo className="h-3.5 w-3.5 text-gray-300" />
-            </div>
+          <div key={card.etiqueta} className="flex min-w-[180px] flex-col gap-2 px-5 py-4">
+            <p className="text-[13px] text-gray-500">{card.etiqueta}</p>
             <p className="text-2xl font-bold leading-none text-gray-900">{card.valor}</p>
-            <div className="flex items-center gap-1.5 text-[12.5px] text-gray-400">
-              {card.nota}
-              {card.pct !== null && (
-                <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-1.5 py-0.5 font-medium text-emerald-600">
-                  ↑ {card.pct}%
-                </span>
-              )}
-            </div>
+            <p className="text-[12.5px] text-gray-400">{card.nota}</p>
           </div>
         ))}
       </div>
