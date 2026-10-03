@@ -15,7 +15,7 @@ import {
   listarPaises,
   listarServicios,
 } from '../services/catalogoService'
-import { IconBriefcase, IconBuilding, IconCheckCircle } from '@/components/icons'
+import { IconBriefcase, IconBuilding, IconInfo } from '@/components/icons'
 import { NavCatalogoIcon } from '@/components/navIcons'
 
 type Pestana = 'destinos' | 'servicios'
@@ -40,22 +40,10 @@ export default function CatalogoPage() {
   const pctServiciosActivos = kpis ? porcentaje(kpis.serviciosActivos, kpis.servicios) : null
 
   const cards = [
-    { etiqueta: 'Destinos', valor: kpis?.destinos ?? 0, nota: 'Total registrados', color: 'bg-blue-50 text-blue-600', Icon: IconBuilding },
-    {
-      etiqueta: 'Destinos activos',
-      valor: kpis?.destinosActivos ?? 0,
-      nota: pctDestinosActivos !== null ? `${pctDestinosActivos}% del total` : 'Sin registros aún',
-      color: 'bg-emerald-50 text-emerald-600',
-      Icon: IconCheckCircle,
-    },
-    { etiqueta: 'Servicios', valor: kpis?.servicios ?? 0, nota: 'Total registrados', color: 'bg-amber-50 text-amber-600', Icon: IconBriefcase },
-    {
-      etiqueta: 'Servicios activos',
-      valor: kpis?.serviciosActivos ?? 0,
-      nota: pctServiciosActivos !== null ? `${pctServiciosActivos}% del total` : 'Sin registros aún',
-      color: 'bg-emerald-50 text-emerald-600',
-      Icon: IconCheckCircle,
-    },
+    { etiqueta: 'Destinos', valor: kpis?.destinos ?? 0, nota: 'Total registrados', pct: null },
+    { etiqueta: 'Destinos activos', valor: kpis?.destinosActivos ?? 0, nota: 'vs. total', pct: pctDestinosActivos },
+    { etiqueta: 'Servicios', valor: kpis?.servicios ?? 0, nota: 'Total registrados', pct: null },
+    { etiqueta: 'Servicios activos', valor: kpis?.serviciosActivos ?? 0, nota: 'vs. total', pct: pctServiciosActivos },
   ]
 
   const TABS: { id: Pestana; etiqueta: string; Icon: typeof IconBuilding; total: number | undefined }[] = [
@@ -77,19 +65,21 @@ export default function CatalogoPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="flex divide-x divide-gray-100 overflow-x-auto rounded-xl border border-gray-200/70 bg-white shadow-sm">
         {cards.map((card) => (
-          <div
-            key={card.etiqueta}
-            className="flex items-center gap-4 rounded-xl border border-gray-200/70 bg-white p-4 shadow-sm"
-          >
-            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${card.color}`}>
-              <card.Icon />
+          <div key={card.etiqueta} className="flex min-w-[160px] flex-1 flex-col gap-2.5 px-5 py-4">
+            <div className="flex items-center gap-1.5 text-[13px] text-gray-500">
+              {card.etiqueta}
+              <IconInfo className="h-3.5 w-3.5 text-gray-300" />
             </div>
-            <div className="min-w-0">
-              <p className="text-2xl font-bold leading-tight text-gray-900">{card.valor}</p>
-              <p className="truncate text-[13px] text-gray-500">{card.etiqueta}</p>
-              <p className="truncate text-[11px] text-gray-400">{card.nota}</p>
+            <p className="text-2xl font-bold leading-none text-gray-900">{card.valor}</p>
+            <div className="flex items-center gap-1.5 text-[12.5px] text-gray-400">
+              {card.nota}
+              {card.pct !== null && (
+                <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-1.5 py-0.5 font-medium text-emerald-600">
+                  ↑ {card.pct}%
+                </span>
+              )}
             </div>
           </div>
         ))}
