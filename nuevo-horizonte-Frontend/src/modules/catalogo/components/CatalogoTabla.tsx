@@ -50,11 +50,11 @@ function Colgroup() {
   return (
     <colgroup>
       <col className="w-10" />
-      <col />
-      <col className="w-[16%]" />
-      <col className="w-[13%]" />
+      <col className="w-[24%]" />
+      <col className="w-[17%]" />
       <col className="w-[15%]" />
-      <col className="w-[96px]" />
+      <col className="w-[17%]" />
+      <col className="w-[110px]" />
     </colgroup>
   )
 }
@@ -63,23 +63,20 @@ function FilaEsqueleto() {
   return (
     <tr className="border-b border-gray-100 last:border-0">
       <td className="px-4 py-3.5" />
-      <td className="px-4 py-3.5">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-gray-200" />
-          <div className="flex flex-col gap-1.5">
-            <div className="h-3.5 w-36 animate-pulse rounded bg-gray-200" />
-            <div className="h-2.5 w-24 animate-pulse rounded bg-gray-100" />
-          </div>
+      <td className="px-3 py-3.5">
+        <div className="mx-auto flex w-28 flex-col items-center gap-1.5">
+          <div className="h-3.5 w-28 animate-pulse rounded bg-gray-200" />
+          <div className="h-2.5 w-20 animate-pulse rounded bg-gray-100" />
         </div>
       </td>
-      <td className="px-4 py-3.5">
-        <div className="h-5 w-20 animate-pulse rounded-full bg-gray-100" />
+      <td className="px-3 py-3.5">
+        <div className="mx-auto h-5 w-20 animate-pulse rounded-full bg-gray-100" />
       </td>
-      <td className="px-4 py-3.5">
-        <div className="h-5 w-16 animate-pulse rounded-full bg-gray-100" />
+      <td className="px-3 py-3.5">
+        <div className="mx-auto h-5 w-16 animate-pulse rounded-full bg-gray-100" />
       </td>
-      <td className="px-4 py-3.5">
-        <div className="h-3 w-24 animate-pulse rounded bg-gray-100" />
+      <td className="px-3 py-3.5">
+        <div className="mx-auto h-3 w-24 animate-pulse rounded bg-gray-100" />
       </td>
       <td className="px-4 py-3.5" />
     </tr>
@@ -360,7 +357,7 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
           <table className="w-full table-fixed text-sm">
             <Colgroup />
             <thead>
-              <tr className="border-b border-gray-200 bg-gray-50/80 text-left text-[11px] uppercase tracking-wide text-gray-500">
+              <tr className="border-b border-gray-200 bg-gray-50/80 text-center text-[11px] uppercase tracking-wide text-gray-500">
                 <th className="px-4 py-3">
                   {puedeEliminar && (
                     <input
@@ -375,11 +372,11 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
                     />
                   )}
                 </th>
-                <th className="px-4 py-3 font-semibold">{capitalizar(singular)}</th>
-                <th className="px-4 py-3 font-semibold">{etiquetaGrupo}</th>
-                <th className="px-4 py-3 font-semibold">Estado</th>
-                <th className="px-4 py-3 font-semibold">Registrado</th>
-                <th className="px-4 py-3 text-right font-semibold">Acciones</th>
+                <th className="px-3 py-3 font-semibold">{capitalizar(singular)}</th>
+                <th className="px-3 py-3 font-semibold">{etiquetaGrupo}</th>
+                <th className="px-3 py-3 font-semibold">Estado</th>
+                <th className="px-3 py-3 font-semibold">Registrado</th>
+                <th className="px-4 py-3 font-semibold">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -396,7 +393,7 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
                         seleccionado ? 'border-l-blue-600 bg-blue-50/40' : 'border-l-transparent hover:bg-gray-50/70'
                       }`}
                     >
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-3.5 text-center">
                         {puedeEliminar && (
                           <input
                             type="checkbox"
@@ -407,22 +404,11 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
                           />
                         )}
                       </td>
-                      <td className="min-w-0 px-4 py-3.5">
-                        <div className="flex min-w-0 items-center gap-3">
-                          <span
-                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                              item.activo ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-400'
-                            }`}
-                          >
-                            <Icon className="h-4 w-4" />
-                          </span>
-                          <div className="min-w-0">
-                            <p className="truncate font-medium text-gray-900">{item.nombre}</p>
-                            <p className="truncate text-[12px] text-gray-500">{item.descripcion || 'Sin descripción'}</p>
-                          </div>
-                        </div>
+                      <td className="min-w-0 px-3 py-3.5 text-center">
+                        <p className="truncate font-medium text-gray-900">{item.nombre}</p>
+                        <p className="truncate text-[12px] text-gray-500">{item.descripcion || 'Sin descripción'}</p>
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-3 py-3.5 text-center">
                         {grupo ? (
                           <span
                             className={`inline-flex max-w-full items-center truncate rounded-full px-2.5 py-1 text-[11.5px] font-medium ring-1 ring-inset ${colorEtiqueta(grupo)}`}
@@ -433,7 +419,7 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
                           <span className="text-gray-400">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-3 py-3.5 text-center">
                         <span
                           className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${
                             item.activo
@@ -445,9 +431,9 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
                           {item.activo ? 'Activo' : 'Inactivo'}
                         </span>
                       </td>
-                      <td className="truncate px-4 py-3.5 text-xs text-gray-500">{formatDate(item.fechaCreacion)}</td>
+                      <td className="truncate px-3 py-3.5 text-center text-xs text-gray-500">{formatDate(item.fechaCreacion)}</td>
                       <td className="px-4 py-3.5">
-                        <div className="flex items-center justify-end gap-1">
+                        <div className="flex items-center justify-center gap-1">
                           {puedeEditar && (
                             <button
                               type="button"
