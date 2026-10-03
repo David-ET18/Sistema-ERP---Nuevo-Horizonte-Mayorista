@@ -15,7 +15,7 @@ import {
   listarPaises,
   listarServicios,
 } from '../services/catalogoService'
-import { IconBriefcase, IconBuilding } from '@/components/icons'
+import { IconBriefcase, IconBuilding, IconCheckCircle } from '@/components/icons'
 import { NavCatalogoIcon } from '@/components/navIcons'
 
 type Pestana = 'destinos' | 'servicios'
@@ -31,15 +31,28 @@ export default function CatalogoPage() {
   useEffect(cargarKpis, [])
 
   // Solo los 2 KPIs relevantes a la pestaña activa: total y activos de eso mismo.
+  const IconPestana = pestana === 'destinos' ? IconBuilding : IconBriefcase
   const cards =
     pestana === 'destinos'
       ? [
-          { etiqueta: 'Destinos', valor: kpis?.destinos ?? 0, nota: 'Registrados en total' },
-          { etiqueta: 'Destinos activos', valor: kpis?.destinosActivos ?? 0, nota: 'Disponibles en los formularios' },
+          { etiqueta: 'Destinos', valor: kpis?.destinos ?? 0, nota: 'Registrados en total', Icon: IconPestana, color: 'bg-blue-50 text-blue-600' },
+          {
+            etiqueta: 'Destinos activos',
+            valor: kpis?.destinosActivos ?? 0,
+            nota: 'Disponibles en los formularios',
+            Icon: IconCheckCircle,
+            color: 'bg-emerald-50 text-emerald-600',
+          },
         ]
       : [
-          { etiqueta: 'Servicios', valor: kpis?.servicios ?? 0, nota: 'Registrados en total' },
-          { etiqueta: 'Servicios activos', valor: kpis?.serviciosActivos ?? 0, nota: 'Disponibles en los formularios' },
+          { etiqueta: 'Servicios', valor: kpis?.servicios ?? 0, nota: 'Registrados en total', Icon: IconPestana, color: 'bg-amber-50 text-amber-600' },
+          {
+            etiqueta: 'Servicios activos',
+            valor: kpis?.serviciosActivos ?? 0,
+            nota: 'Disponibles en los formularios',
+            Icon: IconCheckCircle,
+            color: 'bg-emerald-50 text-emerald-600',
+          },
         ]
 
   const TABS: { id: Pestana; etiqueta: string; Icon: typeof IconBuilding; total: number | undefined }[] = [
@@ -61,12 +74,20 @@ export default function CatalogoPage() {
         </div>
       </div>
 
-      <div className="flex w-fit divide-x divide-gray-100 overflow-x-auto rounded-xl border border-gray-200/70 bg-white shadow-sm">
+      <div className="grid grid-cols-2 gap-4 sm:w-fit sm:grid-cols-[repeat(2,220px)]">
         {cards.map((card) => (
-          <div key={card.etiqueta} className="flex min-w-[180px] flex-col gap-2 px-5 py-4">
-            <p className="text-[13px] text-gray-500">{card.etiqueta}</p>
-            <p className="text-2xl font-bold leading-none text-gray-900">{card.valor}</p>
-            <p className="text-[12.5px] text-gray-400">{card.nota}</p>
+          <div
+            key={card.etiqueta}
+            className="flex items-center gap-3.5 rounded-xl border border-gray-200/70 bg-white px-4 py-3.5 shadow-sm"
+          >
+            <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${card.color}`}>
+              <card.Icon className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-2xl font-bold leading-none text-gray-900">{card.valor}</p>
+              <p className="mt-1.5 truncate text-[13px] font-medium text-gray-600">{card.etiqueta}</p>
+              <p className="truncate text-[11.5px] text-gray-400">{card.nota}</p>
+            </div>
           </div>
         ))}
       </div>
