@@ -1,19 +1,25 @@
 import { useEffect, useState } from 'react'
+import type { ReactElement, SVGProps } from 'react'
 
 import type { FiltrosCatalogo, Paginacion } from '../types'
+import { colorEtiqueta } from '../utils/tagColor'
 import CatalogoFormModal, { type ValoresCatalogo } from './CatalogoFormModal'
 import { extractErrorMessage } from '@/api/http'
+import ConfirmDialog from '@/components/ConfirmDialog'
 import {
   canCreateModule,
   canDeleteModule,
   canUpdateModule,
 } from '@/modules/gestion-usuarios-roles-permisos/utils/permissions'
+import { useToastStore } from '@/store/toastStore'
 import { formatDate } from '@/utils/format'
-import { IconChevronLeft, IconChevronRight, IconPencil, IconPlus, IconSearch, IconTrash } from '@/components/icons'
+import { IconChevronLeft, IconChevronRight, IconPencil, IconPlus, IconSearch, IconTrash, IconX } from '@/components/icons'
 
 const MODULO = 'catalogo'
 const TAMANOS_PAGINA = [5, 10, 25, 50]
 const FILTROS_INICIALES: FiltrosCatalogo = { q: '', grupo: '', activo: '' }
+
+type IconComponent = (props: SVGProps<SVGSVGElement>) => ReactElement
 
 interface ItemCatalogo {
   id: number
@@ -29,6 +35,8 @@ interface Props<T extends ItemCatalogo> {
   plural: string
   etiquetaGrupo: string
   grupoObligatorio: boolean
+  /** Icono que identifica visualmente cada fila (avatar circular). */
+  Icon: IconComponent
   obtenerGrupo: (item: T) => string | null
   listar: (filtros: FiltrosCatalogo, page: number, size: number) => Promise<Paginacion<T>>
   listarGrupos: () => Promise<string[]>
@@ -37,11 +45,38 @@ interface Props<T extends ItemCatalogo> {
   onCambio: () => void
 }
 
+function FilaEsqueleto() {
+  return (
+    <tr className="border-b border-gray-100 last:border-0">
+      <td className="px-4 py-3.5">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-gray-200" />
+          <div className="flex flex-col gap-1.5">
+            <div className="h-3.5 w-36 animate-pulse rounded bg-gray-200" />
+            <div className="h-2.5 w-24 animate-pulse rounded bg-gray-100" />
+          </div>
+        </div>
+      </td>
+      <td className="px-4 py-3.5">
+        <div className="h-5 w-20 animate-pulse rounded-full bg-gray-100" />
+      </td>
+      <td className="px-4 py-3.5">
+        <div className="h-5 w-16 animate-pulse rounded-full bg-gray-100" />
+      </td>
+      <td className="px-4 py-3.5">
+        <div className="h-3 w-24 animate-pulse rounded bg-gray-100" />
+      </td>
+      <td className="px-4 py-3.5" />
+    </tr>
+  )
+}
+
 export default function CatalogoTabla<T extends ItemCatalogo>({
   singular,
   plural,
   etiquetaGrupo,
   grupoObligatorio,
+  Icon,
   obtenerGrupo,
   listar,
   listarGrupos,
@@ -59,6 +94,8 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
   const [refreshKey, setRefreshKey] = useState(0)
   const [formAbierto, setFormAbierto] = useState(false)
   const [editando, setEditando] = useState<T | null>(null)
+  const [aEliminar, setAEliminar] = useState<T | null>(null)
+  const toast = useToastStore((s) => s.show)
 
   const puedeCrear = canCreateModule(MODULO)
   const puedeEditar = canUpdateModule(MODULO)
@@ -89,27 +126,37 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
     setFiltros((prev) => ({ ...prev, [campo]: valor }))
   }
 
-  async function borrar(item: T) {
-    if (!window.confirm(`¿Eliminar ${singular} "${item.nombre}"?`)) return
+  async function confirmarEliminar() {
+    if (!aEliminar) return
     try {
-      await eliminar(item.id)
+      await eliminar(aEliminar.id)
+      setAEliminar(null)
       recargar(true)
       onCambio()
+      toast(`${capitalizar(singular)} "${aEliminar.nombre}" eliminado correctamente`, 'success')
     } catch (err) {
-      setError(extractErrorMessage(err))
+      setAEliminar(null)
+      toast(extractErrorMessage(err), 'error')
     }
   }
 
   async function enviar(valores: ValoresCatalogo) {
+    const creando = !editando
     await guardar(valores, editando)
     setFormAbierto(false)
     recargar(true)
     onCambio()
+    toast(
+      creando ? `${capitalizar(singular)} creado correctamente` : `${capitalizar(singular)} actualizado correctamente`,
+      'success',
+    )
   }
 
   const hayFiltros = Boolean(filtros.q) || Boolean(filtros.grupo) || Boolean(filtros.activo)
+  const cantidadFiltros = [filtros.q, filtros.grupo, filtros.activo].filter(Boolean).length
   const desde = data ? data.number * data.size + 1 : 0
   const hasta = data ? Math.min((data.number + 1) * data.size, data.totalElements) : 0
+  const sinResultados = !loading && (data?.content.length ?? 0) === 0
 
   const inicialForm: ValoresCatalogo | null = editando
     ? {
@@ -122,7 +169,8 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-3 rounded-xl bg-white p-4 shadow-sm">
+      {/* Barra de filtros y acciones */}
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-gray-200/70 bg-white p-4 shadow-sm">
         <div className="relative">
           <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
             <IconSearch />
@@ -130,7 +178,7 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
           <input
             type="text"
             placeholder={`Buscar ${singular}...`}
-            className="w-64 rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand"
+            className="w-64 rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
             value={filtros.q}
             onChange={(e) => setFiltro('q', e.target.value)}
             onKeyDown={(e) => {
@@ -140,7 +188,7 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
         </div>
 
         <select
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand"
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 transition-colors focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
           value={filtros.grupo}
           onChange={(e) => {
             setFiltro('grupo', e.target.value)
@@ -155,18 +203,30 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
           ))}
         </select>
 
-        <select
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand"
-          value={filtros.activo}
-          onChange={(e) => {
-            setFiltro('activo', e.target.value)
-            recargar(true)
-          }}
-        >
-          <option value="">Estado</option>
-          <option value="true">Activo</option>
-          <option value="false">Inactivo</option>
-        </select>
+        {/* Segmento de estado: mas rapido de operar que un select y comunica el filtro activo de un vistazo */}
+        <div className="flex rounded-lg border border-gray-300 bg-gray-50 p-0.5">
+          {(
+            [
+              { valor: '', etiqueta: 'Todos' },
+              { valor: 'true', etiqueta: 'Activos' },
+              { valor: 'false', etiqueta: 'Inactivos' },
+            ] as const
+          ).map((op) => (
+            <button
+              key={op.valor}
+              type="button"
+              onClick={() => {
+                setFiltro('activo', op.valor)
+                recargar(true)
+              }}
+              className={`cursor-pointer rounded-md px-3 py-1.5 text-[12.5px] font-medium transition-colors ${
+                filtros.activo === op.valor ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {op.etiqueta}
+            </button>
+          ))}
+        </div>
 
         {hayFiltros && (
           <button
@@ -175,9 +235,10 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
               setFiltros(FILTROS_INICIALES)
               recargar(true)
             }}
-            className="cursor-pointer rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
+            className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12.5px] font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
           >
-            Limpiar Filtros
+            <IconX className="h-3.5 w-3.5" />
+            Limpiar {cantidadFiltros > 1 ? `(${cantidadFiltros})` : ''}
           </button>
         )}
 
@@ -189,7 +250,7 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
                 setEditando(null)
                 setFormAbierto(true)
               }}
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
             >
               <IconPlus /> Nuevo {singular}
             </button>
@@ -197,78 +258,141 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
         </div>
       </div>
 
-      {error && <p className="text-[13px] text-red-700">{error}</p>}
+      {error && (
+        <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-[13px] text-red-700">
+          {error}
+        </p>
+      )}
 
-      <div className="overflow-hidden rounded-xl bg-white shadow-sm">
+      {/* Tabla */}
+      <div className="overflow-hidden rounded-xl border border-gray-200/70 bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 text-left text-[11px] uppercase tracking-wide text-gray-500">
-                <th className="px-4 py-3 font-semibold">Nombre</th>
+              <tr className="border-b border-gray-200 bg-gray-50/80 text-left text-[11px] uppercase tracking-wide text-gray-500">
+                <th className="px-4 py-3 font-semibold">{capitalizar(singular)}</th>
                 <th className="px-4 py-3 font-semibold">{etiquetaGrupo}</th>
-                <th className="px-4 py-3 font-semibold">Descripción</th>
                 <th className="px-4 py-3 font-semibold">Estado</th>
                 <th className="px-4 py-3 font-semibold">Registrado</th>
-                <th className="px-4 py-3 text-right font-semibold">Acciones</th>
+                <th className="px-4 py-3 text-right font-semibold">
+                  <span className="sr-only">Acciones</span>
+                </th>
               </tr>
             </thead>
             <tbody>
+              {loading && Array.from({ length: 5 }).map((_, i) => <FilaEsqueleto key={i} />)}
+
               {!loading &&
-                data?.content.map((item) => (
-                  <tr key={item.id} className="border-t border-gray-100 hover:bg-gray-50/60">
-                    <td className="px-4 py-3 font-medium text-gray-900">{item.nombre}</td>
-                    <td className="px-4 py-3 text-gray-700">{obtenerGrupo(item) || '-'}</td>
-                    <td className="max-w-xs truncate px-4 py-3 text-gray-500">{item.descripcion || '-'}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                          item.activo ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
-                        }`}
-                      >
-                        {item.activo ? 'Activo' : 'Inactivo'}
+                data?.content.map((item) => {
+                  const grupo = obtenerGrupo(item)
+                  return (
+                    <tr key={item.id} className="group border-b border-gray-100 transition-colors last:border-0 hover:bg-gray-50/70">
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                              item.activo ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-400'
+                            }`}
+                          >
+                            <Icon className="h-4 w-4" />
+                          </span>
+                          <div className="min-w-0">
+                            <p className="truncate font-medium text-gray-900">{item.nombre}</p>
+                            <p className="truncate text-[12px] text-gray-500">{item.descripcion || 'Sin descripción'}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        {grupo ? (
+                          <span
+                            className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11.5px] font-medium ring-1 ring-inset ${colorEtiqueta(grupo)}`}
+                          >
+                            {grupo}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${
+                            item.activo
+                              ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/15'
+                              : 'bg-gray-100 text-gray-500 ring-gray-400/15'
+                          }`}
+                        >
+                          <span className={`h-1.5 w-1.5 rounded-full ${item.activo ? 'bg-emerald-500' : 'bg-gray-400'}`} />
+                          {item.activo ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-xs text-gray-500">{formatDate(item.fechaCreacion)}</td>
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 focus-within:opacity-100">
+                          {puedeEditar && (
+                            <button
+                              type="button"
+                              className="cursor-pointer rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                              onClick={() => {
+                                setEditando(item)
+                                setFormAbierto(true)
+                              }}
+                              aria-label={`Editar ${item.nombre}`}
+                            >
+                              <IconPencil />
+                            </button>
+                          )}
+                          {puedeEliminar && (
+                            <button
+                              type="button"
+                              className="cursor-pointer rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                              onClick={() => setAEliminar(item)}
+                              aria-label={`Eliminar ${item.nombre}`}
+                            >
+                              <IconTrash />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+
+              {sinResultados && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-14">
+                    <div className="flex flex-col items-center gap-2 text-center">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                        <Icon className="h-5 w-5" />
                       </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-500">{formatDate(item.fechaCreacion)}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        {puedeEditar && (
+                      <p className="text-sm font-medium text-gray-700">
+                        {hayFiltros ? `No hay ${plural} que coincidan con los filtros` : `Todavía no hay ${plural}`}
+                      </p>
+                      {hayFiltros ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFiltros(FILTROS_INICIALES)
+                            recargar(true)
+                          }}
+                          className="cursor-pointer text-[13px] font-medium text-blue-600 hover:text-blue-700"
+                        >
+                          Limpiar filtros
+                        </button>
+                      ) : (
+                        puedeCrear && (
                           <button
                             type="button"
-                            className="cursor-pointer rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
                             onClick={() => {
-                              setEditando(item)
+                              setEditando(null)
                               setFormAbierto(true)
                             }}
-                            aria-label="Editar"
+                            className="mt-1 inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-1.5 text-[13px] font-medium text-white hover:bg-blue-700"
                           >
-                            <IconPencil />
+                            <IconPlus className="h-3.5 w-3.5" /> Crear {singular}
                           </button>
-                        )}
-                        {puedeEliminar && (
-                          <button
-                            type="button"
-                            className="cursor-pointer rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"
-                            onClick={() => borrar(item)}
-                            aria-label="Eliminar"
-                          >
-                            <IconTrash />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              {loading && (
-                <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-400">
-                    Cargando {plural}...
-                  </td>
-                </tr>
-              )}
-              {!loading && (data?.content.length ?? 0) === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-400">
-                    No hay {plural} que coincidan con los filtros
+                        )
+                      )}
+                    </div>
                   </td>
                 </tr>
               )}
@@ -279,11 +403,12 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
         {(data?.totalElements ?? 0) > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-3">
             <p className="text-[13px] text-gray-500">
-              Mostrando {desde}–{hasta} de {data?.totalElements} {plural}
+              Mostrando <span className="font-medium text-gray-700">{desde}–{hasta}</span> de{' '}
+              <span className="font-medium text-gray-700">{data?.totalElements}</span> {plural}
             </p>
             <div className="flex items-center gap-3">
               <select
-                className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-gray-800 focus:outline-none"
+                className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-gray-700 focus:outline-none"
                 value={size}
                 onChange={(e) => {
                   setSize(Number(e.target.value))
@@ -300,7 +425,7 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
                 type="button"
                 disabled={(data?.number ?? 0) <= 0}
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
-                className="cursor-pointer rounded-lg border border-gray-200 p-1.5 text-gray-500 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                className="cursor-pointer rounded-lg border border-gray-200 p-1.5 text-gray-500 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
                 aria-label="Página anterior"
               >
                 <IconChevronLeft />
@@ -312,7 +437,7 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
                 type="button"
                 disabled={(data?.number ?? 0) + 1 >= (data?.totalPages ?? 1)}
                 onClick={() => setPage((p) => p + 1)}
-                className="cursor-pointer rounded-lg border border-gray-200 p-1.5 text-gray-500 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                className="cursor-pointer rounded-lg border border-gray-200 p-1.5 text-gray-500 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
                 aria-label="Página siguiente"
               >
                 <IconChevronRight />
@@ -325,6 +450,7 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
       {formAbierto && (
         <CatalogoFormModal
           titulo={editando ? `Editar ${singular}` : `Nuevo ${singular}`}
+          subtitulo={editando ? `Actualiza los datos de este ${singular}` : `Completa los datos del nuevo ${singular}`}
           etiquetaNombre="Nombre"
           etiquetaGrupo={etiquetaGrupo}
           grupoObligatorio={grupoObligatorio}
@@ -334,6 +460,24 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
           onClose={() => setFormAbierto(false)}
         />
       )}
+
+      <ConfirmDialog
+        open={aEliminar !== null}
+        tono="danger"
+        title={`Eliminar ${singular}`}
+        description={
+          aEliminar
+            ? `¿Seguro que deseas eliminar "${aEliminar.nombre}"? Si está en uso por tarifas o paquetes, se te pedirá desactivarlo en su lugar.`
+            : ''
+        }
+        confirmLabel="Eliminar"
+        onConfirm={confirmarEliminar}
+        onCancel={() => setAEliminar(null)}
+      />
     </div>
   )
+}
+
+function capitalizar(texto: string): string {
+  return texto.charAt(0).toUpperCase() + texto.slice(1)
 }

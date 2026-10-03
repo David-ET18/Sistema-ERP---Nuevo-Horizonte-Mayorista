@@ -19,6 +19,10 @@ const STYLES: Record<
     container: 'border-blue-200 bg-blue-50 text-blue-800',
     icon: 'text-blue-500',
   },
+  warning: {
+    container: 'border-amber-200 bg-amber-50 text-amber-800',
+    icon: 'text-amber-500',
+  },
 }
 
 function CheckIcon() {
@@ -49,6 +53,7 @@ const ICONS: Record<ToastType, () => ReactElement> = {
   success: CheckIcon,
   error: ExclamationIcon,
   info: InfoIcon,
+  warning: ExclamationIcon,
 }
 
 export default function Toast() {
@@ -61,7 +66,7 @@ export default function Toast() {
   return (
     <div
       role="status"
-      className={`fixed top-6 right-6 z-[100] flex max-w-sm items-center gap-3 rounded-xl border px-4 py-3 shadow-lg ${styles.container}`}
+      className={`toast-in fixed top-6 right-6 z-[100] flex max-w-sm items-center gap-3 rounded-xl border px-4 py-3 shadow-lg ${styles.container}`}
     >
       <span className={styles.icon}>
         <Icon />
