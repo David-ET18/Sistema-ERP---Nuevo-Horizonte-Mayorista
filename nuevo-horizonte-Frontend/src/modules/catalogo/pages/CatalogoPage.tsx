@@ -62,20 +62,22 @@ export default function CatalogoPage() {
 
   return (
     <section className="flex flex-col gap-6">
-      <div className="flex items-start gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-          <NavCatalogoIcon className="h-5 w-5" />
-        </span>
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Catálogo Base</h2>
-          <p className="mt-0.5 text-sm text-gray-500">
-            Administra los destinos y servicios que alimentan tarifas, paquetes y cotizaciones
-          </p>
-        </div>
-      </div>
-
+      {/* Encabezado + KPIs comparten un mismo bloque relativo: la ilustracion se superpone
+          abarcando ambas secciones, asi puede ser grande sin empujar ninguna de las dos. */}
       <div className="relative">
-        <div className="grid grid-cols-2 gap-4 sm:w-fit sm:grid-cols-[repeat(2,220px)]">
+        <div className="flex items-start gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+            <NavCatalogoIcon className="h-5 w-5" />
+          </span>
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">Catálogo Base</h2>
+            <p className="mt-0.5 text-sm text-gray-500">
+              Administra los destinos y servicios que alimentan tarifas, paquetes y cotizaciones
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 grid grid-cols-2 gap-4 sm:w-fit sm:grid-cols-[repeat(2,220px)]">
           {cards.map((card) => (
             <div
               key={card.etiqueta}
@@ -93,12 +95,12 @@ export default function CatalogoPage() {
           ))}
         </div>
 
-        {/* Ilustracion decorativa: superpuesta (posicion absoluta) para que su alto no empuje
-            la fila de KPIs ni el contenido de abajo. */}
+        {/* Ilustracion decorativa: posicion absoluta, centrada en el alto combinado de las
+            dos secciones de arriba. No empuja ni el titulo ni la fila de KPIs. */}
         <img
           src="/brand/ilustracion-multitasking.svg"
           alt=""
-          className="pointer-events-none absolute right-0 top-1/2 hidden h-28 w-auto -translate-y-1/2 opacity-90 xl:block"
+          className="pointer-events-none absolute right-0 top-1/2 hidden h-40 w-auto -translate-y-1/2 opacity-90 xl:block 2xl:h-48"
         />
       </div>
 
