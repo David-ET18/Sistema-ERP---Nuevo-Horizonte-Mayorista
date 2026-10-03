@@ -19,11 +19,11 @@ import {
   IconChevronRight,
   IconChevronsLeft,
   IconChevronsRight,
+  IconEdit,
   IconFilter,
-  IconPencil,
   IconPlus,
   IconSearch,
-  IconTrash,
+  IconTrashBin,
   IconX,
 } from '@/components/icons'
 
@@ -61,11 +61,10 @@ interface Props<T extends ItemCatalogo> {
 function Colgroup() {
   return (
     <colgroup>
-      <col className="w-10" />
-      <col className="w-[24%]" />
-      <col className="w-[17%]" />
-      <col className="w-[15%]" />
-      <col className="w-[17%]" />
+      <col className="w-[28%]" />
+      <col className="w-[19%]" />
+      <col className="w-[16%]" />
+      <col className="w-[19%]" />
       <col className="w-[110px]" />
     </colgroup>
   )
@@ -74,7 +73,6 @@ function Colgroup() {
 function FilaEsqueleto() {
   return (
     <tr className="border-b border-gray-100 last:border-0">
-      <td className="px-4 py-3.5" />
       <td className="px-3 py-3.5">
         <div className="mx-auto flex w-28 flex-col items-center gap-1.5">
           <div className="h-3.5 w-28 animate-pulse rounded bg-gray-200" />
@@ -137,8 +135,6 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
   const [formAbierto, setFormAbierto] = useState(false)
   const [editando, setEditando] = useState<T | null>(null)
   const [aEliminar, setAEliminar] = useState<T | null>(null)
-  const [seleccionados, setSeleccionados] = useState<Set<number>>(new Set())
-  const [eliminandoSeleccion, setEliminandoSeleccion] = useState(false)
   const toast = useToastStore((s) => s.show)
 
   const puedeCrear = canCreateModule(MODULO)
@@ -161,11 +157,6 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, size, refreshKey])
 
-  // La seleccion es solo de la pagina visible: al cambiar de pagina o refrescar, se limpia.
-  useEffect(() => {
-    setSeleccionados(new Set())
-  }, [page, refreshKey])
-
   function recargar(resetPagina: boolean) {
     if (resetPagina && page !== 0) setPage(0)
     setRefreshKey((k) => k + 1)
@@ -173,21 +164,6 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
 
   function setFiltro<K extends keyof FiltrosCatalogo>(campo: K, valor: FiltrosCatalogo[K]) {
     setFiltros((prev) => ({ ...prev, [campo]: valor }))
-  }
-
-  function alternarSeleccion(id: number) {
-    setSeleccionados((prev) => {
-      const siguiente = new Set(prev)
-      if (siguiente.has(id)) siguiente.delete(id)
-      else siguiente.add(id)
-      return siguiente
-    })
-  }
-
-  function alternarSeleccionTodos() {
-    const idsPagina = data?.content.map((i) => i.id) ?? []
-    const todosSeleccionados = idsPagina.length > 0 && idsPagina.every((id) => seleccionados.has(id))
-    setSeleccionados(todosSeleccionados ? new Set() : new Set(idsPagina))
   }
 
   async function confirmarEliminar() {
@@ -201,26 +177,6 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
     } catch (err) {
       setAEliminar(null)
       toast(extractErrorMessage(err), 'error')
-    }
-  }
-
-  async function confirmarEliminarSeleccion() {
-    const ids = [...seleccionados]
-    setEliminandoSeleccion(false)
-    const resultados = await Promise.allSettled(ids.map((id) => eliminar(id)))
-    const exitosos = resultados.filter((r) => r.status === 'fulfilled').length
-    const fallidos = resultados.length - exitosos
-    setSeleccionados(new Set())
-    recargar(true)
-    onCambio()
-    if (exitosos > 0) {
-      toast(`${exitosos} ${exitosos === 1 ? singular : plural} eliminado${exitosos === 1 ? '' : 's'} correctamente`, 'success')
-    }
-    if (fallidos > 0) {
-      toast(
-        `${fallidos} ${fallidos === 1 ? 'registro no se pudo' : 'registros no se pudieron'} eliminar por estar en uso`,
-        'warning',
-      )
     }
   }
 
@@ -243,9 +199,6 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
   const sinResultados = !loading && (data?.content.length ?? 0) === 0
   const paginaActual = (data?.number ?? 0) + 1
   const totalPaginas = Math.max(data?.totalPages ?? 1, 1)
-  const idsPagina = data?.content.map((i) => i.id) ?? []
-  const todosSeleccionados = idsPagina.length > 0 && idsPagina.every((id) => seleccionados.has(id))
-  const algunoSeleccionado = idsPagina.some((id) => seleccionados.has(id))
 
   const paginas = useMemo(() => paginasVisibles(paginaActual, totalPaginas), [paginaActual, totalPaginas])
 
@@ -379,20 +332,6 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
             <Colgroup />
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50/80 text-center text-[11px] uppercase tracking-wide text-gray-500">
-                <th className="px-4 py-3">
-                  {puedeEliminar && (
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 cursor-pointer rounded border-gray-300 accent-blue-600"
-                      checked={todosSeleccionados}
-                      ref={(el) => {
-                        if (el) el.indeterminate = algunoSeleccionado && !todosSeleccionados
-                      }}
-                      onChange={alternarSeleccionTodos}
-                      aria-label={`Seleccionar todos los ${plural} de la página`}
-                    />
-                  )}
-                </th>
                 <th className="px-3 py-3 font-semibold">{capitalizar(singular)}</th>
                 <th className="px-3 py-3 font-semibold">{etiquetaGrupo}</th>
                 <th className="px-3 py-3 font-semibold">Estado</th>
@@ -406,28 +345,15 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
               {!loading &&
                 data?.content.map((item) => {
                   const grupo = obtenerGrupo(item)
-                  const seleccionado = seleccionados.has(item.id)
                   return (
-                    <tr
-                      key={item.id}
-                      className={`group border-b border-l-2 border-gray-100 transition-colors last:border-b-0 ${
-                        seleccionado ? 'border-l-blue-600 bg-blue-50/40' : 'border-l-transparent hover:bg-gray-50/70'
-                      }`}
-                    >
-                      <td className="px-4 py-3.5 text-center">
-                        {puedeEliminar && (
-                          <input
-                            type="checkbox"
-                            className="h-4 w-4 cursor-pointer rounded border-gray-300 accent-blue-600"
-                            checked={seleccionado}
-                            onChange={() => alternarSeleccion(item.id)}
-                            aria-label={`Seleccionar ${item.nombre}`}
-                          />
-                        )}
-                      </td>
+                    <tr key={item.id} className="border-b border-gray-100 transition-colors last:border-b-0 hover:bg-gray-50/70">
                       <td className="min-w-0 px-3 py-3.5 text-center">
-                        <p className="truncate font-medium text-gray-900">{item.nombre}</p>
-                        <p className="truncate text-[12px] text-gray-500">{item.descripcion || 'Sin descripción'}</p>
+                        <p className="truncate font-medium text-gray-900" title={item.nombre}>
+                          {item.nombre}
+                        </p>
+                        <p className="truncate text-[12px] text-gray-500" title={item.descripcion ?? undefined}>
+                          {item.descripcion || 'Sin descripción'}
+                        </p>
                       </td>
                       <td className="px-3 py-3.5 text-center">
                         {grupo ? (
@@ -454,32 +380,35 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
                       </td>
                       <td className="truncate px-3 py-3.5 text-center text-xs text-gray-500">{formatDate(item.fechaCreacion)}</td>
                       <td className="px-4 py-3.5">
-                        <div className="flex items-center justify-center gap-1">
-                          {puedeEditar && (
-                            <button
-                              type="button"
-                              className="cursor-pointer rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
-                              onClick={() => {
-                                setEditando(item)
-                                setFormAbierto(true)
-                              }}
-                              aria-label={`Editar ${item.nombre}`}
-                              title="Editar"
-                            >
-                              <IconPencil />
-                            </button>
-                          )}
-                          {puedeEliminar && (
-                            <button
-                              type="button"
-                              className="cursor-pointer rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                              onClick={() => setAEliminar(item)}
-                              aria-label={`Eliminar ${item.nombre}`}
-                              title="Eliminar"
-                            >
-                              <IconTrash />
-                            </button>
-                          )}
+                        <div className="flex items-center justify-center">
+                          <div className="inline-flex items-center overflow-hidden rounded-lg border border-gray-200">
+                            {puedeEditar && (
+                              <button
+                                type="button"
+                                className="flex h-8 w-8 cursor-pointer items-center justify-center text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600"
+                                onClick={() => {
+                                  setEditando(item)
+                                  setFormAbierto(true)
+                                }}
+                                aria-label={`Editar ${item.nombre}`}
+                                title="Editar"
+                              >
+                                <IconEdit className="h-4 w-4" />
+                              </button>
+                            )}
+                            {puedeEditar && puedeEliminar && <span className="h-8 w-px bg-gray-200" />}
+                            {puedeEliminar && (
+                              <button
+                                type="button"
+                                className="flex h-8 w-8 cursor-pointer items-center justify-center text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                                onClick={() => setAEliminar(item)}
+                                aria-label={`Eliminar ${item.nombre}`}
+                                title="Eliminar"
+                              >
+                                <IconTrashBin className="h-4 w-4" />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -488,7 +417,7 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
 
               {sinResultados && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-14">
+                  <td colSpan={5} className="px-4 py-14">
                     <div className="flex flex-col items-center gap-2 text-center">
                       <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-400">
                         <Icon className="h-5 w-5" />
@@ -632,35 +561,6 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
             </div>
           </div>
         )}
-
-        {/* Barra flotante de accion masiva */}
-        {seleccionados.size > 0 && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-20 flex justify-center">
-            <div className="animate-panel-in pointer-events-auto flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2 py-1.5 shadow-lg">
-              <span className="px-2.5 text-[13px] font-medium text-gray-700">
-                {seleccionados.size} seleccionado{seleccionados.size === 1 ? '' : 's'}
-              </span>
-              <span className="h-5 w-px bg-gray-200" />
-              {puedeEliminar && (
-                <button
-                  type="button"
-                  onClick={() => setEliminandoSeleccion(true)}
-                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium text-red-600 transition-colors hover:bg-red-50"
-                >
-                  <IconTrash className="h-3.5 w-3.5" /> Eliminar
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setSeleccionados(new Set())}
-                className="cursor-pointer rounded-full p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-                aria-label="Cancelar selección"
-              >
-                <IconX className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       {formAbierto && (
@@ -689,16 +589,6 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
         confirmLabel="Eliminar"
         onConfirm={confirmarEliminar}
         onCancel={() => setAEliminar(null)}
-      />
-
-      <ConfirmDialog
-        open={eliminandoSeleccion}
-        tono="danger"
-        title={`Eliminar ${seleccionados.size} ${seleccionados.size === 1 ? singular : plural}`}
-        description={`Esta acción no se puede deshacer. Los registros en uso por tarifas o paquetes no se eliminarán; se te avisará cuáles.`}
-        confirmLabel="Eliminar"
-        onConfirm={confirmarEliminarSeleccion}
-        onCancel={() => setEliminandoSeleccion(false)}
       />
     </div>
   )
