@@ -6,19 +6,29 @@ import { useAuthStore } from '@/modules/gestion-usuarios-roles-permisos/store/au
 import {
   DEFAULT_ROLE_COLOR,
   getRoleColor,
-  mezclarColor,
 } from '@/modules/gestion-usuarios-roles-permisos/utils/roleColor'
 import { canReadModule } from '@/modules/gestion-usuarios-roles-permisos/utils/permissions'
+import { BellIcon, ChevronDownIcon, LogoutIcon, SearchIcon } from '@/components/icons'
 import {
-  BoxIcon,
-  BellIcon,
-  ChevronDownIcon,
-  HomeIcon,
-  LogoutIcon,
-  SearchIcon,
-  ShieldIcon,
-  UsersIcon,
-} from '@/components/icons'
+  NavAgenciasIcon,
+  NavCatalogoIcon,
+  NavCotizacionesIcon,
+  NavDocumentosIcon,
+  NavMarketingIcon,
+  NavNotificacionesIcon,
+  NavPagosIcon,
+  NavPanelIcon,
+  NavPaquetesIcon,
+  NavPromocionesIcon,
+  NavProveedoresIcon,
+  NavReportesIcon,
+  NavReservasIcon,
+  NavRolesIcon,
+  NavSeguimientoIcon,
+  NavTarifasIcon,
+  NavUsuariosIcon,
+  NavVentasIcon,
+} from '@/components/navIcons'
 
 interface NavItem {
   to: string
@@ -35,36 +45,36 @@ interface NavSection {
 const NAV_SECTIONS: NavSection[] = [
   {
     label: 'Principal',
-    items: [{ to: '/dashboard', label: 'Panel', module: 'reportes', Icon: HomeIcon }],
+    items: [{ to: '/dashboard', label: 'Panel', module: 'reportes', Icon: NavPanelIcon }],
   },
   {
     label: 'Producto',
     items: [
-      { to: '/catalogo', label: 'Catálogo Base', module: 'catalogo', Icon: BoxIcon },
-      { to: '/proveedores', label: 'Proveedores', module: 'proveedores', Icon: BoxIcon },
-      { to: '/tarifas', label: 'Tarifas', module: 'tarifas', Icon: BoxIcon },
-      { to: '/paquetes', label: 'Paquetes Turísticos', module: 'paquetes', Icon: BoxIcon },
-      { to: '/promociones', label: 'Promociones', module: 'promociones', Icon: BoxIcon },
+      { to: '/catalogo', label: 'Catálogo Base', module: 'catalogo', Icon: NavCatalogoIcon },
+      { to: '/proveedores', label: 'Proveedores', module: 'proveedores', Icon: NavProveedoresIcon },
+      { to: '/tarifas', label: 'Tarifas', module: 'tarifas', Icon: NavTarifasIcon },
+      { to: '/paquetes', label: 'Paquetes Turísticos', module: 'paquetes', Icon: NavPaquetesIcon },
+      { to: '/promociones', label: 'Promociones', module: 'promociones', Icon: NavPromocionesIcon },
     ],
   },
   {
     label: 'Ventas',
     items: [
-      { to: '/cotizaciones', label: 'Cotizaciones', module: 'cotizaciones', Icon: BoxIcon },
-      { to: '/ventas', label: 'Gestión de Ventas', module: 'ventas', Icon: BoxIcon },
-      { to: '/reservas', label: 'Reservas', module: 'reservas', Icon: BoxIcon },
-      { to: '/pagos', label: 'Pagos', module: 'pagos', Icon: BoxIcon },
-      { to: '/gestion-agencias', label: 'Gestión de Agencias', module: 'gestion-agencias', Icon: UsersIcon },
-      { to: '/seguimiento-comercial', label: 'Seguimiento Comercial', module: 'seguimiento-comercial', Icon: BoxIcon },
-      { to: '/marketing', label: 'Difusión y Marketing', module: 'marketing', Icon: BoxIcon },
+      { to: '/cotizaciones', label: 'Cotizaciones', module: 'cotizaciones', Icon: NavCotizacionesIcon },
+      { to: '/ventas', label: 'Gestión de Ventas', module: 'ventas', Icon: NavVentasIcon },
+      { to: '/reservas', label: 'Reservas', module: 'reservas', Icon: NavReservasIcon },
+      { to: '/pagos', label: 'Pagos', module: 'pagos', Icon: NavPagosIcon },
+      { to: '/gestion-agencias', label: 'Gestión de Agencias', module: 'gestion-agencias', Icon: NavAgenciasIcon },
+      { to: '/seguimiento-comercial', label: 'Seguimiento Comercial', module: 'seguimiento-comercial', Icon: NavSeguimientoIcon },
+      { to: '/marketing', label: 'Difusión y Marketing', module: 'marketing', Icon: NavMarketingIcon },
     ],
   },
   {
     label: 'General',
     items: [
-      { to: '/reportes', label: 'Dashboard y Reportes', module: 'reportes', Icon: HomeIcon },
-      { to: '/documentos', label: 'Documentos', module: 'documentos', Icon: BoxIcon },
-      { to: '/notificaciones', label: 'Notificaciones', module: 'notificaciones', Icon: BellIcon },
+      { to: '/reportes', label: 'Dashboard y Reportes', module: 'reportes', Icon: NavReportesIcon },
+      { to: '/documentos', label: 'Documentos', module: 'documentos', Icon: NavDocumentosIcon },
+      { to: '/notificaciones', label: 'Notificaciones', module: 'notificaciones', Icon: NavNotificacionesIcon },
     ],
   },
   {
@@ -74,17 +84,21 @@ const NAV_SECTIONS: NavSection[] = [
         to: '/gestion-usuarios-roles-permisos/usuarios',
         label: 'Usuarios',
         module: 'gestion-usuarios-roles-permisos',
-        Icon: UsersIcon,
+        Icon: NavUsuariosIcon,
       },
       {
         to: '/gestion-usuarios-roles-permisos/roles',
         label: 'Roles y Permisos',
         module: 'gestion-usuarios-roles-permisos',
-        Icon: ShieldIcon,
+        Icon: NavRolesIcon,
       },
     ],
   },
 ]
+
+/** Azul corporativo del menu lateral (mismo tono que nh-core). */
+const SIDEBAR_TOP = '#143b72'
+const SIDEBAR_BOTTOM = '#0c2750'
 
 function initials(name: string): string {
   return name.slice(0, 2).toUpperCase()
@@ -100,9 +114,7 @@ export default function Layout() {
   const roles = user?.roles ?? []
   const firstName = user?.username ?? 'Usuario'
   const colorPrimario = roles.length > 0 ? getRoleColor(roles[0]) : DEFAULT_ROLE_COLOR
-  const colorOscuro = mezclarColor(colorPrimario, '#0b1b3a', 0.62)
-  const colorSidenav = `linear-gradient(180deg, ${colorOscuro}, #0b1b3a)`
-  const colorActivo = mezclarColor(colorPrimario, '#0b1b3a', 0.28)
+  const colorSidenav = `linear-gradient(180deg, ${SIDEBAR_TOP}, ${SIDEBAR_BOTTOM})`
 
   const visibleSections = NAV_SECTIONS.map((section) => ({
     ...section,
@@ -130,7 +142,7 @@ export default function Layout() {
           <div
             className="flex h-10 w-10 items-center justify-center rounded-lg font-bold text-white"
             style={{
-              background: `linear-gradient(135deg, ${colorPrimario}, ${mezclarColor(colorPrimario, '#0b1b3a', 0.55)})`,
+              background: 'linear-gradient(135deg, #2f6fd1, #1b4a98)',
             }}
           >
             NH
@@ -144,7 +156,7 @@ export default function Layout() {
         </div>
 
         {/* Navegación */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
+        <nav className="sidebar-scroll flex-1 overflow-y-auto px-3 py-4">
           {visibleSections.map((section) => (
             <div key={section.label} className="mb-4">
               <p className="mb-1 px-3 text-[11px] uppercase tracking-widest opacity-60">
@@ -155,12 +167,16 @@ export default function Layout() {
                   key={to}
                   type="button"
                   onClick={() => navigate(to)}
-                  style={isActive(to) ? { backgroundColor: colorActivo } : undefined}
-                  className={`mb-1 flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
-                    isActive(to) ? 'font-semibold' : 'hover:bg-white/10'
+                  className={`relative mb-1 flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
+                    isActive(to)
+                      ? 'bg-white/15 font-semibold text-white'
+                      : 'text-white/75 hover:bg-white/10 hover:text-white'
                   }`}
                 >
-                  <Icon className="h-5 w-5 shrink-0" />
+                  {isActive(to) && (
+                    <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r bg-sky-300" />
+                  )}
+                  <Icon className={`h-5 w-5 shrink-0 ${isActive(to) ? 'text-sky-200' : 'text-white/70'}`} />
                   {label}
                 </button>
               ))}
@@ -199,8 +215,8 @@ export default function Layout() {
               </div>
             </div>
             <span className="relative flex h-2.5 w-2.5 shrink-0">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-300 opacity-60" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-sky-400" />
             </span>
           </div>
         </div>
