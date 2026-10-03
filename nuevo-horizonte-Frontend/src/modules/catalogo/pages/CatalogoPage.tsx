@@ -97,7 +97,7 @@ export default function CatalogoPage() {
         <img
           src="/brand/ilustracion-multitasking.svg"
           alt=""
-          className="ml-auto hidden h-28 w-auto shrink-0 opacity-90 xl:block"
+          className="ml-auto hidden h-44 w-auto shrink-0 opacity-90 xl:block 2xl:h-52"
         />
       </div>
 
