@@ -74,7 +74,7 @@ export default function CatalogoPage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="relative">
         <div className="grid grid-cols-2 gap-4 sm:w-fit sm:grid-cols-[repeat(2,220px)]">
           {cards.map((card) => (
             <div
@@ -93,11 +93,12 @@ export default function CatalogoPage() {
           ))}
         </div>
 
-        {/* Ilustracion decorativa: llena el espacio libre a la derecha de los KPIs */}
+        {/* Ilustracion decorativa: superpuesta (posicion absoluta) para que su alto no empuje
+            la fila de KPIs ni el contenido de abajo. */}
         <img
           src="/brand/ilustracion-multitasking.svg"
           alt=""
-          className="ml-auto hidden h-44 w-auto shrink-0 opacity-90 xl:block 2xl:h-52"
+          className="pointer-events-none absolute right-0 top-1/2 hidden h-28 w-auto -translate-y-1/2 opacity-90 xl:block"
         />
       </div>
 
