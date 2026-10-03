@@ -74,22 +74,31 @@ export default function CatalogoPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:w-fit sm:grid-cols-[repeat(2,220px)]">
-        {cards.map((card) => (
-          <div
-            key={card.etiqueta}
-            className="flex items-center gap-3.5 rounded-xl border border-gray-200/70 bg-white px-4 py-3.5 shadow-sm"
-          >
-            <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${card.color}`}>
-              <card.Icon className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-2xl font-bold leading-none text-gray-900">{card.valor}</p>
-              <p className="mt-1.5 truncate text-[13px] font-medium text-gray-600">{card.etiqueta}</p>
-              <p className="truncate text-[11.5px] text-gray-400">{card.nota}</p>
+      <div className="flex items-center gap-4">
+        <div className="grid grid-cols-2 gap-4 sm:w-fit sm:grid-cols-[repeat(2,220px)]">
+          {cards.map((card) => (
+            <div
+              key={card.etiqueta}
+              className="flex items-center gap-3.5 rounded-xl border border-gray-200/70 bg-white px-4 py-3.5 shadow-sm"
+            >
+              <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${card.color}`}>
+                <card.Icon className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-2xl font-bold leading-none text-gray-900">{card.valor}</p>
+                <p className="mt-1.5 truncate text-[13px] font-medium text-gray-600">{card.etiqueta}</p>
+                <p className="truncate text-[11.5px] text-gray-400">{card.nota}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+
+        {/* Ilustracion decorativa: llena el espacio libre a la derecha de los KPIs */}
+        <img
+          src="/brand/ilustracion-multitasking.svg"
+          alt=""
+          className="ml-auto hidden h-28 w-auto shrink-0 opacity-90 xl:block"
+        />
       </div>
 
       <div className="flex w-fit rounded-lg bg-gray-100 p-1">
