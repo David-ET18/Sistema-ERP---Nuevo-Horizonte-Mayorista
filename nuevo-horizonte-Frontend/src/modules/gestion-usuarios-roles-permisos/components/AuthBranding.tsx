@@ -1,5 +1,7 @@
 import type { SVGProps } from 'react'
 
+import BrandLogo from '@/components/BrandLogo'
+
 function MapPinIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
@@ -101,23 +103,13 @@ export default function AuthBranding() {
     <aside className="relative hidden flex-col justify-between overflow-hidden bg-[#0b1b3a] p-10 text-white lg:flex">
       <div className="bg-[radial-gradient(circle,rgba(255,255,255,0.12)_1px,transparent_1px)] bg-[size:26px_26px] absolute inset-0" />
 
-      <header className="relative flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-sky-400 to-blue-600 font-bold">
-          NH
-        </div>
-        <div className="text-[13px] font-semibold tracking-wide uppercase">
-          Nuevo Horizonte
-          <span className="block text-[10px] font-normal uppercase tracking-widest opacity-70">
-            Agencia Mayorista
-          </span>
-        </div>
+      <header className="relative flex items-center">
+        <BrandLogo height={34} />
       </header>
 
       <section className="relative max-w-md">
-        <span className="font-extrabold text-[120px] leading-none text-transparent bg-gradient-to-br from-sky-300 via-blue-500 to-indigo-600 bg-clip-text">
-          NH
-        </span>
-        <h1 className="mt-2 text-3xl font-bold leading-tight">
+        <BrandLogo height={90} className="opacity-95" />
+        <h1 className="mt-5 text-3xl font-bold leading-tight">
           Sistema de Gestión de Productos y Ventas
         </h1>
         <p className="mt-3 text-sm opacity-80">

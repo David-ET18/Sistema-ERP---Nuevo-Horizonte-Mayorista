@@ -2,20 +2,14 @@ import { useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import type { ReactElement, SVGProps } from 'react'
 
+import BrandLogo from '@/components/BrandLogo'
 import { useAuthStore } from '@/modules/gestion-usuarios-roles-permisos/store/authStore'
 import {
   DEFAULT_ROLE_COLOR,
   getRoleColor,
 } from '@/modules/gestion-usuarios-roles-permisos/utils/roleColor'
 import { canReadModule } from '@/modules/gestion-usuarios-roles-permisos/utils/permissions'
-import {
-  BellIcon,
-  ChevronDownIcon,
-  IconChevronLeft,
-  IconChevronRight,
-  LogoutIcon,
-  SearchIcon,
-} from '@/components/icons'
+import { BellIcon, ChevronDownIcon, LogoutIcon, SearchIcon } from '@/components/icons'
 import {
   NavAgenciasIcon,
   NavCatalogoIcon,
@@ -105,7 +99,6 @@ const NAV_SECTIONS: NavSection[] = [
 
 /** Azul corporativo del menu lateral (mismo tono que nh-core). */
 const SIDEBAR_COLOR = '#143b72'
-const CLAVE_COLAPSADO = 'nh-sidebar-colapsado'
 
 function initials(name: string): string {
   return name.slice(0, 2).toUpperCase()
@@ -115,13 +108,6 @@ export default function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
   const [dropdownOpen, setDropdownOpen] = useState(false)
-  const [collapsed, setCollapsed] = useState(() => {
-    try {
-      return localStorage.getItem(CLAVE_COLAPSADO) === '1'
-    } catch {
-      return false
-    }
-  })
   const logout = useAuthStore((state) => state.logout)
   const user = useAuthStore((state) => state.user)
 
@@ -144,87 +130,26 @@ export default function Layout() {
     return location.pathname === to || location.pathname.startsWith(`${to}/`)
   }
 
-  function toggleCollapsed() {
-    setCollapsed((prev) => {
-      const next = !prev
-      try {
-        localStorage.setItem(CLAVE_COLAPSADO, next ? '1' : '0')
-      } catch {
-        /* sin almacenamiento: el estado solo vive en memoria */
-      }
-      return next
-    })
-  }
-
   return (
-    <div
-      className={`grid min-h-screen bg-gray-50 transition-[grid-template-columns] duration-200 ${
-        collapsed ? 'grid-cols-[76px_1fr]' : 'grid-cols-[264px_1fr]'
-      }`}
-    >
+    <div className="grid min-h-screen grid-cols-[264px_1fr] bg-gray-50">
       {/* ===== Sidebar ===== */}
       <aside
         className="sticky top-0 flex h-screen flex-col text-white"
         style={{ background: SIDEBAR_COLOR }}
         aria-label="Menú principal"
       >
-        {/* Marca + colapsar */}
-        <div
-          className={`flex items-center border-b border-white/10 py-4 ${
-            collapsed ? 'justify-center px-2' : 'justify-between gap-2 px-4'
-          }`}
-        >
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-[15px] font-extrabold text-[#143b72] shadow-sm">
-              NH
-            </div>
-            {!collapsed && (
-              <div className="min-w-0 leading-tight">
-                <p className="truncate text-[13px] font-semibold uppercase tracking-wide text-white">
-                  Nuevo Horizonte
-                </p>
-                <p className="truncate text-[10px] uppercase tracking-[0.18em] text-white/70">
-                  Agencia Mayorista
-                </p>
-              </div>
-            )}
-          </div>
-          {!collapsed && (
-            <button
-              type="button"
-              onClick={toggleCollapsed}
-              className="cursor-pointer rounded-lg p-1.5 text-white/80 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-              aria-label="Contraer menú"
-              title="Contraer menú"
-            >
-              <IconChevronLeft className="h-5 w-5" />
-            </button>
-          )}
+        {/* Marca */}
+        <div className="flex items-center justify-center border-b border-white/10 px-4 py-7">
+          <BrandLogo height={48} />
         </div>
 
-        {collapsed && (
-          <button
-            type="button"
-            onClick={toggleCollapsed}
-            className="mx-auto mt-3 cursor-pointer rounded-lg p-1.5 text-white/80 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-            aria-label="Expandir menú"
-            title="Expandir menú"
-          >
-            <IconChevronRight className="h-5 w-5" />
-          </button>
-        )}
-
         {/* Navegación */}
-        <nav className={`sidebar-scroll flex-1 overflow-y-auto py-3 ${collapsed ? 'px-2' : 'px-3'}`}>
+        <nav className="sidebar-scroll flex-1 overflow-y-auto px-3 pb-3 pt-6">
           {visibleSections.map((section, index) => (
             <div key={section.label} className={index === 0 ? '' : 'mt-5'}>
-              {collapsed ? (
-                index > 0 && <hr className="mx-2 mb-3 border-white/15" />
-              ) : (
-                <p className="mb-1.5 px-3 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-white/60">
-                  {section.label}
-                </p>
-              )}
+              <p className="mb-1.5 px-3 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-white/60">
+                {section.label}
+              </p>
               <ul className="flex flex-col gap-0.5">
                 {section.items.map(({ to, label, Icon }) => {
                   const active = isActive(to)
@@ -233,12 +158,10 @@ export default function Layout() {
                       <button
                         type="button"
                         onClick={() => navigate(to)}
-                        title={collapsed ? label : undefined}
-                        aria-label={collapsed ? label : undefined}
                         aria-current={active ? 'page' : undefined}
-                        className={`group relative flex w-full cursor-pointer items-center rounded-lg text-left text-[13.5px] text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${
-                          collapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2'
-                        } ${active ? 'bg-white/[0.16] font-semibold' : 'font-normal hover:bg-white/10'}`}
+                        className={`group relative flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left text-[13.5px] text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${
+                          active ? 'bg-white/[0.16] font-semibold' : 'font-normal hover:bg-white/10'
+                        }`}
                       >
                         {active && (
                           <span className="absolute -left-1 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-sky-300" />
@@ -248,7 +171,7 @@ export default function Layout() {
                             active ? 'opacity-100' : 'opacity-80 group-hover:opacity-100'
                           }`}
                         />
-                        {!collapsed && <span className="truncate">{label}</span>}
+                        <span className="truncate">{label}</span>
                       </button>
                     </li>
                   )
@@ -259,13 +182,9 @@ export default function Layout() {
         </nav>
 
         {/* Perfil */}
-        <div className={`border-t border-white/10 ${collapsed ? 'px-2 py-3' : 'p-3'}`}>
-          <div
-            className={`flex items-center rounded-xl bg-white/[0.08] ${
-              collapsed ? 'flex-col gap-2 p-2' : 'gap-3 p-2.5'
-            }`}
-          >
-            <div className="relative shrink-0" title={collapsed ? firstName : undefined}>
+        <div className="border-t border-white/10 p-3">
+          <div className="flex items-center gap-3 rounded-xl bg-white/[0.08] p-2.5">
+            <div className="relative shrink-0">
               <div
                 className="flex h-9 w-9 items-center justify-center rounded-full text-[13px] font-bold text-white ring-2 ring-white/25"
                 style={{ backgroundColor: colorPrimario }}
@@ -274,15 +193,13 @@ export default function Layout() {
               </div>
               <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#143b72] bg-sky-300" />
             </div>
-            {!collapsed && (
-              <div className="min-w-0 flex-1 leading-tight">
-                <p className="truncate text-[13px] font-semibold text-white">{firstName}</p>
-                <p className="truncate text-[11px] text-white/70">
-                  {rolPrincipal}
-                  {roles.length > 1 ? ` +${roles.length - 1}` : ''}
-                </p>
-              </div>
-            )}
+            <div className="min-w-0 flex-1 leading-tight">
+              <p className="truncate text-[13px] font-semibold text-white">{firstName}</p>
+              <p className="truncate text-[11px] text-white/70">
+                {rolPrincipal}
+                {roles.length > 1 ? ` +${roles.length - 1}` : ''}
+              </p>
+            </div>
             <button
               type="button"
               onClick={handleLogout}
