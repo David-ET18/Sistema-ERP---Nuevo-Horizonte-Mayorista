@@ -100,7 +100,7 @@ export default function CatalogoPage() {
         <img
           src="/brand/ilustracion-multitasking.svg"
           alt=""
-          className="pointer-events-none absolute right-0 top-1/2 hidden h-40 w-auto -translate-y-1/2 opacity-90 xl:block 2xl:h-48"
+          className="pointer-events-none absolute right-16 top-1/2 hidden h-40 w-auto -translate-y-1/2 opacity-90 xl:block 2xl:h-48"
         />
       </div>
 
