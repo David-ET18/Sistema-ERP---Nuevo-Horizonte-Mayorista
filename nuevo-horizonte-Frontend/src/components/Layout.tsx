@@ -97,8 +97,7 @@ const NAV_SECTIONS: NavSection[] = [
 ]
 
 /** Azul corporativo del menu lateral (mismo tono que nh-core). */
-const SIDEBAR_TOP = '#143b72'
-const SIDEBAR_BOTTOM = '#0c2750'
+const SIDEBAR_COLOR = '#143b72'
 
 function initials(name: string): string {
   return name.slice(0, 2).toUpperCase()
@@ -114,7 +113,7 @@ export default function Layout() {
   const roles = user?.roles ?? []
   const firstName = user?.username ?? 'Usuario'
   const colorPrimario = roles.length > 0 ? getRoleColor(roles[0]) : DEFAULT_ROLE_COLOR
-  const colorSidenav = `linear-gradient(180deg, ${SIDEBAR_TOP}, ${SIDEBAR_BOTTOM})`
+  const colorSidenav = SIDEBAR_COLOR
 
   const visibleSections = NAV_SECTIONS.map((section) => ({
     ...section,
