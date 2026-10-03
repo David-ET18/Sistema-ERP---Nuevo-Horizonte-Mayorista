@@ -13,7 +13,17 @@ import {
 } from '@/modules/gestion-usuarios-roles-permisos/utils/permissions'
 import { useToastStore } from '@/store/toastStore'
 import { formatDate } from '@/utils/format'
-import { IconChevronLeft, IconChevronRight, IconPencil, IconPlus, IconSearch, IconTrash, IconX } from '@/components/icons'
+import {
+  IconChevronDown,
+  IconChevronLeft,
+  IconChevronRight,
+  IconFilter,
+  IconPencil,
+  IconPlus,
+  IconSearch,
+  IconTrash,
+  IconX,
+} from '@/components/icons'
 
 const MODULO = 'catalogo'
 const TAMANOS_PAGINA = [5, 10, 25, 50]
@@ -257,15 +267,15 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
   return (
     <div className="flex flex-col gap-4">
       {/* Barra de filtros y acciones */}
-      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-gray-200/70 bg-white p-4 shadow-sm">
+      <div className="flex flex-wrap items-center gap-2.5 rounded-xl border border-gray-200/70 bg-white p-3.5 shadow-sm">
         <div className="relative">
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
             <IconSearch />
           </span>
           <input
             type="text"
             placeholder={`Buscar ${singular}...`}
-            className="w-64 rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+            className="w-64 rounded-xl border border-gray-200 bg-gray-50/60 py-2.5 pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10"
             value={filtros.q}
             onChange={(e) => setFiltro('q', e.target.value)}
             onKeyDown={(e) => {
@@ -274,24 +284,33 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
           />
         </div>
 
-        <select
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 transition-colors focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
-          value={filtros.grupo}
-          onChange={(e) => {
-            setFiltro('grupo', e.target.value)
-            recargar(true)
-          }}
-        >
-          <option value="">{etiquetaGrupo}</option>
-          {grupos.map((g) => (
-            <option key={g} value={g}>
-              {g}
-            </option>
-          ))}
-        </select>
+        {/* Filtro por grupo, con el mismo lenguaje visual de boton con icono + chevron que el resto de la barra */}
+        <div className="relative">
+          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500">
+            <IconFilter />
+          </span>
+          <select
+            className="cursor-pointer appearance-none rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-9 text-sm font-medium text-gray-700 transition-colors focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+            value={filtros.grupo}
+            onChange={(e) => {
+              setFiltro('grupo', e.target.value)
+              recargar(true)
+            }}
+          >
+            <option value="">{etiquetaGrupo}</option>
+            {grupos.map((g) => (
+              <option key={g} value={g}>
+                {g}
+              </option>
+            ))}
+          </select>
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+            <IconChevronDown className="h-3.5 w-3.5" />
+          </span>
+        </div>
 
         {/* Segmento de estado: mas rapido de operar que un select y comunica el filtro activo de un vistazo */}
-        <div className="flex rounded-lg border border-gray-300 bg-gray-50 p-0.5">
+        <div className="flex rounded-xl border border-gray-200 bg-gray-50/60 p-1">
           {(
             [
               { valor: '', etiqueta: 'Todos' },
@@ -306,7 +325,7 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
                 setFiltro('activo', op.valor)
                 recargar(true)
               }}
-              className={`cursor-pointer rounded-md px-3 py-1.5 text-[12.5px] font-medium transition-colors ${
+              className={`cursor-pointer rounded-lg px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors ${
                 filtros.activo === op.valor ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -322,7 +341,7 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
               setFiltros(FILTROS_INICIALES)
               recargar(true)
             }}
-            className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12.5px] font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+            className="inline-flex cursor-pointer items-center gap-1 rounded-xl px-2.5 py-2 text-[12.5px] font-semibold text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
           >
             <IconX className="h-3.5 w-3.5" />
             Limpiar {cantidadFiltros > 1 ? `(${cantidadFiltros})` : ''}
@@ -337,7 +356,7 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
                 setEditando(null)
                 setFormAbierto(true)
               }}
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
             >
               <IconPlus /> Nuevo {singular}
             </button>

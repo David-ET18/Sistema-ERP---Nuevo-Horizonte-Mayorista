@@ -4,7 +4,7 @@
   --color-brand: #0b6e4f;
   --color-brand-dark: #084c38;
 
-  --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
 }
 
 body {
