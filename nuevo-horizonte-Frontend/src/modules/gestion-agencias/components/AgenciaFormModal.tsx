@@ -4,6 +4,7 @@ import type { Agencia, AgenciaFormState, AgenciaPayload } from '../types'
 import { actualizarAgencia, crearAgencia, logoAgenciaUrl, subirLogoAgencia } from '../services/agenciaService'
 import { extractErrorMessage } from '@/api/http'
 import { IconUpload, IconX } from '@/components/icons'
+import { useFormDraft } from '@/hooks/useFormDraft'
 
 const CATEGORIAS_SUGERIDAS = ['Premium', 'Estándar', 'Selectiva', 'Corporativa']
 
@@ -30,7 +31,7 @@ const VACIO: AgenciaFormState = {
 
 export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose, onSaved }: Props) {
   const editando = agencia !== null
-  const [form, setForm] = useState<AgenciaFormState>(VACIO)
+  const [formEdicion, setFormEdicion] = useState<AgenciaFormState>(VACIO)
   const [logoNombre, setLogoNombre] = useState<string | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [archivoPendiente, setArchivoPendiente] = useState<File | null>(null)
@@ -39,9 +40,13 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
   const [subiendo, setSubiendo] = useState(false)
   const inputLogo = useRef<HTMLInputElement>(null)
 
+  // El alta conserva borrador entre cierres; la edicion parte del registro real.
+  const borrador = useFormDraft<AgenciaFormState>('agencia:nueva', VACIO)
+  const form = editando ? formEdicion : borrador.valor
+
   useEffect(() => {
     if (agencia) {
-      setForm({
+      setFormEdicion({
         razonSocial: agencia.razonSocial,
         nombreComercial: agencia.nombreComercial ?? '',
         ruc: agencia.ruc,
@@ -55,16 +60,22 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
         activo: agencia.activo,
       })
       setLogoNombre(agencia.logoUrl)
-    } else {
-      setForm(VACIO)
-      setLogoNombre(null)
     }
     setPreview(null)
     setError(null)
   }, [agencia])
 
+  function limpiarFormulario() {
+    setFormEdicion(VACIO)
+    setLogoNombre(null)
+    setPreview(null)
+    setArchivoPendiente(null)
+    borrador.reset()
+  }
+
   function setCampo<K extends keyof AgenciaFormState>(campo: K, valor: AgenciaFormState[K]) {
-    setForm((prev) => ({ ...prev, [campo]: valor }))
+    if (editando) setFormEdicion((prev) => ({ ...prev, [campo]: valor }))
+    else borrador.setCampo(campo, valor)
   }
 
   async function manejarArchivo(evento: React.ChangeEvent<HTMLInputElement>) {
@@ -137,12 +148,14 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
 
       if (editando && agencia) {
         await actualizarAgencia(agencia.id, payload)
+        limpiarFormulario()
       } else {
         const creada = await crearAgencia(payload)
         // en alta la agencia todavia no tiene id, por eso el logo se sube despues
         if (archivoPendiente) {
           await subirLogoAgencia(creada.id, archivoPendiente)
         }
+        limpiarFormulario()
       }
       onSaved()
     } catch (err) {
@@ -231,6 +244,7 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
             <Campo label="Razón social" obligatorio>
               <input
                 type="text"
+                maxLength={200}
                 className={inputClase}
                 value={form.razonSocial}
                 onChange={(e) => setCampo('razonSocial', e.target.value)}
@@ -241,6 +255,7 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
             <Campo label="Nombre comercial">
               <input
                 type="text"
+                maxLength={200}
                 className={inputClase}
                 value={form.nombreComercial}
                 onChange={(e) => setCampo('nombreComercial', e.target.value)}
@@ -261,32 +276,31 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
             </Campo>
 
             <Campo label="Categoría">
-              <div className="flex flex-col gap-2">
-                <select
-                  className={inputClase}
-                  value={form.categoria}
-                  onChange={(e) => setCampo('categoria', e.target.value)}
-                >
-                  <option value="">Sin categoría</option>
-                  {CATEGORIAS_SUGERIDAS.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  className={inputClase}
-                  value={form.categoria}
-                  onChange={(e) => setCampo('categoria', e.target.value)}
-                  placeholder="O escribe otra categoría"
-                />
-              </div>
+              <select
+                className={inputClase}
+                value={CATEGORIAS_SUGERIDAS.includes(form.categoria) ? form.categoria : '__otra__'}
+                onChange={(e) => {
+                  const valor = e.target.value
+                  setCampo('categoria', valor === '__otra__' ? '' : valor)
+                }}
+              >
+                <option value="">Sin categoría</option>
+                {CATEGORIAS_SUGERIDAS.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+                <option value="__otra__">Otra...</option>
+              </select>
+              {!CATEGORIAS_SUGERIDAS.includes(form.categoria) && form.categoria !== '' && (
+                <p className="text-xs text-gray-400">Categoría personalizada: {form.categoria}</p>
+              )}
             </Campo>
 
             <Campo label="Ciudad">
               <input
                 type="text"
+                maxLength={100}
                 className={inputClase}
                 value={form.ciudad}
                 onChange={(e) => setCampo('ciudad', e.target.value)}
@@ -297,6 +311,7 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
             <Campo label="Ejecutivo asignado">
               <input
                 type="text"
+                maxLength={150}
                 className={inputClase}
                 value={form.ejecutivoAsignado}
                 onChange={(e) => setCampo('ejecutivoAsignado', e.target.value)}
@@ -309,6 +324,7 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
             <Campo label="Nombre de contacto">
               <input
                 type="text"
+                maxLength={100}
                 className={inputClase}
                 value={form.contactoNombre}
                 onChange={(e) => setCampo('contactoNombre', e.target.value)}
@@ -319,6 +335,7 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
             <Campo label="Teléfono de contacto">
               <input
                 type="text"
+                maxLength={20}
                 className={inputClase}
                 value={form.contactoTelefono}
                 onChange={(e) => setCampo('contactoTelefono', e.target.value)}
@@ -329,6 +346,7 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
             <Campo label="Email de contacto">
               <input
                 type="email"
+                maxLength={100}
                 className={inputClase}
                 value={form.contactoEmail}
                 onChange={(e) => setCampo('contactoEmail', e.target.value)}
@@ -353,22 +371,31 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-gray-100 px-5 py-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="cursor-pointer rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={guardar}
-            disabled={guardando || subiendo}
-            className="cursor-pointer rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {guardando ? 'Guardando...' : 'Guardar agencia'}
-          </button>
+        <div className="flex items-center justify-between gap-2 border-t border-gray-100 px-5 py-4">
+          {!editando && (
+            <span className="text-[11px] text-gray-400">
+              {borrador.restaurado
+                ? 'Borrador restaurado'
+                : 'Los datos se guardan al cerrar el modal'}
+            </span>
+          )}
+          <div className="ml-auto flex gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="cursor-pointer rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              Cerrar
+            </button>
+            <button
+              type="button"
+              onClick={guardar}
+              disabled={guardando || subiendo}
+              className="cursor-pointer rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {guardando ? 'Guardando...' : 'Guardar agencia'}
+            </button>
+          </div>
         </div>
       </aside>
     </div>

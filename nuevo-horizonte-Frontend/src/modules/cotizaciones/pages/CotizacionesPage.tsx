@@ -44,6 +44,7 @@ import {
   IconPlus,
   IconSearch,
 } from '@/components/icons'
+import MenuContextual from '@/components/MenuContextual'
 
 const FILTROS_INICIALES: FiltrosCotizaciones = {
   q: '',
@@ -69,7 +70,7 @@ export default function CotizacionesPage() {
   const [showForm, setShowForm] = useState(false)
   const [editando, setEditando] = useState<Cotizacion | null>(null)
   const [detalleId, setDetalleId] = useState<number | null>(null)
-  const [menuAbierto, setMenuAbierto] = useState<number | null>(null)
+  const [menuAncla, setMenuAncla] = useState<{ id: number; elemento: HTMLElement } | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const puedeCrear = canCreateModule('cotizaciones')
   const puedeEditar = canUpdateModule('cotizaciones')
@@ -135,14 +136,14 @@ export default function CotizacionesPage() {
     try {
       const detalle = await detalleCotizacion(id)
       setEditando(detalle)
-      setMenuAbierto(null)
+      cerrarMenu()
     } catch (err) {
       setError(extractErrorMessage(err))
     }
   }
 
   async function cambioRapidoEstado(id: number, estado: EstadoCotizacion) {
-    setMenuAbierto(null)
+    cerrarMenu()
     try {
       await cambiarEstadoCotizacion(id, estado)
       recargar(false)
@@ -153,6 +154,14 @@ export default function CotizacionesPage() {
 
   async function refrescarDespuesDeCambio() {
     recargar(false)
+  }
+
+  function cerrarMenu() {
+    setMenuAncla(null)
+  }
+
+  function alternarMenu(id: number, elemento: HTMLElement) {
+    setMenuAncla((prev) => (prev?.id === id ? null : { id, elemento }))
   }
 
   const desde = data ? data.number * data.size + 1 : 0
@@ -381,55 +390,57 @@ export default function CotizacionesPage() {
                         <button
                           type="button"
                           className="cursor-pointer rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
-                          onClick={() => setMenuAbierto(menuAbierto === c.id ? null : c.id)}
+                          onClick={(e) => alternarMenu(c.id, e.currentTarget)}
                           aria-label="Opciones"
+                          aria-haspopup="menu"
+                          aria-expanded={menuAncla?.id === c.id}
                         >
                           <IconDots width={16} height={16} />
                         </button>
 
-                        {menuAbierto === c.id && (
-                          <>
-                            <div
-                              className="fixed inset-0 z-40"
-                              onClick={() => setMenuAbierto(null)}
-                            />
-                            <div className="absolute right-0 top-full z-50 mt-1 w-52 overflow-hidden rounded-lg border border-gray-100 bg-white py-1 shadow-lg">
+                        {menuAncla?.id === c.id && (
+                          <MenuContextual
+                            ancora={menuAncla.elemento}
+                            onClose={cerrarMenu}
+                          >
+                            <button
+                              type="button"
+                              className="flex w-full cursor-pointer items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                              onClick={() => {
+                                cerrarMenu()
+                                setDetalleId(c.id)
+                              }}
+                            >
+                              <IconEye width={14} height={14} />
+                              Ver detalle
+                            </button>
+                            {puedeEditar && (
                               <button
                                 type="button"
                                 className="flex w-full cursor-pointer items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
-                                onClick={() => setDetalleId(c.id)}
+                                onClick={() => abrirEdicion(c.id)}
                               >
-                                <IconEye width={14} height={14} />
-                                Ver detalle
+                                <IconPencil width={14} height={14} />
+                                Editar
                               </button>
-                              {puedeEditar && (
-                                <button
-                                  type="button"
-                                  className="flex w-full cursor-pointer items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
-                                  onClick={() => abrirEdicion(c.id)}
-                                >
-                                  <IconPencil width={14} height={14} />
-                                  Editar
-                                </button>
-                              )}
-                              {puedeEditar && (
-                                <>
-                                  <div className="my-1 border-t border-gray-100" />
-                                  {ESTADOS_COTIZACION.filter((e) => e.valor !== c.estado).map((e) => (
-                                    <button
-                                      key={e.valor}
-                                      type="button"
-                                      className="flex w-full cursor-pointer items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
-                                      onClick={() => cambioRapidoEstado(c.id, e.valor)}
-                                    >
-                                      <span className={`h-2 w-2 rounded-full ${e.dot}`} />
-                                      Marcar {estadoInfo(e.valor).etiqueta.toLowerCase()}
-                                    </button>
-                                  ))}
-                                </>
-                              )}
-                            </div>
-                          </>
+                            )}
+                            {puedeEditar && (
+                              <>
+                                <div className="my-1 border-t border-gray-100" />
+                                {ESTADOS_COTIZACION.filter((e) => e.valor !== c.estado).map((e) => (
+                                  <button
+                                    key={e.valor}
+                                    type="button"
+                                    className="flex w-full cursor-pointer items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                                    onClick={() => cambioRapidoEstado(c.id, e.valor)}
+                                  >
+                                    <span className={`h-2 w-2 rounded-full ${e.dot}`} />
+                                    Marcar {estadoInfo(e.valor).etiqueta.toLowerCase()}
+                                  </button>
+                                ))}
+                              </>
+                            )}
+                          </MenuContextual>
                         )}
                       </div>
                     </td>

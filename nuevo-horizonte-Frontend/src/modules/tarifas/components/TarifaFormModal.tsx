@@ -4,6 +4,7 @@ import type { Destino, ProveedorRef, Servicio, Tarifa, TarifaPayload } from '../
 import { actualizarTarifa, crearTarifa, subirArchivoRespaldo } from '../services/tarifaService'
 import { extractErrorMessage } from '@/api/http'
 import { IconUpload, IconX } from '@/components/icons'
+import { useFormDraft } from '@/hooks/useFormDraft'
 
 interface Props {
   tarifa: Tarifa | null
@@ -53,16 +54,20 @@ export default function TarifaFormModal({
   onSaved,
 }: Props) {
   const editando = tarifa !== null
-  const [form, setForm] = useState<FormState>(VACIO)
+  const [formEdicion, setFormEdicion] = useState<FormState>(VACIO)
   const [archivoPendiente, setArchivoPendiente] = useState<File | null>(null)
   const [nombreArchivo, setNombreArchivo] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
   const inputArchivo = useRef<HTMLInputElement>(null)
 
+  // El alta conserva borrador entre cierres; la edicion parte del registro real.
+  const borrador = useFormDraft<FormState>('tarifa:nueva', VACIO)
+  const form = editando ? formEdicion : borrador.valor
+
   useEffect(() => {
     if (tarifa) {
-      setForm({
+      setFormEdicion({
         proveedorId: String(tarifa.proveedorId),
         servicioId: String(tarifa.servicioId),
         destinoId: String(tarifa.destinoId),
@@ -75,16 +80,21 @@ export default function TarifaFormModal({
         observaciones: tarifa.observaciones ?? '',
       })
       setNombreArchivo(tarifa.archivoRespaldoUrl)
-    } else {
-      setForm(VACIO)
-      setNombreArchivo(null)
     }
     setArchivoPendiente(null)
     setError(null)
   }, [tarifa])
 
+  function limpiarFormulario() {
+    setFormEdicion(VACIO)
+    setArchivoPendiente(null)
+    setNombreArchivo(null)
+    borrador.reset()
+  }
+
   function setCampo<K extends keyof FormState>(campo: K, valor: FormState[K]) {
-    setForm((prev) => ({ ...prev, [campo]: valor }))
+    if (editando) setFormEdicion((prev) => ({ ...prev, [campo]: valor }))
+    else borrador.setCampo(campo, valor)
   }
 
   async function manejarArchivo(evento: React.ChangeEvent<HTMLInputElement>) {
@@ -150,11 +160,13 @@ export default function TarifaFormModal({
 
       if (editando && tarifa) {
         await actualizarTarifa(tarifa.id, payload)
+        limpiarFormulario()
       } else {
         const creada = await crearTarifa(payload)
         if (archivoPendiente) {
           await subirArchivoRespaldo(creada.id, archivoPendiente)
         }
+        limpiarFormulario()
       }
       onSaved()
     } catch (err) {
@@ -337,22 +349,31 @@ export default function TarifaFormModal({
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-gray-100 px-5 py-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="cursor-pointer rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={guardar}
-            disabled={guardando}
-            className="cursor-pointer rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {guardando ? 'Guardando...' : 'Guardar Tarifa'}
-          </button>
+        <div className="flex items-center justify-between gap-2 border-t border-gray-100 px-5 py-4">
+          {!editando && (
+            <span className="text-[11px] text-gray-400">
+              {borrador.restaurado
+                ? 'Borrador restaurado'
+                : 'Los datos se guardan al cerrar el modal'}
+            </span>
+          )}
+          <div className="ml-auto flex gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="cursor-pointer rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              Cerrar
+            </button>
+            <button
+              type="button"
+              onClick={guardar}
+              disabled={guardando}
+              className="cursor-pointer rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {guardando ? 'Guardando...' : 'Guardar Tarifa'}
+            </button>
+          </div>
         </div>
       </aside>
     </div>

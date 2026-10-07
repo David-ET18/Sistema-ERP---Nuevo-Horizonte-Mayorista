@@ -18,6 +18,7 @@ import {
 import { formatDateDDMMYYYY, formatMonto } from '../utils'
 import { extractErrorMessage } from '@/api/http'
 import { IconX } from '@/components/icons'
+import { useFormDraft } from '@/hooks/useFormDraft'
 
 interface Props {
   cotizacion?: Cotizacion | null
@@ -28,6 +29,26 @@ interface Props {
 interface Guardado {
   id: number
   numero: string
+}
+
+interface CotizacionFormState {
+  agenciaId: string
+  destinoId: string
+  tarifaId: string
+  fechaViaje: string
+  numPasajeros: string
+  serviciosAdicionales: string
+  margenPct: string
+}
+
+const VACIO: CotizacionFormState = {
+  agenciaId: '',
+  destinoId: '',
+  tarifaId: '',
+  fechaViaje: '',
+  numPasajeros: '2',
+  serviciosAdicionales: '',
+  margenPct: '15',
 }
 
 const SECCION_CAMPO =
@@ -42,13 +63,7 @@ export default function CotizacionFormModal({
   const [agencias, setAgencias] = useState<Agencia[]>([])
   const [destinos, setDestinos] = useState<Destino[]>([])
   const [tarifas, setTarifas] = useState<Tarifa[]>([])
-  const [agenciaId, setAgenciaId] = useState('')
-  const [destinoId, setDestinoId] = useState('')
-  const [tarifaId, setTarifaId] = useState('')
-  const [fechaViaje, setFechaViaje] = useState('')
-  const [numPasajeros, setNumPasajeros] = useState('2')
-  const [serviciosAdicionales, setServiciosAdicionales] = useState('')
-  const [margenPct, setMargenPct] = useState('15')
+  const [formEdicion, setFormEdicion] = useState<CotizacionFormState>(VACIO)
   const [danos, setDanos] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [guardado, setGuardado] = useState<Guardado | null>(
@@ -57,6 +72,23 @@ export default function CotizacionFormModal({
 
   const esEdicion = Boolean(cotizacion)
 
+  // El alta conserva borrador entre cierres; la edicion parte del registro real.
+  const borrador = useFormDraft<CotizacionFormState>('cotizacion:nueva', VACIO)
+  const form = esEdicion ? formEdicion : borrador.valor
+  const { agenciaId, destinoId, tarifaId, fechaViaje, numPasajeros, serviciosAdicionales, margenPct } = form
+
+  function setCampo<K extends keyof CotizacionFormState>(campo: K, valor: CotizacionFormState[K]) {
+    if (esEdicion) setFormEdicion((prev) => ({ ...prev, [campo]: valor }))
+    else borrador.setCampo(campo, valor)
+  }
+
+  function limpiarFormulario() {
+    setFormEdicion(VACIO)
+    setGuardado(null)
+    setPaso(1)
+    borrador.reset()
+  }
+
   useEffect(() => {
     Promise.all([listarAgencias(), listarDestinos(), listarTarifasVigentes()])
       .then(([ag, de, tar]) => {
@@ -64,17 +96,25 @@ export default function CotizacionFormModal({
         setDestinos(de)
         setTarifas(tar)
         if (cotizacion) {
-          setAgenciaId(String(cotizacion.agenciaId))
+          setFormEdicion({
+            agenciaId: String(cotizacion.agenciaId),
+            destinoId: '',
+            tarifaId: '',
+            fechaViaje: cotizacion.fechaViaje ? cotizacion.fechaViaje.slice(0, 10) : '',
+            numPasajeros: '2',
+            serviciosAdicionales: cotizacion.serviciosAdicionales ?? '',
+            margenPct: String(cotizacion.margenPorcentaje ?? 15),
+          })
           const linea = cotizacion.lineas[0]
           if (linea) {
-            setTarifaId(String(linea.tarifaId))
-            setNumPasajeros(String(linea.cantidadPax))
             const tarifa = tar.find((t) => t.id === linea.tarifaId)
-            if (tarifa) setDestinoId(String(tarifa.destinoId))
+            setFormEdicion((prev) => ({
+              ...prev,
+              tarifaId: String(linea.tarifaId),
+              numPasajeros: String(linea.cantidadPax),
+              destinoId: tarifa ? String(tarifa.destinoId) : '',
+            }))
           }
-          setFechaViaje(cotizacion.fechaViaje ? cotizacion.fechaViaje.slice(0, 10) : '')
-          setServiciosAdicionales(cotizacion.serviciosAdicionales ?? '')
-          setMargenPct(String(cotizacion.margenPorcentaje ?? 15))
         }
       })
       .catch((err) => setDanos(extractErrorMessage(err)))
@@ -99,9 +139,9 @@ export default function CotizacionFormModal({
   const datosValidos = Boolean(agenciaId && tarifaId && pax > 0)
 
   function elegirProducto(idTarifa: string) {
-    setTarifaId(idTarifa)
+    setCampo('tarifaId', idTarifa)
     const tarifa = tarifas.find((t) => String(t.id) === idTarifa)
-    if (tarifa) setDestinoId(String(tarifa.destinoId))
+    if (tarifa) setCampo('destinoId', String(tarifa.destinoId))
   }
 
   function buildRequest(): CotizacionRequest {
@@ -190,6 +230,7 @@ export default function CotizacionFormModal({
     setSaving(true)
     try {
       await cambiarEstadoCotizacion(idFinal, 'ENVIADA')
+      limpiarFormulario()
       onSaved()
       onClose()
     } catch (err) {
@@ -315,7 +356,7 @@ export default function CotizacionFormModal({
                     <select
                       className={SECCION_CAMPO}
                       value={agenciaId}
-                      onChange={(e) => setAgenciaId(e.target.value)}
+                      onChange={(e) => setCampo('agenciaId', e.target.value)}
                     >
                       <option value="">Seleccionar agencia</option>
                       {agencias.map((a) => (
@@ -346,8 +387,8 @@ export default function CotizacionFormModal({
                       className={SECCION_CAMPO}
                       value={destinoId}
                       onChange={(e) => {
-                        setDestinoId(e.target.value)
-                        setTarifaId('')
+                        setCampo('destinoId', e.target.value)
+                        setCampo('tarifaId', '')
                       }}
                     >
                       <option value="">Seleccionar destino</option>
@@ -371,7 +412,7 @@ export default function CotizacionFormModal({
                         type="date"
                         className={SECCION_CAMPO}
                         value={fechaViaje}
-                        onChange={(e) => setFechaViaje(e.target.value)}
+                        onChange={(e) => setCampo('fechaViaje', e.target.value)}
                       />
                     </label>
                     <label className="flex flex-col gap-1 text-[13px] text-gray-500">
@@ -381,7 +422,7 @@ export default function CotizacionFormModal({
                         min={1}
                         className={SECCION_CAMPO}
                         value={numPasajeros}
-                        onChange={(e) => setNumPasajeros(e.target.value)}
+                        onChange={(e) => setCampo('numPasajeros', e.target.value)}
                       />
                     </label>
                   </div>
@@ -396,7 +437,7 @@ export default function CotizacionFormModal({
                     placeholder="Describir los servicios adicionales..."
                     className="resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand"
                     value={serviciosAdicionales}
-                    onChange={(e) => setServiciosAdicionales(e.target.value)}
+                    onChange={(e) => setCampo('serviciosAdicionales', e.target.value)}
                   />
                 </section>
               </>
@@ -461,13 +502,21 @@ export default function CotizacionFormModal({
                 max={100}
                 className={SECCION_CAMPO}
                 value={margenPct}
-                onChange={(e) => setMargenPct(e.target.value)}
+                onChange={(e) => setCampo('margenPct', e.target.value)}
               />
             </label>
           </aside>
         </div>
 
-        <footer className="flex items-center justify-end gap-2 border-t border-gray-200 bg-white px-5 py-4">
+        <footer className="flex items-center justify-between gap-2 border-t border-gray-200 bg-white px-5 py-4">
+          {!esEdicion && (
+            <span className="text-[11px] text-gray-400">
+              {borrador.restaurado
+                ? 'Borrador restaurado'
+                : 'Los datos se guardan al cerrar el modal'}
+            </span>
+          )}
+          <div className="ml-auto flex items-center justify-end gap-2">
           {paso === 1 ? (
             <>
               {botonOutline('Guardar Borrador', guardarBorrador)}
@@ -501,6 +550,7 @@ export default function CotizacionFormModal({
               </button>
             </>
           )}
+          </div>
         </footer>
       </aside>
     </div>

@@ -4,6 +4,8 @@ export const ENDPOINTS = {
     register: '/auth/register',
     recuperarPassword: '/auth/recuperar-password',
     resetPassword: '/auth/reset-password',
+    me: '/auth/me',
+    cambiarPassword: '/auth/cambiar-password',
   },
   usuarios: {
     base: '/usuarios',

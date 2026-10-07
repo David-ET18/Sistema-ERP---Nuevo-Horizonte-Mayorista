@@ -9,7 +9,8 @@ import {
   getRoleColor,
 } from '@/modules/gestion-usuarios-roles-permisos/utils/roleColor'
 import { canReadModule } from '@/modules/gestion-usuarios-roles-permisos/utils/permissions'
-import { BellIcon, ChevronDownIcon, LogoutIcon, SearchIcon } from '@/components/icons'
+import { MODULOS } from '@/config/modulos'
+import { BellIcon, ChevronDownIcon, LogoutIcon, SearchIcon, UsersIcon } from '@/components/icons'
 import {
   NavAgenciasIcon,
   NavCatalogoIcon,
@@ -43,61 +44,49 @@ interface NavSection {
   items: NavItem[]
 }
 
-const NAV_SECTIONS: NavSection[] = [
-  {
-    label: 'Principal',
-    items: [{ to: '/dashboard', label: 'Panel', module: 'reportes', Icon: NavPanelIcon }],
-  },
-  {
-    label: 'Producto',
-    items: [
-      { to: '/catalogo', label: 'Catálogo Base', module: 'catalogo', Icon: NavCatalogoIcon },
-      { to: '/proveedores', label: 'Proveedores', module: 'proveedores', Icon: NavProveedoresIcon },
-      { to: '/tarifas', label: 'Tarifas', module: 'tarifas', Icon: NavTarifasIcon },
-      { to: '/paquetes', label: 'Paquetes Turísticos', module: 'paquetes', Icon: NavPaquetesIcon },
-      { to: '/promociones', label: 'Promociones', module: 'promociones', Icon: NavPromocionesIcon },
-    ],
-  },
-  {
-    label: 'Ventas',
-    items: [
-      { to: '/cotizaciones', label: 'Cotizaciones', module: 'cotizaciones', Icon: NavCotizacionesIcon },
-      { to: '/ventas', label: 'Gestión de Ventas', module: 'ventas', Icon: NavVentasIcon },
-      { to: '/reservas', label: 'Reservas', module: 'reservas', Icon: NavReservasIcon },
-      { to: '/pagos', label: 'Pagos', module: 'pagos', Icon: NavPagosIcon },
-      { to: '/gestion-agencias', label: 'Gestión de Agencias', module: 'gestion-agencias', Icon: NavAgenciasIcon },
-      { to: '/seguimiento-comercial', label: 'Seguimiento Comercial', module: 'seguimiento-comercial', Icon: NavSeguimientoIcon },
-      { to: '/marketing', label: 'Difusión y Marketing', module: 'marketing', Icon: NavMarketingIcon },
-    ],
-  },
-  {
-    label: 'General',
-    items: [
-      { to: '/reportes', label: 'Dashboard y Reportes', module: 'reportes', Icon: NavReportesIcon },
-      { to: '/documentos', label: 'Documentos', module: 'documentos', Icon: NavDocumentosIcon },
-      { to: '/notificaciones', label: 'Notificaciones', module: 'notificaciones', Icon: NavNotificacionesIcon },
-    ],
-  },
-  {
-    label: 'Gestión',
-    items: [
-      {
-        to: '/gestion-usuarios-roles-permisos/usuarios',
-        label: 'Usuarios',
-        module: 'gestion-usuarios-roles-permisos',
-        Icon: NavUsuariosIcon,
-      },
-      {
-        to: '/gestion-usuarios-roles-permisos/roles',
-        label: 'Roles y Permisos',
-        module: 'gestion-usuarios-roles-permisos',
-        Icon: NavRolesIcon,
-      },
-    ],
-  },
-]
+/** Iconos indexados por la clave del modulo (ver src/config/modulos.ts). */
+const ICONOS_POR_MODULO: Record<string, NavItem['Icon']> = {
+  'catalogo': NavCatalogoIcon,
+  'proveedores': NavProveedoresIcon,
+  'tarifas': NavTarifasIcon,
+  'paquetes': NavPaquetesIcon,
+  'promociones': NavPromocionesIcon,
+  'cotizaciones': NavCotizacionesIcon,
+  'ventas': NavVentasIcon,
+  'reservas': NavReservasIcon,
+  'pagos': NavPagosIcon,
+  'gestion-agencias': NavAgenciasIcon,
+  'seguimiento-comercial': NavSeguimientoIcon,
+  'marketing': NavMarketingIcon,
+  'reportes': NavReportesIcon,
+  'documentos': NavDocumentosIcon,
+  'notificaciones': NavNotificacionesIcon,
+  'gestion-usuarios-roles-permisos': NavUsuariosIcon,
+}
 
-/** Azul corporativo del menu lateral (mismo tono que nh-core). */
+const ICONO_POR_RUTA: Record<string, NavItem['Icon']> = {
+  '/dashboard': NavPanelIcon,
+  '/gestion-usuarios-roles-permisos/usuarios': NavUsuariosIcon,
+  '/gestion-usuarios-roles-permisos/roles': NavRolesIcon,
+}
+
+const ORDEN_GRUPOS: NavSection['label'][] = ['Principal', 'Producto', 'Ventas', 'General', 'Gestion']
+
+/**
+ * El menu se deriva de src/config/modulos.ts para no duplicar la lista de rutas.
+ * Se excluyen los modulos que aun no estan desarrollados.
+ */
+const NAV_SECTIONS: NavSection[] = ORDEN_GRUPOS.map((label) => ({
+  label,
+  items: MODULOS.filter((modulo) => modulo.grupo === label && modulo.desarrollado).map((modulo) => ({
+    to: modulo.ruta,
+    label: modulo.etiqueta,
+    module: modulo.clave,
+    Icon: ICONO_POR_RUTA[modulo.ruta] ?? ICONOS_POR_MODULO[modulo.clave] ?? NavPanelIcon,
+  })),
+})).filter((section) => section.items.length > 0)
+
+/** Azul corporativo del menú lateral (mismo tono que nh-core). */
 const SIDEBAR_COLOR = '#143b72'
 
 function initials(name: string): string {
@@ -203,7 +192,7 @@ export default function Layout() {
             <button
               type="button"
               onClick={handleLogout}
-              className="cursor-pointer rounded-lg p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+              className="shrink-0 cursor-pointer rounded-lg p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
               aria-label="Cerrar sesión"
               title="Cerrar sesión"
             >
@@ -241,6 +230,17 @@ export default function Layout() {
               <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
             </button>
 
+            {/* Ver perfil */}
+            <button
+              type="button"
+              onClick={() => navigate('/gestion-usuarios-roles-permisos/perfil')}
+              className="cursor-pointer rounded-lg p-2 text-gray-500 hover:bg-gray-100"
+              aria-label="Ver perfil"
+              title="Ver perfil"
+            >
+              <UsersIcon className="h-5 w-5" />
+            </button>
+
             {/* Menú de usuario */}
             <div className="relative">
               <button
@@ -273,6 +273,17 @@ export default function Layout() {
                       </p>
                     </div>
                     <hr className="my-1 border-gray-100" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDropdownOpen(false)
+                        navigate('/gestion-usuarios-roles-permisos/perfil')
+                      }}
+                      className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      <UsersIcon className="h-4 w-4" />
+                      Ver perfil
+                    </button>
                     <button
                       type="button"
                       onClick={handleLogout}

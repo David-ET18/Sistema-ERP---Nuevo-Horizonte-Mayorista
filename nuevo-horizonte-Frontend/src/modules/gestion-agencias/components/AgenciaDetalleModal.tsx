@@ -70,11 +70,6 @@ export default function AgenciaDetalleModal({ id, onClose, onEditar, puedeEditar
                       Prioritaria
                     </span>
                   )}
-                  {agencia.categoria && (
-                    <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-semibold text-indigo-700">
-                      {agencia.categoria}
-                    </span>
-                  )}
                   <span
                     className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                       agencia.activo ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'

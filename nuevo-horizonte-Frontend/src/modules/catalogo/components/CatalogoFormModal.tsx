@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { extractErrorMessage } from '@/api/http'
 import Alert from '@/components/Alert'
 import { IconX } from '@/components/icons'
+import { useFormDraft } from '@/hooks/useFormDraft'
 
 export interface ValoresCatalogo {
   nombre: string
@@ -41,12 +42,20 @@ export default function CatalogoFormModal({
   onSubmit,
   onClose,
 }: Props) {
-  const [valores, setValores] = useState<ValoresCatalogo>(inicial ?? VACIO)
+  const [valoresEdicion, setValoresEdicion] = useState<ValoresCatalogo>(inicial ?? VACIO)
   const [error, setError] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
 
+  const esEdicion = inicial !== null
+  // El alta conserva borrador entre cierres; la edicion parte del registro real.
+  const borrador = useFormDraft<ValoresCatalogo>(
+    `catalogo:${etiquetaGrupo}:${esEdicion ? (inicial?.nombre ?? 'editar') : 'nuevo'}`,
+    VACIO,
+  )
+  const valores = esEdicion ? valoresEdicion : borrador.valor
+
   useEffect(() => {
-    setValores(inicial ?? VACIO)
+    if (inicial) setValoresEdicion(inicial)
     setError(null)
   }, [inicial])
 
@@ -60,7 +69,8 @@ export default function CatalogoFormModal({
   }, [])
 
   function set<K extends keyof ValoresCatalogo>(campo: K, valor: ValoresCatalogo[K]) {
-    setValores((prev) => ({ ...prev, [campo]: valor }))
+    if (esEdicion) setValoresEdicion((prev) => ({ ...prev, [campo]: valor }))
+    else borrador.setCampo(campo, valor)
   }
 
   async function guardar() {
@@ -76,14 +86,13 @@ export default function CatalogoFormModal({
     setError(null)
     try {
       await onSubmit(valores)
+      if (!esEdicion) borrador.reset()
     } catch (err) {
       setError(extractErrorMessage(err))
     } finally {
       setGuardando(false)
     }
   }
-
-  const esEdicion = inicial !== null
 
   return (
     <div className="fixed inset-0 z-[80] flex justify-end bg-gray-900/40 backdrop-blur-[1px]" onClick={onClose} role="presentation">
@@ -197,24 +206,33 @@ export default function CatalogoFormModal({
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-gray-100 bg-gray-50/60 px-6 py-4">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={guardando}
-            className="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={guardar}
-            disabled={guardando}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {guardando && <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />}
-            {guardando ? 'Guardando…' : esEdicion ? 'Guardar cambios' : 'Crear registro'}
-          </button>
+        <div className="flex items-center justify-between gap-2 border-t border-gray-100 bg-gray-50/60 px-6 py-4">
+          {!esEdicion && (
+            <span className="text-[11px] text-gray-400">
+              {borrador.restaurado
+                ? 'Borrador restaurado'
+                : 'Los datos se guardan al cerrar el modal'}
+            </span>
+          )}
+          <div className="ml-auto flex gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={guardando}
+              className="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Cerrar
+            </button>
+            <button
+              type="button"
+              onClick={guardar}
+              disabled={guardando}
+              className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {guardando && <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />}
+              {guardando ? 'Guardando…' : esEdicion ? 'Guardar cambios' : 'Crear registro'}
+            </button>
+          </div>
         </div>
       </aside>
     </div>

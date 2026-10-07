@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import type { Destino, Proveedor, ProveedorFormState, ProveedorPayload } from '../types'
 import { actualizarProveedor, crearProveedor } from '../services/proveedorService'
 import { extractErrorMessage } from '@/api/http'
+import { useFormDraft } from '@/hooks/useFormDraft'
 import { IconX } from '@/components/icons'
 
 interface Props {
@@ -37,13 +38,17 @@ export default function ProveedorFormModal({
   onSaved,
 }: Props) {
   const editando = proveedor !== null
-  const [form, setForm] = useState<ProveedorFormState>(VACIO)
+  const [formEdicion, setFormEdicion] = useState<ProveedorFormState>(VACIO)
   const [error, setError] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
 
+  // El alta conserva borrador entre cierres; la edicion parte del registro real.
+  const borrador = useFormDraft<ProveedorFormState>('proveedor:nueva', VACIO)
+  const form = editando ? formEdicion : borrador.valor
+
   useEffect(() => {
     if (proveedor) {
-      setForm({
+      setFormEdicion({
         razonSocial: proveedor.razonSocial,
         nombreComercial: proveedor.nombreComercial ?? '',
         ruc: proveedor.ruc,
@@ -56,14 +61,18 @@ export default function ProveedorFormModal({
         observaciones: proveedor.observaciones ?? '',
         activo: proveedor.activo,
       })
-    } else {
-      setForm(VACIO)
     }
     setError(null)
   }, [proveedor])
 
+  function limpiarFormulario() {
+    setFormEdicion(VACIO)
+    borrador.reset()
+  }
+
   function setCampo<K extends keyof ProveedorFormState>(campo: K, valor: ProveedorFormState[K]) {
-    setForm((prev) => ({ ...prev, [campo]: valor }))
+    if (editando) setFormEdicion((prev) => ({ ...prev, [campo]: valor }))
+    else borrador.setCampo(campo, valor)
   }
 
   function validar(): string | null {
@@ -102,8 +111,10 @@ export default function ProveedorFormModal({
 
       if (editando && proveedor) {
         await actualizarProveedor(proveedor.id, payload)
+        limpiarFormulario()
       } else {
         await crearProveedor(payload)
+        limpiarFormulario()
       }
       onSaved()
     } catch (err) {
@@ -268,22 +279,31 @@ export default function ProveedorFormModal({
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-gray-100 px-5 py-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="cursor-pointer rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={guardar}
-            disabled={guardando}
-            className="cursor-pointer rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {guardando ? 'Guardando...' : 'Guardar Proveedor'}
-          </button>
+        <div className="flex items-center justify-between gap-2 border-t border-gray-100 px-5 py-4">
+          {!editando && (
+            <span className="text-[11px] text-gray-400">
+              {borrador.restaurado
+                ? 'Borrador restaurado'
+                : 'Los datos se guardan al cerrar el modal'}
+            </span>
+          )}
+          <div className="ml-auto flex gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="cursor-pointer rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              Cerrar
+            </button>
+            <button
+              type="button"
+              onClick={guardar}
+              disabled={guardando}
+              className="cursor-pointer rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {guardando ? 'Guardando...' : 'Guardar Proveedor'}
+            </button>
+          </div>
         </div>
       </aside>
     </div>

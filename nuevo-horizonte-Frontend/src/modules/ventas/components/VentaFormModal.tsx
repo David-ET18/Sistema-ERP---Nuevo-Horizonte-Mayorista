@@ -20,6 +20,7 @@ import {
 import { formatMonto } from '../utils'
 import { extractErrorMessage } from '@/api/http'
 import { IconX } from '@/components/icons'
+import { useFormDraft } from '@/hooks/useFormDraft'
 
 interface Props {
   venta?: Venta | null
@@ -32,6 +33,32 @@ interface Guardado {
   numero: string
 }
 
+interface VentaFormState {
+  cotizacionId: string
+  productoId: string
+  tarifaId: string
+  agenciaId: string
+  montoAPagar: string
+  comision: string
+  igv: string
+  notas: string
+  fechaVenta: string
+}
+
+function vacioVenta(): VentaFormState {
+  return {
+    cotizacionId: '',
+    productoId: '',
+    tarifaId: '',
+    agenciaId: '',
+    montoAPagar: '',
+    comision: '',
+    igv: '',
+    notas: '',
+    fechaVenta: new Date().toISOString().slice(0, 10),
+  }
+}
+
 const SECCION_CAMPO =
   'rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand'
 
@@ -40,15 +67,7 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
   const [productos, setProductos] = useState<Producto[]>([])
   const [tarifas, setTarifas] = useState<Tarifa[]>([])
   const [cotizaciones, setCotizaciones] = useState<CotizacionVenta[]>([])
-  const [cotizacionId, setCotizacionId] = useState('')
-  const [productoId, setProductoId] = useState('')
-  const [tarifaId, setTarifaId] = useState('')
-  const [agenciaId, setAgenciaId] = useState('')
-  const [montoAPagar, setMontoAPagar] = useState('')
-  const [comision, setComision] = useState('')
-  const [igv, setIgv] = useState('')
-  const [notas, setNotas] = useState('')
-  const [fechaVenta, setFechaVenta] = useState('')
+  const [formEdicion, setFormEdicion] = useState<VentaFormState>(vacioVenta())
   const [danos, setDanos] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [guardado, setGuardado] = useState<Guardado | null>(
@@ -56,6 +75,22 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
   )
 
   const esEdicion = Boolean(venta)
+
+  // El alta conserva borrador entre cierres; la edicion parte del registro real.
+  const borrador = useFormDraft<VentaFormState>('venta:nueva', vacioVenta())
+  const form = esEdicion ? formEdicion : borrador.valor
+  const { cotizacionId, productoId, tarifaId, agenciaId, montoAPagar, comision, igv, notas, fechaVenta } = form
+
+  function setCampo<K extends keyof VentaFormState>(campo: K, valor: VentaFormState[K]) {
+    if (esEdicion) setFormEdicion((prev) => ({ ...prev, [campo]: valor }))
+    else borrador.setCampo(campo, valor)
+  }
+
+  function limpiarFormulario() {
+    setFormEdicion(vacioVenta())
+    setGuardado(null)
+    borrador.reset()
+  }
 
   useEffect(() => {
     Promise.all([
@@ -70,18 +105,17 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
         setTarifas(tar)
         setCotizaciones(cots)
         if (venta) {
-          setCotizacionId(venta.cotizacionId ? String(venta.cotizacionId) : '')
-          setProductoId(venta.productoId ? String(venta.productoId) : '')
-          setTarifaId(venta.tarifaId ? String(venta.tarifaId) : '')
-          setAgenciaId(String(venta.agenciaId))
-          setMontoAPagar(String(venta.montoAPagar ?? 0))
-          setComision(String(venta.comision ?? 0))
-          setIgv(String(venta.igv ?? 0))
-          setNotas(venta.notasOperativas ?? '')
-          setFechaVenta(venta.fechaVenta ? venta.fechaVenta.slice(0, 10) : '')
-        } else {
-          const hoy = new Date().toISOString().slice(0, 10)
-          setFechaVenta(hoy)
+          setFormEdicion({
+            cotizacionId: venta.cotizacionId ? String(venta.cotizacionId) : '',
+            productoId: venta.productoId ? String(venta.productoId) : '',
+            tarifaId: venta.tarifaId ? String(venta.tarifaId) : '',
+            agenciaId: String(venta.agenciaId),
+            montoAPagar: String(venta.montoAPagar ?? 0),
+            comision: String(venta.comision ?? 0),
+            igv: String(venta.igv ?? 0),
+            notas: venta.notasOperativas ?? '',
+            fechaVenta: venta.fechaVenta ? venta.fechaVenta.slice(0, 10) : '',
+          })
         }
       })
       .catch((err) => setDanos(extractErrorMessage(err)))
@@ -139,6 +173,7 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
     setSaving(true)
     try {
       await guardar()
+      limpiarFormulario()
       onSaved()
       onClose()
     } catch (err) {
@@ -162,6 +197,7 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
     try {
       const g = await guardar()
       await cambiarEstadoVenta(g.id, 'CONFIRMADA')
+      limpiarFormulario()
       onSaved()
       onClose()
     } catch (err) {
@@ -172,10 +208,10 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
   }
 
   function alCambiarCotizacion(id: string) {
-    setCotizacionId(id)
+    setCampo('cotizacionId', id)
     const c = cotizaciones.find((x) => String(x.id) === id)
     if (c) {
-      setAgenciaId(String(agencias.find((a) => a.nombre === c.agencia)?.id ?? ''))
+      setCampo('agenciaId', String(agencias.find((a) => a.nombre === c.agencia)?.id ?? ''))
     }
   }
 
@@ -231,8 +267,8 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
                   className={SECCION_CAMPO}
                   value={productoId}
                   onChange={(e) => {
-                    setProductoId(e.target.value)
-                    if (e.target.value) setCotizacionId('')
+                    setCampo('productoId', e.target.value)
+                    if (e.target.value) setCampo('cotizacionId', '')
                   }}
                 >
                   <option value="">Seleccionar paquete</option>
@@ -252,8 +288,8 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
                   className={SECCION_CAMPO}
                   value={tarifaId}
                   onChange={(e) => {
-                    setTarifaId(e.target.value)
-                    if (e.target.value) setCotizacionId('')
+                    setCampo('tarifaId', e.target.value)
+                    if (e.target.value) setCampo('cotizacionId', '')
                   }}
                 >
                   <option value="">Seleccionar tarifa</option>
@@ -276,7 +312,7 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
             <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Cliente y fechas</p>
             <label className="flex flex-col gap-1 text-[13px] text-gray-500">
               <span>Agencia *</span>
-              <select className={SECCION_CAMPO} value={agenciaId} onChange={(e) => setAgenciaId(e.target.value)}>
+              <select className={SECCION_CAMPO} value={agenciaId} onChange={(e) => setCampo('agenciaId', e.target.value)}>
                 <option value="">Seleccionar agencia</option>
                 {agencias.map((a) => (
                   <option key={a.id} value={a.id}>
@@ -287,7 +323,7 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
             </label>
             <label className="flex flex-col gap-1 text-[13px] text-gray-500">
               <span>Fecha de venta</span>
-              <input type="date" className={SECCION_CAMPO} value={fechaVenta} onChange={(e) => setFechaVenta(e.target.value)} />
+              <input type="date" className={SECCION_CAMPO} value={fechaVenta} onChange={(e) => setCampo('fechaVenta', e.target.value)} />
             </label>
             {cotizacionSeleccionada && (
               <div className="rounded-lg bg-blue-50 px-3 py-2 text-[13px] text-blue-700">
@@ -301,15 +337,15 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
             <div className="grid grid-cols-3 gap-3">
               <label className="flex flex-col gap-1 text-[13px] text-gray-500">
                 <span>Monto a pagar (S/)</span>
-                <input type="number" step="0.01" min="0" className={SECCION_CAMPO} value={montoAPagar} onChange={(e) => setMontoAPagar(e.target.value)} />
+                <input type="number" step="0.01" min="0" className={SECCION_CAMPO} value={montoAPagar} onChange={(e) => setCampo('montoAPagar', e.target.value)} />
               </label>
               <label className="flex flex-col gap-1 text-[13px] text-gray-500">
                 <span>Comisión (S/)</span>
-                <input type="number" step="0.01" min="0" className={SECCION_CAMPO} value={comision} onChange={(e) => setComision(e.target.value)} />
+                <input type="number" step="0.01" min="0" className={SECCION_CAMPO} value={comision} onChange={(e) => setCampo('comision', e.target.value)} />
               </label>
               <label className="flex flex-col gap-1 text-[13px] text-gray-500">
                 <span>IGV (S/)</span>
-                <input type="number" step="0.01" min="0" className={SECCION_CAMPO} value={igv} onChange={(e) => setIgv(e.target.value)} />
+                <input type="number" step="0.01" min="0" className={SECCION_CAMPO} value={igv} onChange={(e) => setCampo('igv', e.target.value)} />
               </label>
             </div>
             <div className="flex items-center justify-end gap-2 border-t border-gray-100 pt-2 text-sm">
@@ -325,28 +361,37 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
               placeholder="Observaciones internas o detalles operativos..."
               className="resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand"
               value={notas}
-              onChange={(e) => setNotas(e.target.value)}
+              onChange={(e) => setCampo('notas', e.target.value)}
             />
           </section>
         </div>
 
-        <footer className="flex items-center justify-end gap-2 border-t border-gray-200 bg-white px-5 py-4">
-          <button
-            type="button"
-            className="cursor-pointer rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
-            onClick={guardarVenta}
-            disabled={saving || !datosValidos}
-          >
-            {saving ? 'Guardando...' : 'Guardar venta'}
-          </button>
-          <button
-            type="button"
-            className="cursor-pointer rounded-lg bg-brand px-5 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-50"
-            onClick={guardarYConfirmar}
-            disabled={saving || !datosValidos}
-          >
-            {saving ? 'Guardando...' : 'Guardar y confirmar'}
-          </button>
+        <footer className="flex items-center justify-between gap-2 border-t border-gray-200 bg-white px-5 py-4">
+          {!esEdicion && (
+            <span className="text-[11px] text-gray-400">
+              {borrador.restaurado
+                ? 'Borrador restaurado'
+                : 'Los datos se guardan al cerrar el modal'}
+            </span>
+          )}
+          <div className="ml-auto flex items-center justify-end gap-2">
+            <button
+              type="button"
+              className="cursor-pointer rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={guardarVenta}
+              disabled={saving || !datosValidos}
+            >
+              {saving ? 'Guardando...' : 'Guardar venta'}
+            </button>
+            <button
+              type="button"
+              className="cursor-pointer rounded-lg bg-brand px-5 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={guardarYConfirmar}
+              disabled={saving || !datosValidos}
+            >
+              {saving ? 'Guardando...' : 'Guardar y confirmar'}
+            </button>
+          </div>
         </footer>
       </aside>
     </div>

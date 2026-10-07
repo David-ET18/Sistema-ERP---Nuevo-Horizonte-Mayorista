@@ -4,6 +4,8 @@ import type { FormEvent } from 'react'
 import type { PermisoRequest, Rol, RolRequest } from '../types'
 import { extractErrorMessage } from '@/api/http'
 import { DEFAULT_ROLE_COLOR } from '../utils/roleColor'
+import { OPCIONES_PERMISOS } from '@/config/modulos'
+import { useFormDraft } from '@/hooks/useFormDraft'
 
 interface RolFormModalProps {
   onClose: () => void
@@ -19,53 +21,76 @@ interface PermisoRow {
   puedeEliminar: boolean
 }
 
+interface RolFormState {
+  nombre: string
+  descripcion: string
+  tipoBase: RolRequest['tipoBase']
+  color: string
+  activo: boolean
+  permisos: PermisoRow[]
+}
+
 const TIPOS_BASE: Array<RolRequest['tipoBase']> = ['custom', 'admin', 'system']
+
+function permisosDe(rol?: Rol): PermisoRow[] {
+  return (rol?.permisos ?? []).map((permiso) => ({
+    modulo: permiso?.modulo ?? '',
+    puedeLeer: permiso?.puedeLeer ?? false,
+    puedeCrear: permiso?.puedeCrear ?? false,
+    puedeActualizar: permiso?.puedeActualizar ?? false,
+    puedeEliminar: permiso?.puedeEliminar ?? false,
+  }))
+}
 
 export default function RolFormModal({ onClose, onSubmit, rol }: RolFormModalProps) {
   const editing = Boolean(rol)
 
-  const [nombre, setNombre] = useState(rol?.nombre ?? '')
-  const [descripcion, setDescripcion] = useState(rol?.descripcion ?? '')
-  const [tipoBase, setTipoBase] = useState<RolRequest['tipoBase']>(
-    rol?.tipoBase ?? 'custom',
-  )
-  const [color, setColor] = useState(rol?.color || DEFAULT_ROLE_COLOR)
-  const [activo, setActivo] = useState(rol?.activo ?? true)
-  const [permisos, setPermisos] = useState<PermisoRow[]>(
-    rol?.permisos.map((permiso) => ({
-      modulo: permiso.modulo,
-      puedeLeer: permiso.puedeLeer,
-      puedeCrear: permiso.puedeCrear,
-      puedeActualizar: permiso.puedeActualizar,
-      puedeEliminar: permiso.puedeEliminar,
-    })) ?? [],
-  )
+  const [formEdicion, setFormEdicion] = useState<RolFormState>({
+    nombre: rol?.nombre ?? '',
+    descripcion: rol?.descripcion ?? '',
+    tipoBase: rol?.tipoBase ?? 'custom',
+    color: rol?.color || DEFAULT_ROLE_COLOR,
+    activo: rol?.activo ?? true,
+    permisos: permisosDe(rol),
+  })
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
-  function addPermiso() {
-    setPermisos((prev) => [
-      ...prev,
-      {
-        modulo: '',
-        puedeLeer: true,
-        puedeCrear: false,
-        puedeActualizar: false,
-        puedeEliminar: false,
-      },
-    ])
+  // El alta conserva borrador entre cierres; la edicion parte del rol real.
+  const borrador = useFormDraft<RolFormState>('rol:nuevo', {
+    nombre: '',
+    descripcion: '',
+    tipoBase: 'custom',
+    color: DEFAULT_ROLE_COLOR,
+    activo: true,
+    permisos: [],
+  })
+
+  const form = editing ? formEdicion : borrador.valor
+  const { nombre, descripcion, tipoBase, color, activo, permisos } = form
+
+  function patch(p: Partial<RolFormState>) {
+    if (editing) setFormEdicion((prev) => ({ ...prev, ...p }))
+    else borrador.setValor((prev) => ({ ...prev, ...p }))
   }
 
-  function updatePermiso(index: number, patch: Partial<PermisoRow>) {
-    setPermisos((prev) =>
-      prev.map((permiso, i) =>
-        i === index ? { ...permiso, ...patch } : permiso,
-      ),
-    )
+  function addPermiso() {
+    patch({
+      permisos: [
+        ...permisos,
+        { modulo: '', puedeLeer: true, puedeCrear: false, puedeActualizar: false, puedeEliminar: false },
+      ],
+    })
+  }
+
+  function updatePermiso(index: number, p: Partial<PermisoRow>) {
+    patch({
+      permisos: permisos.map((permiso, i) => (i === index ? { ...permiso, ...p } : permiso)),
+    })
   }
 
   function removePermiso(index: number) {
-    setPermisos((prev) => prev.filter((_, i) => i !== index))
+    patch({ permisos: permisos.filter((_, i) => i !== index) })
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -92,6 +117,7 @@ export default function RolFormModal({ onClose, onSubmit, rol }: RolFormModalPro
         activo,
         permisos: validPermisos,
       })
+      if (!editing) borrador.reset()
     } catch (err) {
       setError(extractErrorMessage(err))
     } finally {
@@ -122,7 +148,7 @@ export default function RolFormModal({ onClose, onSubmit, rol }: RolFormModalPro
               <input
                 className={inputClass}
                 value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
+                onChange={(e) => patch({ nombre: e.target.value })}
                 required
               />
             </label>
@@ -132,7 +158,7 @@ export default function RolFormModal({ onClose, onSubmit, rol }: RolFormModalPro
               <select
                 className={inputClass}
                 value={tipoBase}
-                onChange={(e) => setTipoBase(e.target.value as RolRequest['tipoBase'])}
+                onChange={(e) => patch({ tipoBase: e.target.value as RolRequest['tipoBase'] })}
               >
                 {TIPOS_BASE.map((tipo) => (
                   <option key={tipo} value={tipo}>
@@ -148,7 +174,7 @@ export default function RolFormModal({ onClose, onSubmit, rol }: RolFormModalPro
             <input
               className={inputClass}
               value={descripcion}
-              onChange={(e) => setDescripcion(e.target.value)}
+              onChange={(e) => patch({ descripcion: e.target.value })}
             />
           </label>
 
@@ -159,7 +185,7 @@ export default function RolFormModal({ onClose, onSubmit, rol }: RolFormModalPro
                 <input
                   type="color"
                   value={color || DEFAULT_ROLE_COLOR}
-                  onChange={(e) => setColor(e.target.value)}
+                  onChange={(e) => patch({ color: e.target.value })}
                   className="h-9 w-12 cursor-pointer rounded border border-gray-300"
                 />
                 <span className="font-mono text-sm text-gray-700">{color}</span>
@@ -170,7 +196,7 @@ export default function RolFormModal({ onClose, onSubmit, rol }: RolFormModalPro
               <input
                 type="checkbox"
                 checked={activo}
-                onChange={(e) => setActivo(e.target.checked)}
+                onChange={(e) => patch({ activo: e.target.checked })}
                 disabled={rol?.esSistema}
               />
               Rol activo
@@ -186,12 +212,21 @@ export default function RolFormModal({ onClose, onSubmit, rol }: RolFormModalPro
                 key={index}
                 className="flex flex-col gap-2 rounded-lg border border-gray-100 p-2 sm:flex-row sm:items-center"
               >
-                <input
-                  placeholder="Módulo"
+                <select
                   className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand"
                   value={permiso.modulo}
                   onChange={(e) => updatePermiso(index, { modulo: e.target.value })}
-                />
+                >
+                  <option value="">Seleccionar módulo</option>
+                  {OPCIONES_PERMISOS.map((opcion) => (
+                    <option key={opcion.clave} value={opcion.clave}>
+                      {opcion.etiqueta}
+                    </option>
+                  ))}
+                  {!OPCIONES_PERMISOS.some((o) => o.clave === permiso.modulo) && permiso.modulo && (
+                    <option value={permiso.modulo}>{permiso.modulo} (no disponible)</option>
+                  )}
+                </select>
                 <div className="flex flex-wrap items-center gap-3 text-sm">
                   <label className="flex items-center gap-1">
                     <input
@@ -254,13 +289,21 @@ export default function RolFormModal({ onClose, onSubmit, rol }: RolFormModalPro
 
           {error && <p className="text-[13px] text-red-700">{error}</p>}
 
+          {!editing && (
+            <p className="text-[11px] text-gray-400">
+              {borrador.restaurado
+                ? 'Borrador restaurado'
+                : 'Los datos se guardan al cerrar el modal'}
+            </p>
+          )}
+
           <div className="mt-2 flex justify-end gap-2">
             <button
               type="button"
               className="cursor-pointer rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               onClick={onClose}
             >
-              Cancelar
+              Cerrar
             </button>
             <button
               type="submit"

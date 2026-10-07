@@ -5,23 +5,34 @@ import type { Rol, UsuarioCreateRequest } from '../types'
 import { listarRoles } from '../services/rolService'
 import { extractErrorMessage } from '@/api/http'
 import { getRoleColor } from '../utils/roleColor'
+import { useFormDraft } from '@/hooks/useFormDraft'
 
 interface UsuarioFormModalProps {
   onClose: () => void
   onSubmit: (payload: UsuarioCreateRequest) => Promise<void>
 }
 
+interface UsuarioFormState {
+  username: string
+  email: string
+  rolIds: number[]
+}
+
+const VACIO: UsuarioFormState = { username: '', email: '', rolIds: [] }
+
 export default function UsuarioFormModal({
   onClose,
   onSubmit,
 }: UsuarioFormModalProps) {
   const [roles, setRoles] = useState<Rol[]>([])
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [email, setEmail] = useState('')
-  const [rolIds, setRolIds] = useState<number[]>([])
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+
+  // La contrasena nunca se guarda en sessionStorage: solo vive en memoria.
+  const [password, setPassword] = useState('')
+
+  const borrador = useFormDraft<UsuarioFormState>('usuario:nuevo', VACIO)
+  const { username, email, rolIds } = borrador.valor
 
   useEffect(() => {
     listarRoles()
@@ -30,8 +41,9 @@ export default function UsuarioFormModal({
   }, [])
 
   function toggleRol(id: number) {
-    setRolIds((prev) =>
-      prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id],
+    borrador.setCampo(
+      'rolIds',
+      rolIds.includes(id) ? rolIds.filter((r) => r !== id) : [...rolIds, id],
     )
   }
 
@@ -51,6 +63,7 @@ export default function UsuarioFormModal({
     setSaving(true)
     try {
       await onSubmit({ username, password, email: email.trim(), rolIds })
+      borrador.reset()
     } catch (err) {
       setError(extractErrorMessage(err))
     } finally {
@@ -75,7 +88,8 @@ export default function UsuarioFormModal({
             <input
               className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => borrador.setCampo('username', e.target.value)}
+              maxLength={60}
               required
             />
           </label>
@@ -97,7 +111,8 @@ export default function UsuarioFormModal({
               type="email"
               className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => borrador.setCampo('email', e.target.value)}
+              maxLength={100}
               required
             />
           </label>
@@ -123,13 +138,19 @@ export default function UsuarioFormModal({
 
           {error && <p className="text-[13px] text-red-700">{error}</p>}
 
+          <p className="text-[11px] text-gray-400">
+            {borrador.restaurado
+              ? 'Borrador restaurado (sin contrasena)'
+              : 'Los datos se guardan al cerrar el modal'}
+          </p>
+
           <div className="mt-2 flex justify-end gap-2">
             <button
               type="button"
               className="cursor-pointer rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               onClick={onClose}
             >
-              Cancelar
+              Cerrar
             </button>
             <button
               type="submit"

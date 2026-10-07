@@ -86,3 +86,14 @@ export interface RolRequest {
   activo?: boolean
   permisos: PermisoRequest[]
 }
+
+export interface PerfilUpdateRequest {
+  username: string
+  email: string
+}
+
+export interface CambiarPasswordRequest {
+  passwordActual: string
+  nuevaContrasena: string
+  confirmarContrasena: string
+}

@@ -115,13 +115,16 @@ public class RolService {
 			return;
 		}
 		for (PermisoRequest permiso : request.permisos()) {
+			if (permiso == null || permiso.modulo() == null || permiso.modulo().isBlank()) {
+				continue;
+			}
 			RolPermiso rolPermiso = new RolPermiso();
 			rolPermiso.setRol(rol);
-			rolPermiso.setModulo(permiso.modulo());
-			rolPermiso.setPuedeLeer(permiso.puedeLeer());
-			rolPermiso.setPuedeCrear(permiso.puedeCrear());
-			rolPermiso.setPuedeActualizar(permiso.puedeActualizar());
-			rolPermiso.setPuedeEliminar(permiso.puedeEliminar());
+			rolPermiso.setModulo(permiso.modulo().trim());
+			rolPermiso.setPuedeLeer(Boolean.TRUE.equals(permiso.puedeLeer()));
+			rolPermiso.setPuedeCrear(Boolean.TRUE.equals(permiso.puedeCrear()));
+			rolPermiso.setPuedeActualizar(Boolean.TRUE.equals(permiso.puedeActualizar()));
+			rolPermiso.setPuedeEliminar(Boolean.TRUE.equals(permiso.puedeEliminar()));
 			rol.getRolPermisos().add(rolPermiso);
 		}
 	}

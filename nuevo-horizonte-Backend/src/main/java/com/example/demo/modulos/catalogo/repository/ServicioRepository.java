@@ -6,10 +6,13 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ServicioRepository extends JpaRepository<Servicio, Long>, JpaSpecificationExecutor<Servicio> {
 
 	List<Servicio> findAllByOrderByNombreAsc();
+
+	Optional<Servicio> findByNombre(String nombre);
 
 	List<Servicio> findByActivoTrueOrderByNombreAsc();
 

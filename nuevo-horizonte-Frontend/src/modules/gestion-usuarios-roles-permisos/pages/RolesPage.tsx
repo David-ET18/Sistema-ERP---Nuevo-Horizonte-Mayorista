@@ -13,17 +13,19 @@ import RolFormModal from '../components/RolFormModal'
 import RoleBadge from '../components/RoleBadge'
 
 function formatPermisos(permisos: Permiso[]): string {
+  if (!permisos || permisos.length === 0) return '-'
   return permisos
+    .filter((permiso) => permiso?.modulo)
     .map((permiso) => {
       const flags = [
-        permiso.puedeLeer ? 'V' : '',
-        permiso.puedeCrear ? 'C' : '',
-        permiso.puedeActualizar ? 'U' : '',
-        permiso.puedeEliminar ? 'D' : '',
+        permiso?.puedeLeer ? 'V' : '',
+        permiso?.puedeCrear ? 'C' : '',
+        permiso?.puedeActualizar ? 'U' : '',
+        permiso?.puedeEliminar ? 'D' : '',
       ]
         .filter(Boolean)
         .join('·')
-      return `${permiso.modulo} (${flags})`
+      return `${permiso?.modulo} (${flags})`
     })
     .join(', ')
 }
@@ -129,9 +131,7 @@ export default function RolesPage() {
                 </td>
                 <td className="px-4 py-3">{rol.descripcion || '-'}</td>
                 <td className="px-4 py-3 text-[13px] text-gray-600">
-                  {rol.permisos.length === 0
-                    ? '-'
-                    : formatPermisos(rol.permisos)}
+                  {formatPermisos(rol?.permisos ?? [])}
                 </td>
                 <td className="px-4 py-3">
                   <span
