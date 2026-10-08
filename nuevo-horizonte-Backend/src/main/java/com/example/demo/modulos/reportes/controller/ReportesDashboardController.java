@@ -6,6 +6,7 @@ import com.example.demo.modulos.reportes.dto.RankingAgenciaDTO;
 import com.example.demo.modulos.reportes.dto.ResumenEjecutivoDTO;
 import com.example.demo.modulos.reportes.dto.TarifasPorProveedorDTO;
 import com.example.demo.modulos.reportes.service.ReportesService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -20,6 +21,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/reportes")
+@PreAuthorize("@permisoEvaluator.puedeLeer('reportes')")
 public class ReportesDashboardController {
 
 	private final ReportesService reportesService;

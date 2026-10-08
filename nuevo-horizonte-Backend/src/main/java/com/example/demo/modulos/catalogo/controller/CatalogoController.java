@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,6 +33,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/catalogo")
+@PreAuthorize("@permisoEvaluator.puedeLeer('catalogo')")
 public class CatalogoController {
 
 	private final DestinoService destinoService;
@@ -73,16 +75,19 @@ public class CatalogoController {
 	}
 
 	@PostMapping("/destinos")
+	@PreAuthorize("@permisoEvaluator.puedeCrear('catalogo')")
 	public ResponseEntity<DestinoDetalleDTO> crearDestino(@Valid @RequestBody DestinoRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED).body(destinoService.crear(request));
 	}
 
 	@PutMapping("/destinos/{id}")
+	@PreAuthorize("@permisoEvaluator.puedeActualizar('catalogo')")
 	public DestinoDetalleDTO actualizarDestino(@PathVariable Long id, @Valid @RequestBody DestinoRequest request) {
 		return destinoService.actualizar(id, request);
 	}
 
 	@DeleteMapping("/destinos/{id}")
+	@PreAuthorize("@permisoEvaluator.puedeEliminar('catalogo')")
 	public ResponseEntity<Void> eliminarDestino(@PathVariable Long id) {
 		destinoService.eliminar(id);
 		return ResponseEntity.noContent().build();
@@ -111,16 +116,19 @@ public class CatalogoController {
 	}
 
 	@PostMapping("/servicios")
+	@PreAuthorize("@permisoEvaluator.puedeCrear('catalogo')")
 	public ResponseEntity<ServicioDetalleDTO> crearServicio(@Valid @RequestBody ServicioRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED).body(servicioService.crear(request));
 	}
 
 	@PutMapping("/servicios/{id}")
+	@PreAuthorize("@permisoEvaluator.puedeActualizar('catalogo')")
 	public ServicioDetalleDTO actualizarServicio(@PathVariable Long id, @Valid @RequestBody ServicioRequest request) {
 		return servicioService.actualizar(id, request);
 	}
 
 	@DeleteMapping("/servicios/{id}")
+	@PreAuthorize("@permisoEvaluator.puedeEliminar('catalogo')")
 	public ResponseEntity<Void> eliminarServicio(@PathVariable Long id) {
 		servicioService.eliminar(id);
 		return ResponseEntity.noContent().build();

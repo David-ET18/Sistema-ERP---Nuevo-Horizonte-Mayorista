@@ -13,12 +13,22 @@ interface ProtectedRouteProps {
 /**
  * Primera barrera: exige sesion activa.
  * El bloqueo por permiso se hace mas abajo, con `<PermisoRequerido>`.
+ *
+ * La sesion vive solo en una cookie httpOnly (ver authStore.cargarSesion):
+ * mientras esa llamada inicial a /auth/me esta en curso no sabemos todavia
+ * si hay sesion o no, asi que no hay que redirigir a /login de una vez
+ * (se veria un parpadeo al recargar la pagina estando logueado).
  */
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const token = useAuthStore((state) => state.token)
+  const user = useAuthStore((state) => state.user)
+  const cargandoSesion = useAuthStore((state) => state.cargandoSesion)
   const location = useLocation()
 
-  if (!token) {
+  if (cargandoSesion) {
+    return null
+  }
+
+  if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 

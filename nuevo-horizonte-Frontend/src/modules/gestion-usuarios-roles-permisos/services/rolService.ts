@@ -1,6 +1,13 @@
 import { http } from '@/api/http'
 import { ENDPOINTS } from './endpoints'
-import type { Rol, RolRequest } from '../types'
+import type { Modulo, Rol, RolRequest } from '../types'
+
+/** Catálogo real de módulos (ver GET /api/modulos en el backend): es la fuente
+ * de verdad que alimenta la matriz de permisos del formulario de roles. */
+export async function listarModulos(): Promise<Modulo[]> {
+  const { data } = await http.get<Modulo[]>(ENDPOINTS.modulos.base)
+  return data
+}
 
 export async function listarRoles(): Promise<Rol[]> {
   const { data } = await http.get<Rol[]>(ENDPOINTS.roles.base)

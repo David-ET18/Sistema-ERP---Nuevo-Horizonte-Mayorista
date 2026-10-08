@@ -6,7 +6,6 @@ public record RolDTO(
 		Long id,
 		String nombre,
 		String descripcion,
-		String tipoBase,
 		String color,
 		boolean esSistema,
 		boolean activo,

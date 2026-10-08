@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,6 +44,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/tarifas")
+@PreAuthorize("@permisoEvaluator.puedeLeer('tarifas')")
 public class TarifaController {
 
 	private static final Set<String> EXTENSIONES_PERMITIDAS = Set.of("pdf", "xls", "xlsx", "csv");
@@ -104,22 +106,26 @@ public class TarifaController {
 	}
 
 	@PostMapping
+	@PreAuthorize("@permisoEvaluator.puedeCrear('tarifas')")
 	public ResponseEntity<TarifaDetalleDTO> crear(@Valid @RequestBody TarifaRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED).body(tarifaService.crear(request));
 	}
 
 	@PutMapping("/{id}")
+	@PreAuthorize("@permisoEvaluator.puedeActualizar('tarifas')")
 	public TarifaDetalleDTO actualizar(@PathVariable Long id, @Valid @RequestBody TarifaRequest request) {
 		return tarifaService.actualizar(id, request);
 	}
 
 	@DeleteMapping("/{id}")
+	@PreAuthorize("@permisoEvaluator.puedeEliminar('tarifas')")
 	public ResponseEntity<Void> eliminar(@PathVariable Long id) {
 		tarifaService.eliminar(id);
 		return ResponseEntity.noContent().build();
 	}
 
 	@PostMapping(value = "/{id}/archivo-respaldo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PreAuthorize("@permisoEvaluator.puedeActualizar('tarifas')")
 	public Map<String, String> subirArchivoRespaldo(@PathVariable Long id,
 			@RequestParam("archivo") MultipartFile archivo) throws IOException {
 		if (archivo.isEmpty()) {

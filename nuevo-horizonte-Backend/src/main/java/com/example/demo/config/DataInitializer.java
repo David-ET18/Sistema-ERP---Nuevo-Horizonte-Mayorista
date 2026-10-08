@@ -1,5 +1,6 @@
 package com.example.demo.config;
 
+import com.example.demo.modulos.ModuloCatalogo;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.entity.Rol;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.entity.RolPermiso;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.entity.Usuario;
@@ -54,27 +55,31 @@ public class DataInitializer implements CommandLineRunner {
 	public void run(String... args) {
 		sembrarRol("Area de Producto", "Gestion del inventario y catalogo de productos",
 				"#f59e0b",
-				permisos(leer("reportes"), leer("notificaciones"), lcr("documentos"),
-						lcr("catalogo"), lcr("proveedores"), lcr("tarifas"), lcr("paquetes"), lcr("promociones")));
+				permisos(leer(ModuloCatalogo.REPORTES), leer(ModuloCatalogo.NOTIFICACIONES), lcr(ModuloCatalogo.DOCUMENTOS),
+						lcr(ModuloCatalogo.CATALOGO), lcr(ModuloCatalogo.PROVEEDORES), lcr(ModuloCatalogo.TARIFAS),
+						lcr(ModuloCatalogo.PAQUETES), lcr(ModuloCatalogo.PROMOCIONES)));
 		sembrarRol("Area de Ventas", "Gestion de clientes, pedidos y facturacion",
 				"#10b981",
-				permisos(leer("reportes"), leer("notificaciones"), lcr("documentos"),
-						lcr("cotizaciones"), lcr("ventas"), lcr("reservas"), lcr("pagos"),
-						lcr("gestion-agencias"), leer("seguimiento-comercial"), lcr("marketing")));
+				permisos(leer(ModuloCatalogo.REPORTES), leer(ModuloCatalogo.NOTIFICACIONES), lcr(ModuloCatalogo.DOCUMENTOS),
+						lcr(ModuloCatalogo.COTIZACIONES), lcr(ModuloCatalogo.VENTAS), lcr(ModuloCatalogo.RESERVAS),
+						lcr(ModuloCatalogo.PAGOS), lcr(ModuloCatalogo.GESTION_AGENCIAS),
+						leer(ModuloCatalogo.SEGUIMIENTO_COMERCIAL), lcr(ModuloCatalogo.MARKETING)));
 		sembrarRol("Gerencia", "Reportes, indicadores y supervision general",
 				"#6366f1",
-				permisos(lcr("notificaciones"), lcr("reportes"), lcr("documentos"),
-						lcr("gestion-usuarios-roles-permisos"), lcr("catalogo"),
-						lcr("proveedores"), lcr("tarifas"), lcr("paquetes"), lcr("promociones"),
-						lcr("cotizaciones"), lcr("ventas"), lcr("reservas"), lcr("pagos"),
-						lcr("gestion-agencias"), lcr("seguimiento-comercial"), lcr("marketing")));
+				permisos(lcr(ModuloCatalogo.NOTIFICACIONES), lcr(ModuloCatalogo.REPORTES), lcr(ModuloCatalogo.DOCUMENTOS),
+						lcr(ModuloCatalogo.GESTION_USUARIOS_ROLES_PERMISOS), lcr(ModuloCatalogo.CATALOGO),
+						lcr(ModuloCatalogo.PROVEEDORES), lcr(ModuloCatalogo.TARIFAS), lcr(ModuloCatalogo.PAQUETES),
+						lcr(ModuloCatalogo.PROMOCIONES), lcr(ModuloCatalogo.COTIZACIONES), lcr(ModuloCatalogo.VENTAS),
+						lcr(ModuloCatalogo.RESERVAS), lcr(ModuloCatalogo.PAGOS), lcr(ModuloCatalogo.GESTION_AGENCIAS),
+						lcr(ModuloCatalogo.SEGUIMIENTO_COMERCIAL), lcr(ModuloCatalogo.MARKETING)));
 		sembrarRol("Administración", "Acceso total a la administracion del sistema",
 				"#2563eb",
-				permisos(crud("notificaciones"), crud("reportes"), crud("documentos"),
-						crud("gestion-usuarios-roles-permisos"), crud("catalogo"),
-						crud("proveedores"), crud("tarifas"), crud("paquetes"), crud("promociones"),
-						crud("cotizaciones"), crud("ventas"), crud("reservas"), crud("pagos"),
-						crud("gestion-agencias"), crud("seguimiento-comercial"), crud("marketing")));
+				permisos(crud(ModuloCatalogo.NOTIFICACIONES), crud(ModuloCatalogo.REPORTES), crud(ModuloCatalogo.DOCUMENTOS),
+						crud(ModuloCatalogo.GESTION_USUARIOS_ROLES_PERMISOS), crud(ModuloCatalogo.CATALOGO),
+						crud(ModuloCatalogo.PROVEEDORES), crud(ModuloCatalogo.TARIFAS), crud(ModuloCatalogo.PAQUETES),
+						crud(ModuloCatalogo.PROMOCIONES), crud(ModuloCatalogo.COTIZACIONES), crud(ModuloCatalogo.VENTAS),
+						crud(ModuloCatalogo.RESERVAS), crud(ModuloCatalogo.PAGOS), crud(ModuloCatalogo.GESTION_AGENCIAS),
+						crud(ModuloCatalogo.SEGUIMIENTO_COMERCIAL), crud(ModuloCatalogo.MARKETING)));
 
 		sembrarUsuario("ADM", "adm@nuevohorizonte.com", "Administración");
 		sembrarUsuario("GRT", "grt@nuevohorizonte.com", "Gerencia");
@@ -94,7 +99,6 @@ public class DataInitializer implements CommandLineRunner {
 		if (rol.getColor() == null || rol.getColor().isBlank() || rol.getId() == null) {
 			rol.setColor(color);
 		}
-		rol.setTipoBase("system");
 		rol.setEsSistema(true);
 		rol.setActivo(true);
 		rol.setFechaActualizacion(LocalDateTime.now());

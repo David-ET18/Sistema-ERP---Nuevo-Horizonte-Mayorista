@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 
 import { extractErrorMessage } from '@/api/http'
 import SuccessOverlay from '@/components/SuccessOverlay'
@@ -10,8 +10,8 @@ import ForgotPasswordModal from '../components/ForgotPasswordModal'
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const [startedAuthenticated] = useState(() => Boolean(useAuthStore.getState().token))
-  const token = useAuthStore((state) => state.token)
+  const user = useAuthStore((state) => state.user)
+  const cargandoSesion = useAuthStore((state) => state.cargandoSesion)
   const login = useAuthStore((state) => state.login)
 
   const [email, setEmail] = useState('')
@@ -21,10 +21,6 @@ export default function LoginPage() {
   const [success, setSuccess] = useState(false)
   const [welcome, setWelcome] = useState('')
   const [forgotOpen, setForgotOpen] = useState(false)
-
-  if (token && startedAuthenticated) {
-    return <Navigate to="/" replace />
-  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -61,6 +57,19 @@ export default function LoginPage() {
         onFinish={() => navigate('/', { replace: true })}
       />
     )
+  }
+
+  // Si ya hay sesion activa (se entro a /login a mano estando logueado) se
+  // redirige directo, sin pasar por el overlay de bienvenida de arriba.
+  //
+  // El "!loading" es necesario: login() deja el usuario en el store global
+  // (useAuthStore) antes de que handleSubmit llegue a su propio setSuccess,
+  // y como este componente esta suscrito a ese store, ese cambio dispara un
+  // re-render intermedio con user ya presente pero success todavia en false.
+  // Sin este resguardo, ese render de paso caia aqui y mandaba derecho a "/"
+  // sin pasar nunca por el check de exito ni por SuccessOverlay.
+  if (!cargandoSesion && user && !loading) {
+    return <Navigate to="/" replace />
   }
 
   return (
@@ -128,15 +137,6 @@ export default function LoginPage() {
               >
                 Recuperar acceso
               </button>
-            </p>
-            <p className="mt-3 text-[13px] text-gray-500">
-              ¿No tienes cuenta?{' '}
-              <Link
-                to="/register"
-                className="font-medium text-blue-700 hover:underline"
-              >
-                Regístrate aquí
-              </Link>
             </p>
           </footer>
         </form>

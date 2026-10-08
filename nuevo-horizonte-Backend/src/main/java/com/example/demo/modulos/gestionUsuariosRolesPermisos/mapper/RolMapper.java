@@ -21,7 +21,6 @@ public final class RolMapper {
 				rol.getId(),
 				rol.getNombre(),
 				rol.getDescripcion(),
-				rol.getTipoBase(),
 				rol.getColor(),
 				rol.isEsSistema(),
 				rol.isActivo(),

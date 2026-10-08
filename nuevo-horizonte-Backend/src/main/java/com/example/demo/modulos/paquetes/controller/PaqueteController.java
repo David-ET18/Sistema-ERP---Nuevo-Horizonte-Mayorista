@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,6 +32,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/paquetes")
+@PreAuthorize("@permisoEvaluator.puedeLeer('paquetes')")
 public class PaqueteController {
 
 	private final PaqueteService paqueteService;
@@ -88,16 +90,19 @@ public class PaqueteController {
 	}
 
 	@PostMapping
+	@PreAuthorize("@permisoEvaluator.puedeCrear('paquetes')")
 	public ResponseEntity<PaqueteDetalleDTO> crear(@Valid @RequestBody PaqueteRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED).body(paqueteService.crear(request));
 	}
 
 	@PutMapping("/{id}")
+	@PreAuthorize("@permisoEvaluator.puedeActualizar('paquetes')")
 	public PaqueteDetalleDTO actualizar(@PathVariable Long id, @Valid @RequestBody PaqueteRequest request) {
 		return paqueteService.actualizar(id, request);
 	}
 
 	@DeleteMapping("/{id}")
+	@PreAuthorize("@permisoEvaluator.puedeEliminar('paquetes')")
 	public ResponseEntity<Void> eliminar(@PathVariable Long id) {
 		paqueteService.eliminar(id);
 		return ResponseEntity.noContent().build();

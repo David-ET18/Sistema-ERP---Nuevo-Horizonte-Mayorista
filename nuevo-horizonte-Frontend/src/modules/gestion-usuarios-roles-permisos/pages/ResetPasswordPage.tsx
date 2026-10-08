@@ -10,7 +10,7 @@ import AuthBranding, { AUTH_INPUT_CLASSES } from '../components/AuthBranding'
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token') ?? ''
-  const loggedIn = useAuthStore((state) => state.token)
+  const loggedIn = useAuthStore((state) => state.user)
 
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')

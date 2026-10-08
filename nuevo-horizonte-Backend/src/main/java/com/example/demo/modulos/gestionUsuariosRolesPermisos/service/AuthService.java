@@ -7,7 +7,6 @@ import com.example.demo.modulos.gestionUsuariosRolesPermisos.dto.LoginRequest;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.dto.LoginResponse;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.dto.MessageResponse;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.dto.PerfilUpdateRequest;
-import com.example.demo.modulos.gestionUsuariosRolesPermisos.dto.RegisterRequest;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.dto.UsuarioDTO;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.entity.HistorialPassword;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.entity.Usuario;
@@ -59,28 +58,6 @@ public class AuthService {
 				.toList();
 
 		String token = jwtService.generateToken(usuario, roles);
-		return new LoginResponse(token, UsuarioMapper.toDTO(usuario));
-	}
-
-	@Transactional
-	public LoginResponse register(RegisterRequest request) {
-		if (usuarioRepository.existsByUsername(request.username())) {
-			throw new BusinessException("El username ya esta en uso");
-		}
-		if (request.email() != null && !request.email().isBlank()
-				&& usuarioRepository.existsByEmail(request.email())) {
-			throw new BusinessException("El email ya esta en uso");
-		}
-
-		Usuario usuario = new Usuario();
-		usuario.setUsername(request.username());
-		usuario.setPasswordHash(passwordEncoder.encode(request.password()));
-		usuario.setEmail(request.email());
-		usuario.setActivo(true);
-		usuario.setFechaCreacion(LocalDateTime.now());
-		usuarioRepository.save(usuario);
-
-		String token = jwtService.generateToken(usuario, List.of());
 		return new LoginResponse(token, UsuarioMapper.toDTO(usuario));
 	}
 

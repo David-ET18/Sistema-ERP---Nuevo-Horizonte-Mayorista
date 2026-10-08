@@ -29,29 +29,31 @@ public class RolController {
 	}
 
 	@GetMapping
+	@PreAuthorize("@permisoEvaluator.puedeLeer('gestion-usuarios-roles-permisos')")
 	public ResponseEntity<List<RolDTO>> listar() {
 		return ResponseEntity.ok(rolService.listar());
 	}
 
 	@GetMapping("/{id}")
+	@PreAuthorize("@permisoEvaluator.puedeLeer('gestion-usuarios-roles-permisos')")
 	public ResponseEntity<RolDTO> obtener(@PathVariable Long id) {
 		return ResponseEntity.ok(rolService.obtener(id));
 	}
 
 	@PostMapping
-	@PreAuthorize("hasAnyAuthority('Administración', 'Gerencia')")
+	@PreAuthorize("@permisoEvaluator.puedeCrear('gestion-usuarios-roles-permisos')")
 	public ResponseEntity<RolDTO> crear(@Valid @RequestBody RolRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED).body(rolService.crear(request));
 	}
 
 	@PutMapping("/{id}")
-	@PreAuthorize("hasAnyAuthority('Administración', 'Gerencia')")
+	@PreAuthorize("@permisoEvaluator.puedeActualizar('gestion-usuarios-roles-permisos')")
 	public ResponseEntity<RolDTO> actualizar(@PathVariable Long id, @Valid @RequestBody RolRequest request) {
 		return ResponseEntity.ok(rolService.actualizar(id, request));
 	}
 
 	@DeleteMapping("/{id}")
-	@PreAuthorize("hasAnyAuthority('Administración', 'Gerencia')")
+	@PreAuthorize("@permisoEvaluator.puedeEliminar('gestion-usuarios-roles-permisos')")
 	public ResponseEntity<Void> eliminar(@PathVariable Long id) {
 		rolService.eliminar(id);
 		return ResponseEntity.noContent().build();

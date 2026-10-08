@@ -2,16 +2,6 @@ import { MODULOS, RUTA_PERFIL } from '@/config/modulos'
 import { useAuthStore } from '../store/authStore'
 import type { Permiso } from '../types'
 
-export function userHasRole(userRole: string): boolean {
-  const user = useAuthStore.getState().user
-  if (!user) return false
-  return (user.roles ?? []).some((rol) => rol?.nombre === userRole)
-}
-
-export function userCanManage(): boolean {
-  return userHasRole('Administración') || userHasRole('Gerencia')
-}
-
 function canModule(modulo: string, check: (permiso: Permiso) => boolean): boolean {
   const user = useAuthStore.getState().user
   if (!user) return false
@@ -36,6 +26,23 @@ export function canUpdateModule(modulo: string): boolean {
 
 export function canDeleteModule(modulo: string): boolean {
   return canModule(modulo, (permiso) => Boolean(permiso?.puedeEliminar))
+}
+
+const MODULO_SEGURIDAD = 'gestion-usuarios-roles-permisos'
+
+/**
+ * Puede crear, editar o eliminar roles/usuarios. Antes esto dependia de un
+ * allowlist de nombres de rol hardcodeado ('Administración', 'Gerencia'),
+ * desincronizado del backend (que ya usa permisos por modulo para los GET).
+ * Ahora usa el mismo permiso de escritura sobre el modulo de seguridad que
+ * exige el backend en POST/PUT/DELETE de /api/roles y /api/usuarios.
+ */
+export function userCanManage(): boolean {
+  return (
+    canCreateModule(MODULO_SEGURIDAD) ||
+    canUpdateModule(MODULO_SEGURIDAD) ||
+    canDeleteModule(MODULO_SEGURIDAD)
+  )
 }
 
 /**

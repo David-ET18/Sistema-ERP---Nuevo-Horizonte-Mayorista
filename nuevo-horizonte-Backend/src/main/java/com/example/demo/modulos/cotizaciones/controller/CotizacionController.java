@@ -9,6 +9,7 @@ import com.example.demo.modulos.cotizaciones.dto.KpiCotizacionesDTO;
 import com.example.demo.modulos.tarifas.dto.TarifaDTO;
 import com.example.demo.modulos.cotizaciones.service.CotizacionService;
 import org.springframework.data.domain.Page;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,6 +26,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/cotizaciones")
+@PreAuthorize("@permisoEvaluator.puedeLeer('cotizaciones')")
 public class CotizacionController {
 
 	private final CotizacionService cotizacionService;
@@ -58,16 +60,19 @@ public class CotizacionController {
 	}
 
 	@PostMapping
+	@PreAuthorize("@permisoEvaluator.puedeCrear('cotizaciones')")
 	public CotizacionDTO crear(@RequestBody CotizacionRequest request) {
 		return cotizacionService.crear(request);
 	}
 
 	@PutMapping("/{id}")
+	@PreAuthorize("@permisoEvaluator.puedeActualizar('cotizaciones')")
 	public CotizacionDTO actualizar(@PathVariable Long id, @RequestBody CotizacionRequest request) {
 		return cotizacionService.actualizar(id, request);
 	}
 
 	@PatchMapping("/{id}/estado")
+	@PreAuthorize("@permisoEvaluator.puedeActualizar('cotizaciones')")
 	public CotizacionDTO cambiarEstado(@PathVariable Long id, @RequestBody CambioEstadoRequest request) {
 		return cotizacionService.cambiarEstado(id, request);
 	}

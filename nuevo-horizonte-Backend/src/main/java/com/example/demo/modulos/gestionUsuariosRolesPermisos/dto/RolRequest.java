@@ -11,7 +11,6 @@ public record RolRequest(
 		String nombre,
 		@Size(max = 200, message = "La descripcion no debe superar 200 caracteres")
 		String descripcion,
-		String tipoBase,
 		String color,
 		Boolean activo,
 		List<PermisoRequest> permisos) {

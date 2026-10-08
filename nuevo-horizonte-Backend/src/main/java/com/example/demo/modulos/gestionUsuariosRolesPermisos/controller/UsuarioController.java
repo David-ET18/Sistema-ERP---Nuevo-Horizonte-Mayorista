@@ -30,30 +30,32 @@ public class UsuarioController {
 	}
 
 	@GetMapping
+	@PreAuthorize("@permisoEvaluator.puedeLeer('gestion-usuarios-roles-permisos')")
 	public ResponseEntity<List<UsuarioDTO>> listar() {
 		return ResponseEntity.ok(usuarioService.listar());
 	}
 
 	@GetMapping("/{id}")
+	@PreAuthorize("@permisoEvaluator.puedeLeer('gestion-usuarios-roles-permisos')")
 	public ResponseEntity<UsuarioDTO> obtener(@PathVariable Long id) {
 		return ResponseEntity.ok(usuarioService.obtener(id));
 	}
 
 	@PostMapping
-	@PreAuthorize("hasAnyAuthority('Administración', 'Gerencia')")
+	@PreAuthorize("@permisoEvaluator.puedeCrear('gestion-usuarios-roles-permisos')")
 	public ResponseEntity<UsuarioDTO> crear(@Valid @RequestBody UsuarioCreateRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.crear(request));
 	}
 
 	@PutMapping("/{id}")
-	@PreAuthorize("hasAnyAuthority('Administración', 'Gerencia')")
+	@PreAuthorize("@permisoEvaluator.puedeActualizar('gestion-usuarios-roles-permisos')")
 	public ResponseEntity<UsuarioDTO> actualizar(@PathVariable Long id,
 			@Valid @RequestBody UsuarioUpdateRequest request) {
 		return ResponseEntity.ok(usuarioService.actualizar(id, request));
 	}
 
 	@DeleteMapping("/{id}")
-	@PreAuthorize("hasAnyAuthority('Administración', 'Gerencia')")
+	@PreAuthorize("@permisoEvaluator.puedeEliminar('gestion-usuarios-roles-permisos')")
 	public ResponseEntity<Void> desactivar(@PathVariable Long id) {
 		usuarioService.desactivar(id);
 		return ResponseEntity.noContent().build();

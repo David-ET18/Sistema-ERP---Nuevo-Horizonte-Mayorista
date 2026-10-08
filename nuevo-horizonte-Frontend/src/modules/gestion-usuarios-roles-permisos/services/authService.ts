@@ -4,27 +4,25 @@ import type {
   CambiarPasswordRequest,
   ForgotPasswordRequest,
   LoginRequest,
-  LoginResponse,
   MessageResponse,
   PerfilUpdateRequest,
-  RegisterRequest,
   ResetPasswordRequest,
   Usuario,
 } from '../types'
 
-export async function login(payload: LoginRequest): Promise<LoginResponse> {
-  const { data } = await http.post<LoginResponse>(ENDPOINTS.auth.login, payload)
+/**
+ * El backend ya no devuelve el token en el cuerpo: lo entrega como cookie
+ * httpOnly (Set-Cookie), invisible para este codigo. Por eso la respuesta es
+ * directamente el usuario, no un { token, usuario }.
+ */
+export async function login(payload: LoginRequest): Promise<Usuario> {
+  const { data } = await http.post<Usuario>(ENDPOINTS.auth.login, payload)
   return data
 }
 
-export async function register(
-  payload: RegisterRequest,
-): Promise<LoginResponse> {
-  const { data } = await http.post<LoginResponse>(
-    ENDPOINTS.auth.register,
-    payload,
-  )
-  return data
+/** Pide al backend que borre la cookie de sesion. */
+export async function logout(): Promise<void> {
+  await http.post(ENDPOINTS.auth.logout)
 }
 
 export async function forgotPassword(

@@ -78,7 +78,7 @@ public final class PaqueteMapper {
 				paquete.getDuracionTexto(),
 				paquete.isDestacado(),
 				paquete.getEstado(),
-				paquete.getAliados(),
+				new LinkedHashSet<>(paquete.getAliados()),
 				paquete.getVuelos().stream().map(PaqueteMapper::toVueloDTO).toList(),
 				paquete.getOpciones().stream().map(PaqueteMapper::toOpcionDTO).toList(),
 				paquete.getFechaCreacion(),

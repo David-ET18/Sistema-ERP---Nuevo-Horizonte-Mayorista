@@ -28,9 +28,6 @@ public class Rol {
 	@Column(name = "descripcion", length = 200)
 	private String descripcion;
 
-	@Column(name = "tipo_base", nullable = false, length = 30)
-	private String tipoBase = "custom";
-
 	@Column(name = "color", length = 7)
 	private String color;
 
@@ -74,14 +71,6 @@ public class Rol {
 
 	public void setDescripcion(String descripcion) {
 		this.descripcion = descripcion;
-	}
-
-	public String getTipoBase() {
-		return tipoBase;
-	}
-
-	public void setTipoBase(String tipoBase) {
-		this.tipoBase = tipoBase;
 	}
 
 	public String getColor() {

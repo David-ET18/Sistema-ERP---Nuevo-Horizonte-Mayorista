@@ -10,6 +10,7 @@ import com.example.demo.modulos.gestionUsuariosRolesPermisos.repository.RolRepos
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.repository.UsuarioRepository;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.NotFoundException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -95,6 +96,10 @@ public class UsuarioService {
 	@Transactional
 	public void desactivar(Long id) {
 		Usuario usuario = obtenerUsuario(id);
+		String usernameAuth = SecurityContextHolder.getContext().getAuthentication().getName();
+		if (usuario.getUsername().equals(usernameAuth)) {
+			throw new BusinessException("No puedes desactivar tu propia cuenta");
+		}
 		usuario.setActivo(false);
 	}
 

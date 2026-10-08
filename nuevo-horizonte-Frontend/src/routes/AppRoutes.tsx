@@ -26,7 +26,6 @@ function SinDesarrollar() {
 }
 
 import LoginPage from '@/modules/gestion-usuarios-roles-permisos/pages/LoginPage'
-import RegisterPage from '@/modules/gestion-usuarios-roles-permisos/pages/RegisterPage'
 import ResetPasswordPage from '@/modules/gestion-usuarios-roles-permisos/pages/ResetPasswordPage'
 import DashboardPage from '@/modules/gestion-usuarios-roles-permisos/pages/DashboardPage'
 import UsuariosPage from '@/modules/gestion-usuarios-roles-permisos/pages/UsuariosPage'
@@ -48,7 +47,6 @@ export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       <Route

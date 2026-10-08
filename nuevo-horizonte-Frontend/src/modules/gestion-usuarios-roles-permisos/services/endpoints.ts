@@ -1,7 +1,7 @@
 export const ENDPOINTS = {
   auth: {
     login: '/auth/login',
-    register: '/auth/register',
+    logout: '/auth/logout',
     recuperarPassword: '/auth/recuperar-password',
     resetPassword: '/auth/reset-password',
     me: '/auth/me',
@@ -14,5 +14,8 @@ export const ENDPOINTS = {
   roles: {
     base: '/roles',
     byId: (id: number) => `/roles/${id}`,
+  },
+  modulos: {
+    base: '/modulos',
   },
 } as const

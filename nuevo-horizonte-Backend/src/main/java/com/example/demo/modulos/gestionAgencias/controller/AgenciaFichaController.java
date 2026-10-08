@@ -5,6 +5,7 @@ import com.example.demo.modulos.gestionAgencias.dto.HistorialComercialItemDTO;
 import com.example.demo.modulos.gestionAgencias.dto.NotaSeguimientoDTO;
 import com.example.demo.modulos.gestionAgencias.dto.ResumenComercialDTO;
 import com.example.demo.modulos.gestionAgencias.service.AgenciaFichaService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +22,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/gestion-agencias/ficha")
+@PreAuthorize("@permisoEvaluator.puedeLeer('gestion-agencias')")
 public class AgenciaFichaController {
 
 	private final AgenciaFichaService agenciaFichaService;

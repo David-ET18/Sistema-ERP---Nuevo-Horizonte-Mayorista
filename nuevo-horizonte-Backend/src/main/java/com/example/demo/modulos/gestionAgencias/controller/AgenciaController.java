@@ -12,6 +12,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,6 +37,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/gestion-agencias")
+@PreAuthorize("@permisoEvaluator.puedeLeer('gestion-agencias')")
 public class AgenciaController {
 
 	private static final Set<String> EXTENSIONES_PERMITIDAS =
@@ -82,22 +84,26 @@ public class AgenciaController {
 	}
 
 	@PostMapping
+	@PreAuthorize("@permisoEvaluator.puedeCrear('gestion-agencias')")
 	public ResponseEntity<AgenciaDetalleDTO> crear(@Valid @RequestBody AgenciaRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED).body(agenciaService.crear(request));
 	}
 
 	@PutMapping("/{id}")
+	@PreAuthorize("@permisoEvaluator.puedeActualizar('gestion-agencias')")
 	public AgenciaDetalleDTO actualizar(@PathVariable Long id, @Valid @RequestBody AgenciaRequest request) {
 		return agenciaService.actualizar(id, request);
 	}
 
 	@DeleteMapping("/{id}")
+	@PreAuthorize("@permisoEvaluator.puedeEliminar('gestion-agencias')")
 	public ResponseEntity<Void> eliminar(@PathVariable Long id) {
 		agenciaService.eliminar(id);
 		return ResponseEntity.noContent().build();
 	}
 
 	@PostMapping(value = "/{id}/logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PreAuthorize("@permisoEvaluator.puedeActualizar('gestion-agencias')")
 	public Map<String, String> subirLogo(@PathVariable Long id, @RequestParam("archivo") MultipartFile archivo)
 			throws IOException {
 		if (archivo.isEmpty()) {
@@ -122,6 +128,7 @@ public class AgenciaController {
 	}
 
 	@GetMapping("/logo/{nombreArchivo}")
+	@PreAuthorize("permitAll()")
 	public org.springframework.core.io.Resource verLogo(@PathVariable String nombreArchivo) throws IOException {
 		Path ruta = CARPETA_LOGOS.resolve(nombreArchivo).normalize();
 		if (!ruta.startsWith(CARPETA_LOGOS.normalize()) || !Files.exists(ruta)) {

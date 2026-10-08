@@ -12,6 +12,7 @@ import com.example.demo.modulos.ventas.dto.VentaRequest;
 import com.example.demo.modulos.ventas.service.VentaService;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -30,6 +31,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/ventas")
+@PreAuthorize("@permisoEvaluator.puedeLeer('ventas')")
 public class VentaController {
 
 	private final VentaService ventaService;
@@ -63,22 +65,26 @@ public class VentaController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
+	@PreAuthorize("@permisoEvaluator.puedeCrear('ventas')")
 	public VentaDTO crear(@RequestBody VentaRequest request) {
 		return ventaService.crear(request);
 	}
 
 	@PutMapping("/{id}")
+	@PreAuthorize("@permisoEvaluator.puedeActualizar('ventas')")
 	public VentaDTO actualizar(@PathVariable Long id, @RequestBody VentaRequest request) {
 		return ventaService.actualizar(id, request);
 	}
 
 	@PatchMapping("/{id}/estado")
+	@PreAuthorize("@permisoEvaluator.puedeActualizar('ventas')")
 	public VentaDTO cambiarEstado(@PathVariable Long id, @RequestBody CambioEstadoVentaRequest request) {
 		return ventaService.cambiarEstado(id, request);
 	}
 
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
+	@PreAuthorize("@permisoEvaluator.puedeEliminar('ventas')")
 	public void eliminar(@PathVariable Long id) {
 		ventaService.eliminar(id);
 	}
