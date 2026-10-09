@@ -28,9 +28,10 @@ public class ResendEmailService implements EmailService {
 	private static final Logger log = LoggerFactory.getLogger(ResendEmailService.class);
 	private static final URI RESEND_URL = URI.create("https://api.resend.com/emails");
 
-	private final HttpClient httpClient = HttpClient.newBuilder()
-			.connectTimeout(Duration.ofSeconds(10))
-			.build();
+	// Se crea perezosamente (no en el constructor): si algun entorno no puede
+	// abrir el socket/selector que HttpClient necesita, eso solo rompe el
+	// envio de correos (se captura abajo), no el arranque entero de la app.
+	private volatile HttpClient httpClient;
 	private final ObjectMapper objectMapper;
 
 	@Value("${app.resend.api-key}")
@@ -63,7 +64,7 @@ public class ResendEmailService implements EmailService {
 					.POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
 					.build();
 
-			HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+			HttpResponse<String> response = cliente().send(request, HttpResponse.BodyHandlers.ofString());
 			if (response.statusCode() >= 200 && response.statusCode() < 300) {
 				log.info("Correo enviado a {} via Resend", destinatario);
 			}
@@ -72,12 +73,26 @@ public class ResendEmailService implements EmailService {
 						response.body());
 			}
 		}
-		catch (IOException ex) {
+		catch (IOException | RuntimeException ex) {
 			log.error("No se pudo enviar el correo a {} via Resend: {}", destinatario, ex.getMessage());
 		}
 		catch (InterruptedException ex) {
 			Thread.currentThread().interrupt();
 			log.error("Envio de correo a {} via Resend interrumpido", destinatario);
 		}
+	}
+
+	private HttpClient cliente() {
+		HttpClient actual = httpClient;
+		if (actual == null) {
+			synchronized (this) {
+				actual = httpClient;
+				if (actual == null) {
+					actual = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+					httpClient = actual;
+				}
+			}
+		}
+		return actual;
 	}
 }
