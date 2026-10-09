@@ -4,8 +4,9 @@ import { Navigate, useNavigate } from 'react-router-dom'
 
 import { extractErrorMessage } from '@/api/http'
 import SuccessOverlay from '@/components/SuccessOverlay'
+import BrandLogo from '@/components/BrandLogo'
 import { useAuthStore } from '../store/authStore'
-import AuthBranding, { AUTH_INPUT_CLASSES, LocationBox } from '../components/AuthBranding'
+import AuthBranding, { AUTH_INPUT_CLASSES } from '../components/AuthBranding'
 import ForgotPasswordModal from '../components/ForgotPasswordModal'
 
 export default function LoginPage() {
@@ -78,68 +79,77 @@ export default function LoginPage() {
 
       {/* Panel derecho: formulario */}
       <main className="flex items-center justify-center bg-white p-6">
-        <form
-          className="flex w-full max-w-md flex-col gap-5"
-          onSubmit={handleSubmit}
-        >
-          <header>
-            <h2 className="text-3xl font-bold text-gray-900">Bienvenido</h2>
-            <p className="mt-1 text-sm text-gray-500">
-              Ingresa tus credenciales para acceder
-            </p>
-          </header>
+        <div className="w-full max-w-md">
+          {/* Solo visible en movil/tablet: AuthBranding (con el logo) esta oculto ahi.
+              El logo es blanco, por eso el chip oscuro detras. */}
+          <div className="mb-8 flex justify-center lg:hidden">
+            <div className="flex items-center rounded-xl bg-[#0b1b3a] px-5 py-3">
+              <BrandLogo height={28} />
+            </div>
+          </div>
 
-          <label className="flex flex-col gap-1.5 text-[13px] font-medium text-gray-700">
-            <span>Correo institucional</span>
-            <input
-              type="email"
-              className={AUTH_INPUT_CLASSES}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              placeholder="nombre@nuevohorizonte.pe"
-              required
-            />
-          </label>
+          <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+            <header>
+              <h2 className="text-3xl font-bold text-gray-900">Bienvenido</h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Ingresa tus credenciales para acceder
+              </p>
+            </header>
 
-          <label className="flex flex-col gap-1.5 text-[13px] font-medium text-gray-700">
-            <span>Contraseña</span>
-            <input
-              type="password"
-              className={AUTH_INPUT_CLASSES}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-              placeholder="••••••••"
-              required
-            />
-          </label>
+            <label className="flex flex-col gap-1.5 text-[13px] font-medium text-gray-700">
+              <span>Correo institucional</span>
+              <input
+                type="email"
+                className={AUTH_INPUT_CLASSES}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                placeholder="nombre@nuevohorizonte.pe"
+                required
+              />
+            </label>
 
-          <LocationBox />
+            <label className="flex flex-col gap-1.5 text-[13px] font-medium text-gray-700">
+              <span>Contraseña</span>
+              <input
+                type="password"
+                className={AUTH_INPUT_CLASSES}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                placeholder="••••••••"
+                required
+              />
+            </label>
 
-          {error && <p className="text-[13px] text-red-700">{error}</p>}
+            {error && (
+              <p className="rounded-lg bg-red-50 px-3 py-2.5 text-[13px] text-red-700">
+                {error}
+              </p>
+            )}
 
-          <button
-            type="submit"
-            className="w-full cursor-pointer rounded-lg bg-[#0b1b3a] px-4 py-3 text-sm font-semibold text-white hover:bg-[#12305f] disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={loading}
-          >
-            {loading ? 'Ingresando...' : 'Iniciar Sesión'}
-          </button>
+            <button
+              type="submit"
+              className="w-full cursor-pointer rounded-lg bg-[#0b1b3a] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#12305f] disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={loading}
+            >
+              {loading ? 'Ingresando...' : 'Iniciar sesión'}
+            </button>
 
-          <footer className="text-center">
-            <p className="text-[13px] text-gray-500">
-              ¿Olvidaste tu contraseña?{' '}
-              <button
-                type="button"
-                onClick={() => setForgotOpen(true)}
-                className="cursor-pointer font-medium text-blue-700 hover:underline"
-              >
-                Recuperar acceso
-              </button>
-            </p>
-          </footer>
-        </form>
+            <footer className="text-center">
+              <p className="text-[13px] text-gray-500">
+                ¿Olvidaste tu contraseña?{' '}
+                <button
+                  type="button"
+                  onClick={() => setForgotOpen(true)}
+                  className="cursor-pointer font-medium text-blue-700 hover:underline"
+                >
+                  Recuperar acceso
+                </button>
+              </p>
+            </footer>
+          </form>
+        </div>
       </main>
 
       {forgotOpen && (

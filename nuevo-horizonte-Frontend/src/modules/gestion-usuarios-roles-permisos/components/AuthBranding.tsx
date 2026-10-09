@@ -2,23 +2,6 @@ import type { SVGProps } from 'react'
 
 import BrandLogo from '@/components/BrandLogo'
 
-function MapPinIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.8}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-      <path d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
-    </svg>
-  )
-}
-
 function PackageIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
@@ -71,23 +54,6 @@ function PlaneIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
-function ExternalLinkIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.8}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5" />
-      <path d="M21 3h-5.25M21 3v5.25M21 3l-9.75 9.75" />
-    </svg>
-  )
-}
-
 const SERVICE_CATEGORIES = [
   { label: 'Paquetes', Icon: PackageIcon },
   { label: 'Hoteles', Icon: HotelIcon },
@@ -97,57 +63,41 @@ const SERVICE_CATEGORIES = [
 export const AUTH_INPUT_CLASSES =
   'rounded-lg border-0 bg-gray-100 px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-blue-700 focus:outline-none'
 
-/** Panel izquierdo de marca compartido por Login y Registro. */
+/** Panel izquierdo de marca compartido por Login y Reset de contraseña. */
 export default function AuthBranding() {
   return (
-    <aside className="relative hidden flex-col justify-between overflow-hidden bg-[#0b1b3a] p-10 text-white lg:flex">
-      <div className="bg-[radial-gradient(circle,rgba(255,255,255,0.12)_1px,transparent_1px)] bg-[size:26px_26px] absolute inset-0" />
+    <aside className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-[#0b1b3a] to-[#0d2250] p-10 text-white lg:flex">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:26px_26px]" />
+      <span className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-white/[0.04]" />
+      <span className="pointer-events-none absolute -bottom-24 -left-14 h-64 w-64 rounded-full bg-white/[0.04]" />
 
       <header className="relative flex items-center">
         <BrandLogo height={34} />
       </header>
 
       <section className="relative max-w-md">
-        <BrandLogo height={90} className="opacity-95" />
-        <h1 className="mt-5 text-3xl font-bold leading-tight">
+        <img
+          src="/brand/bienvenida-panel.png"
+          alt=""
+          aria-hidden="true"
+          className="h-44 w-44 object-contain drop-shadow-xl"
+        />
+        <h1 className="mt-6 text-3xl font-bold leading-tight">
           Sistema de Gestión de Productos y Ventas
         </h1>
-        <p className="mt-3 text-sm opacity-80">
-          Gestiona productos, reservas y ventas de viajes.
+        <p className="mt-3 text-sm text-white/70">
+          Gestiona productos, reservas y ventas de viajes desde un solo lugar.
         </p>
       </section>
 
       <footer className="relative flex gap-8">
         {SERVICE_CATEGORIES.map(({ label, Icon }) => (
-          <div key={label} className="flex items-center gap-2 text-[13px] opacity-90">
+          <div key={label} className="flex items-center gap-2 text-[13px] text-white/80">
             <Icon className="h-5 w-5" />
             {label}
           </div>
         ))}
       </footer>
     </aside>
-  )
-}
-
-/** Caja de ubicación institucional compartida. */
-export function LocationBox() {
-  return (
-    <div className="flex items-start justify-between gap-2 rounded-lg bg-gray-50 p-3">
-      <div className="flex items-start gap-2">
-        <MapPinIcon className="mt-0.5 h-5 w-5 shrink-0 text-blue-700" />
-        <div className="text-[13px] leading-snug text-gray-600">
-          Universidad Tecnológica del Perú - Sede Ica
-        </div>
-      </div>
-      <div className="flex shrink-0 items-center gap-2 text-[12px] text-blue-700">
-        <a href="#detalle" className="font-medium hover:underline">
-          Ver detalle
-        </a>
-        <span className="text-gray-300">|</span>
-        <a href="#mapa" className="flex items-center gap-0.5 font-medium hover:underline">
-          Mapa <ExternalLinkIcon className="h-3 w-3" />
-        </a>
-      </div>
-    </div>
   )
 }
