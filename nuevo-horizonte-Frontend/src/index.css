@@ -1,0 +1,191 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Azul corporativo: mismo tono que el menú lateral (SIDEBAR_COLOR) para
+     mantener consistencia de color en toda la aplicación. */
+  --color-brand: #143b72;
+  --color-brand-dark: #0d2a52;
+
+  --font-sans: 'Plus Jakarta Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+  background: var(--color-gray-50);
+}
+
+/* Animación del check de éxito (pantalla de éxito) */
+.success-circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  animation: stroke-anim 0.65s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.success-check {
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: stroke-anim 0.35s cubic-bezier(0.65, 0, 0.45, 1) 750ms forwards;
+}
+
+.success-pop {
+  animation: pop-anim 0.45s cubic-bezier(0.68, -0.55, 0.265, 1.55) 200ms backwards;
+}
+
+@keyframes stroke-anim {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes pop-anim {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+/* Entrada del panel lateral (formularios en modal tipo drawer) */
+.animate-panel-in {
+  animation: panel-in-anim 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes panel-in-anim {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-panel-in {
+    animation: none;
+  }
+}
+
+/* Entrada del toast flotante (esquina superior derecha) */
+.toast-in {
+  animation: toast-in-anim 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes toast-in-anim {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast-in {
+    animation: none;
+  }
+}
+
+/* Entrada de modales (detalle, confirmación): escala suave desde el centro */
+.animate-modal-pop {
+  animation: modal-pop-anim 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modal-pop-anim {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-modal-pop {
+    animation: none;
+  }
+}
+
+/* Badge rojo de notificaciones: pequeño rebote y pulso para llamar la atención. */
+.animate-badge-pop {
+  animation: badge-pop-anim 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55) backwards;
+}
+
+.animate-badge-ping {
+  animation: badge-ping-anim 1.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes badge-pop-anim {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes badge-ping-anim {
+  75%,
+  100% {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-badge-pop {
+    animation: none;
+  }
+  .animate-badge-ping {
+    animation: none;
+    display: none;
+  }
+}
+
+/* Barra de progreso del toast: dura lo mismo que el auto-cierre (3.5s). */
+.toast-progress {
+  animation: toast-progress-anim 3.5s linear forwards;
+}
+
+@keyframes toast-progress-anim {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast-progress {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* Scroll interno del menu lateral: fino, sin barra por defecto */
+.sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+.sidebar-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.34);
+}
