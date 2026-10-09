@@ -32,6 +32,8 @@ import com.example.demo.modulos.tarifas.dto.TarifaDetalleDTO;
 import com.example.demo.modulos.tarifas.dto.TarifaRequest;
 import com.example.demo.modulos.tarifas.entity.Tarifa;
 import com.example.demo.modulos.tarifas.repository.TarifaRepository;
+import com.example.demo.modulos.ventas.repository.VentaRepository;
+import com.example.demo.modulos.cotizaciones.repository.CotizacionDetalleRepository;
 
 @ExtendWith(MockitoExtension.class)
 class TarifaServiceTest {
@@ -51,12 +53,18 @@ class TarifaServiceTest {
 	@Mock
 	private UsuarioRepository usuarioRepository;
 
+	@Mock
+	private VentaRepository ventaRepository;
+
+	@Mock
+	private CotizacionDetalleRepository cotizacionDetalleRepository;
+
 	private TarifaService service;
 
 	@BeforeEach
 	void setUp() {
 		service = new TarifaService(tarifaRepository, proveedorRepository, servicioRepository, destinoRepository,
-				usuarioRepository);
+				usuarioRepository, ventaRepository, cotizacionDetalleRepository);
 		org.mockito.Mockito.lenient().when(proveedorRepository.findById(1L)).thenReturn(Optional.of(proveedor()));
 		org.mockito.Mockito.lenient().when(servicioRepository.findById(2L)).thenReturn(Optional.of(servicio()));
 		org.mockito.Mockito.lenient().when(destinoRepository.findById(3L)).thenReturn(Optional.of(destino()));

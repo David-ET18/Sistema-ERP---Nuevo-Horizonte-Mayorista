@@ -29,7 +29,8 @@ import {
 
 const MODULO = 'catalogo'
 const TAMANOS_PAGINA = [5, 10, 25, 50]
-const FILTROS_INICIALES: FiltrosCatalogo = { q: '', grupo: '', activo: '' }
+/** Por defecto solo se listan los activos; los desactivados quedan en el segmento "Inactivos". */
+const FILTROS_INICIALES: FiltrosCatalogo = { q: '', grupo: '', activo: 'true' }
 
 type IconComponent = (props: SVGProps<SVGSVGElement>) => ReactElement
 
@@ -192,8 +193,13 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
     )
   }
 
-  const hayFiltros = Boolean(filtros.q) || Boolean(filtros.grupo) || Boolean(filtros.activo)
-  const cantidadFiltros = [filtros.q, filtros.grupo, filtros.activo].filter(Boolean).length
+  const hayFiltros =
+    Boolean(filtros.q) || Boolean(filtros.grupo) || filtros.activo !== FILTROS_INICIALES.activo
+  const cantidadFiltros = [
+    filtros.q,
+    filtros.grupo,
+    filtros.activo !== FILTROS_INICIALES.activo ? filtros.activo : '',
+  ].filter(Boolean).length
   const desde = data ? data.number * data.size + 1 : 0
   const hasta = data ? Math.min((data.number + 1) * data.size, data.totalElements) : 0
   const sinResultados = !loading && (data?.content.length ?? 0) === 0

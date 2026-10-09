@@ -1,15 +1,21 @@
+import { useMemo } from 'react'
+
 import { MODULOS, RUTA_PERFIL } from '@/config/modulos'
 import { useAuthStore } from '../store/authStore'
-import type { Permiso } from '../types'
+import type { Permiso, Usuario } from '../types'
 
-function canModule(modulo: string, check: (permiso: Permiso) => boolean): boolean {
-  const user = useAuthStore.getState().user
+/** Logica pura: no lee el store, solo evalua el usuario que se le pase. */
+function tieneAcceso(user: Usuario | null, modulo: string, check: (permiso: Permiso) => boolean): boolean {
   if (!user) return false
   return (user.roles ?? []).some((rol) =>
     (rol?.permisos ?? []).some(
       (permiso) => permiso?.modulo === modulo && check(permiso),
     ),
   )
+}
+
+function canModule(modulo: string, check: (permiso: Permiso) => boolean): boolean {
+  return tieneAcceso(useAuthStore.getState().user, modulo, check)
 }
 
 export function canReadModule(modulo: string): boolean {
@@ -46,12 +52,21 @@ export function userCanManage(): boolean {
 }
 
 /**
- * Primera ruta de menu a la que el usuario tiene permiso de lectura.
+ * Primera ruta de menu a la que el usuario tiene permiso de lectura: se usa
+ * al redireccionar desde la raiz o desde un 403 (si el panel tambien esta
+ * restringido, `navigate('/dashboard')` volveria a mostrar el mismo 403 en
+ * bucle).
  *
- * Se usa al redireccionar desde un 403: si el panel tambien esta restringido,
- * `navigate('/dashboard')` volveria a mostrar el mismo 403 en bucle.
+ * Es un hook (suscrito de verdad al store, no un `getState()` suelto) a
+ * proposito: usado dentro del render para decidir un `<Navigate>`, un simple
+ * snapshot podia ejecutarse en un momento intermedio justo despues del
+ * login, antes de que React terminara de propagar el `user` nuevo, y
+ * devolver el fallback de Perfil con datos todavia no asentados.
  */
-export function primeraRutaAccesible(): string {
-  const permitida = MODULOS.find((m) => m.desarrollado && canReadModule(m.clave))
-  return permitida?.ruta ?? RUTA_PERFIL
+export function usePrimeraRutaAccesible(): string {
+  const user = useAuthStore((state) => state.user)
+  return useMemo(() => {
+    const permitida = MODULOS.find((m) => m.desarrollado && tieneAcceso(user, m.clave, (p) => Boolean(p?.puedeLeer)))
+    return permitida?.ruta ?? RUTA_PERFIL
+  }, [user])
 }

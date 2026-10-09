@@ -7,6 +7,8 @@ import {
   listarUsuarios,
   crearUsuario,
   desactivarUsuario,
+  eliminarUsuarioDefinitivo,
+  anonimizarUsuario,
 } from '../services/usuarioService'
 import { userCanManage } from '../utils/permissions'
 import { formatDate } from '@/utils/format'
@@ -14,7 +16,15 @@ import UsuarioFormModal from '../components/UsuarioFormModal'
 import RoleBadge from '../components/RoleBadge'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import { useToastStore } from '@/store/toastStore'
-import { IconCheckCircle, IconPlus, IconPower, IconSearch, IconUsers } from '@/components/icons'
+import {
+  IconCheckCircle,
+  IconEyeOff,
+  IconPlus,
+  IconPower,
+  IconSearch,
+  IconTrash,
+  IconUsers,
+} from '@/components/icons'
 
 function avatarColor(username: string): string {
   const paleta = ['#2563eb', '#7c3aed', '#059669', '#d97706', '#0ea5e9', '#dc2626', '#6366f1']
@@ -47,6 +57,8 @@ export default function UsuariosPage() {
   const [busqueda, setBusqueda] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [aDesactivar, setADesactivar] = useState<Usuario | null>(null)
+  const [aEliminar, setAEliminar] = useState<Usuario | null>(null)
+  const [aAnonimizar, setAAnonimizar] = useState<Usuario | null>(null)
   const canManage = userCanManage()
   const toast = useToastStore((s) => s.show)
 
@@ -103,6 +115,32 @@ export default function UsuariosPage() {
       await load()
       toast(`Usuario "${usuario.username}" reactivado`, 'success')
     } catch (err) {
+      toast(extractErrorMessage(err), 'error')
+    }
+  }
+
+  async function confirmarAnonimizar() {
+    if (!aAnonimizar) return
+    try {
+      await anonimizarUsuario(aAnonimizar.id)
+      setAAnonimizar(null)
+      await load()
+      toast(`Usuario "${aAnonimizar.username}" anonimizado`, 'success')
+    } catch (err) {
+      setAAnonimizar(null)
+      toast(extractErrorMessage(err), 'error')
+    }
+  }
+
+  async function confirmarEliminarDefinitivo() {
+    if (!aEliminar) return
+    try {
+      await eliminarUsuarioDefinitivo(aEliminar.id)
+      setAEliminar(null)
+      await load()
+      toast(`Usuario "${aEliminar.username}" eliminado definitivamente`, 'success')
+    } catch (err) {
+      setAEliminar(null)
       toast(extractErrorMessage(err), 'error')
     }
   }
@@ -225,20 +263,28 @@ export default function UsuariosPage() {
                     <td className="px-4 py-3.5 text-center">
                       <span
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${
-                          usuario.activo
-                            ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/15'
-                            : 'bg-gray-100 text-gray-500 ring-gray-400/15'
+                          usuario.anonimizado
+                            ? 'bg-gray-100 text-gray-400 ring-gray-300/40'
+                            : usuario.activo
+                              ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/15'
+                              : 'bg-gray-100 text-gray-500 ring-gray-400/15'
                         }`}
                       >
-                        <span className={`h-1.5 w-1.5 rounded-full ${usuario.activo ? 'bg-emerald-500' : 'bg-gray-400'}`} />
-                        {usuario.activo ? 'Activo' : 'Inactivo'}
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            usuario.anonimizado ? 'bg-gray-300' : usuario.activo ? 'bg-emerald-500' : 'bg-gray-400'
+                          }`}
+                        />
+                        {usuario.anonimizado ? 'Anonimizado' : usuario.activo ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
                     <td className="px-4 py-3.5 text-[13px] text-gray-500">{formatDate(usuario.fechaCreacion)}</td>
                     {canManage && (
                       <td className="px-4 py-3.5">
                         <div className="flex items-center justify-center">
-                          {usuario.activo ? (
+                          {usuario.anonimizado ? (
+                            <span className="text-[12px] text-gray-400">Sin acciones</span>
+                          ) : usuario.activo ? (
                             <button
                               type="button"
                               className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
@@ -249,15 +295,35 @@ export default function UsuariosPage() {
                               <IconPower className="h-4 w-4" />
                             </button>
                           ) : (
-                            <button
-                              type="button"
-                              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-emerald-50 hover:text-emerald-600"
-                              onClick={() => reactivar(usuario)}
-                              aria-label={`Reactivar ${usuario.username}`}
-                              title="Reactivar"
-                            >
-                              <IconCheckCircle className="h-4 w-4" />
-                            </button>
+                            <>
+                              <button
+                                type="button"
+                                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-emerald-50 hover:text-emerald-600"
+                                onClick={() => reactivar(usuario)}
+                                aria-label={`Reactivar ${usuario.username}`}
+                                title="Reactivar"
+                              >
+                                <IconCheckCircle className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                className="ml-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                                onClick={() => setAAnonimizar(usuario)}
+                                aria-label={`Anonimizar ${usuario.username}`}
+                                title="Anonimizar"
+                              >
+                                <IconEyeOff className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                className="ml-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                                onClick={() => setAEliminar(usuario)}
+                                aria-label={`Eliminar definitivamente ${usuario.username}`}
+                                title="Eliminar definitivamente"
+                              >
+                                <IconTrash className="h-4 w-4" />
+                              </button>
+                            </>
                           )}
                         </div>
                       </td>
@@ -322,6 +388,34 @@ export default function UsuariosPage() {
         confirmLabel="Desactivar"
         onConfirm={confirmarDesactivar}
         onCancel={() => setADesactivar(null)}
+      />
+
+      <ConfirmDialog
+        open={aAnonimizar !== null}
+        tono="danger"
+        title="Anonimizar usuario"
+        description={
+          aAnonimizar
+            ? `¿Anonimizar a "${aAnonimizar.username}"? Su nombre de usuario y correo se reemplazan por un valor genérico y no podrá volver a iniciar sesión. Su historial de ventas y cotizaciones se conserva, pero ya no se podrá identificar quién fue. Esta acción no se puede deshacer.`
+            : ''
+        }
+        confirmLabel="Anonimizar"
+        onConfirm={confirmarAnonimizar}
+        onCancel={() => setAAnonimizar(null)}
+      />
+
+      <ConfirmDialog
+        open={aEliminar !== null}
+        tono="danger"
+        title="Eliminar usuario definitivamente"
+        description={
+          aEliminar
+            ? `¿Eliminar a "${aEliminar.username}" para siempre? Esta acción no se puede deshacer. Si tiene ventas, cotizaciones u otro historial asociado, no se podrá eliminar y deberá permanecer desactivado.`
+            : ''
+        }
+        confirmLabel="Eliminar definitivamente"
+        onConfirm={confirmarEliminarDefinitivo}
+        onCancel={() => setAEliminar(null)}
       />
     </section>
   )

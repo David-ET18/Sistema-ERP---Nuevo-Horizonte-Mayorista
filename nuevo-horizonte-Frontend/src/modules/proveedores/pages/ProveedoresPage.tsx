@@ -9,6 +9,7 @@ import type {
   ProveedorLista,
 } from '../types'
 import {
+  activarProveedor,
   detalleProveedor,
   eliminarProveedor,
   kpisProveedores,
@@ -31,17 +32,18 @@ import {
   IconChevronRight,
   IconCheckCircle,
   IconPencil,
+  IconPower,
   IconSearch,
-  IconTrash,
   IconUsers,
 } from '@/components/icons'
 
 const MODULO = 'proveedores'
 
+/** Por defecto solo se listan los proveedores activos; los desactivados quedan en una lista aparte (filtro "Inactivo"). */
 const FILTROS_INICIALES: FiltrosProveedores = {
   q: '',
   tipoProveedor: '',
-  activo: '',
+  activo: 'true',
   destinoId: '',
 }
 
@@ -113,7 +115,7 @@ export default function ProveedoresPage() {
   }
 
   async function eliminar(id: number, razonSocial: string) {
-    if (!window.confirm(`¿Eliminar el proveedor ${razonSocial}?`)) return
+    if (!window.confirm(`¿Desactivar el proveedor ${razonSocial}? Sus tarifas e historial no se eliminan.`)) return
     try {
       await eliminarProveedor(id)
       recargar(true)
@@ -122,8 +124,20 @@ export default function ProveedoresPage() {
     }
   }
 
+  async function reactivar(id: number) {
+    try {
+      await activarProveedor(id)
+      recargar(true)
+    } catch (err) {
+      setError(extractErrorMessage(err))
+    }
+  }
+
   const hayFiltros =
-    Boolean(filtros.q) || Boolean(filtros.tipoProveedor) || Boolean(filtros.activo) || Boolean(filtros.destinoId)
+    Boolean(filtros.q) ||
+    Boolean(filtros.tipoProveedor) ||
+    filtros.activo !== FILTROS_INICIALES.activo ||
+    Boolean(filtros.destinoId)
 
   const desde = data ? data.number * data.size + 1 : 0
   const hasta = data ? Math.min((data.number + 1) * data.size, data.totalElements) : 0
@@ -211,9 +225,9 @@ export default function ProveedoresPage() {
             aplicar()
           }}
         >
-          <option value="">Estado</option>
-          <option value="true">Activo</option>
-          <option value="false">Inactivo</option>
+          <option value="true">Activos</option>
+          <option value="false">Desactivados</option>
+          <option value="">Todos</option>
         </select>
 
         <select
@@ -325,16 +339,27 @@ export default function ProveedoresPage() {
                             <IconPencil />
                           </button>
                         )}
-                        {puedeEliminar && (
+                        {puedeEliminar && (p.activo ? (
                           <button
                             type="button"
                             className="cursor-pointer rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"
                             onClick={() => eliminar(p.id, p.razonSocial)}
-                            aria-label="Eliminar"
+                            aria-label={`Desactivar ${p.razonSocial}`}
+                            title="Desactivar"
                           >
-                            <IconTrash />
+                            <IconPower />
                           </button>
-                        )}
+                        ) : (
+                          <button
+                            type="button"
+                            className="cursor-pointer rounded-lg p-2 text-gray-400 hover:bg-emerald-50 hover:text-emerald-600"
+                            onClick={() => reactivar(p.id)}
+                            aria-label={`Reactivar ${p.razonSocial}`}
+                            title="Reactivar"
+                          >
+                            <IconCheckCircle />
+                          </button>
+                        ))}
                       </div>
                     </td>
                   </tr>

@@ -37,7 +37,7 @@ import {
   IconPencil,
   IconPlus,
   IconSearch,
-  IconTrash,
+  IconX,
 } from '@/components/icons'
 
 const FILTROS_INICIALES: FiltrosVentas = {
@@ -137,7 +137,7 @@ export default function VentasPage() {
   }
 
   async function eliminar(id: number, numero: string) {
-    if (!window.confirm(`¿Eliminar la venta ${numero}?`)) return
+    if (!window.confirm(`¿Anular la venta ${numero}? Queda registrada como anulada, no se borra del historial.`)) return
     try {
       await eliminarVenta(id)
       recargar(true)
@@ -365,14 +365,15 @@ export default function VentasPage() {
                             ))}
                           </select>
                         )}
-                        {puedeEliminar && (
+                        {puedeEliminar && v.estado !== 'ANULADA' && (
                           <button
                             type="button"
                             className="cursor-pointer rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"
                             onClick={() => eliminar(v.id, v.numero)}
-                            aria-label="Eliminar"
+                            aria-label={`Anular venta ${v.numero}`}
+                            title="Anular"
                           >
-                            <IconTrash width={16} height={16} />
+                            <IconX width={16} height={16} />
                           </button>
                         )}
                       </div>

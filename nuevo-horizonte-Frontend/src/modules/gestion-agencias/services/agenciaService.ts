@@ -45,6 +45,10 @@ export function eliminarAgencia(id: number): Promise<void> {
   return http.delete(`${BASE}/${id}`).then(() => undefined)
 }
 
+export function activarAgencia(id: number): Promise<void> {
+  return http.patch(`${BASE}/${id}/activar`).then(() => undefined)
+}
+
 export function subirLogoAgencia(id: number, archivo: File): Promise<{ logoUrl: string }> {
   const form = new FormData()
   form.append('archivo', archivo)

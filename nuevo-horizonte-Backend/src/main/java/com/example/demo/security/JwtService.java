@@ -25,11 +25,20 @@ public class JwtService {
 
 	private final SecretKey key;
 	private final long expirationMs;
+	private final boolean cookieSecure;
 
+	/**
+	 * cookieSecure=true por defecto (solo se envia por HTTPS, lo correcto en
+	 * produccion). Se puede desactivar con COOKIE_SECURE=false para probar en
+	 * local por HTTP plano (p.ej. docker-compose en localhost sin TLS), donde
+	 * el navegador nunca adjuntaria una cookie Secure.
+	 */
 	public JwtService(@Value("${app.jwt.secret}") String secret,
-			@Value("${app.jwt.expiration-ms}") long expirationMs) {
+			@Value("${app.jwt.expiration-ms}") long expirationMs,
+			@Value("${app.jwt.cookie-secure:true}") boolean cookieSecure) {
 		this.key = Keys.hmacShaKeyFor(secret.getBytes());
 		this.expirationMs = expirationMs;
+		this.cookieSecure = cookieSecure;
 	}
 
 	public String generateToken(Usuario usuario, List<String> roles) {
@@ -68,7 +77,7 @@ public class JwtService {
 	public ResponseCookie cookieDeSesion(String token) {
 		return ResponseCookie.from(COOKIE_NAME, token)
 				.httpOnly(true)
-				.secure(true)
+				.secure(cookieSecure)
 				.sameSite("Lax")
 				.path("/")
 				.maxAge(Duration.ofMillis(expirationMs))
@@ -79,7 +88,7 @@ public class JwtService {
 	public ResponseCookie cookieDeCierreSesion() {
 		return ResponseCookie.from(COOKIE_NAME, "")
 				.httpOnly(true)
-				.secure(true)
+				.secure(cookieSecure)
 				.sameSite("Lax")
 				.path("/")
 				.maxAge(Duration.ZERO)

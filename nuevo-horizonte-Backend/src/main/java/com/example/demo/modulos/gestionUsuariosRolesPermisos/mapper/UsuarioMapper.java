@@ -25,6 +25,7 @@ public final class UsuarioMapper {
 				usuario.getUsername(),
 				usuario.getEmail(),
 				usuario.isActivo(),
+				usuario.isAnonimizado(),
 				usuario.getFechaCreacion(),
 				roles);
 	}

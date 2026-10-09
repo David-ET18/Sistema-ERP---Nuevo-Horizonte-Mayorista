@@ -30,6 +30,7 @@ export interface Usuario {
   username: string
   email: string
   activo: boolean
+  anonimizado: boolean
   fechaCreacion: string
   roles: Rol[]
 }

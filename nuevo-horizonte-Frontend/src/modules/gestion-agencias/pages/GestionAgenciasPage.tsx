@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import type { Agencia, AgenciaLista, FiltrosAgencias, KpisAgencias, PaginacionAgencias } from '../types'
 import {
+  activarAgencia,
   detalleAgencia,
   eliminarAgencia,
   kpisAgencias,
@@ -27,17 +28,18 @@ import {
   IconEye,
   IconPencil,
   IconPlus,
+  IconPower,
   IconSearch,
   IconStar,
-  IconTrash,
 } from '@/components/icons'
 
 const MODULO = 'gestion-agencias'
 
+/** Por defecto solo se listan las agencias activas; las desactivadas quedan en una lista aparte (filtro "Inactivo"). */
 const FILTROS_INICIALES: FiltrosAgencias = {
   q: '',
   categoria: '',
-  activo: '',
+  activo: 'true',
   soloPrioritarias: false,
 }
 
@@ -105,7 +107,7 @@ export default function GestionAgenciasPage() {
   }
 
   async function eliminar(id: number, razonSocial: string) {
-    if (!window.confirm(`¿Eliminar la agencia ${razonSocial}?`)) return
+    if (!window.confirm(`¿Desactivar la agencia ${razonSocial}? Sus cotizaciones y ventas no se eliminan.`)) return
     try {
       await eliminarAgencia(id)
       recargar(true)
@@ -114,8 +116,20 @@ export default function GestionAgenciasPage() {
     }
   }
 
+  async function reactivar(id: number) {
+    try {
+      await activarAgencia(id)
+      recargar(true)
+    } catch (err) {
+      setError(extractErrorMessage(err))
+    }
+  }
+
   const hayFiltros =
-    Boolean(filtros.q) || Boolean(filtros.categoria) || Boolean(filtros.activo) || filtros.soloPrioritarias
+    Boolean(filtros.q) ||
+    Boolean(filtros.categoria) ||
+    filtros.activo !== FILTROS_INICIALES.activo ||
+    filtros.soloPrioritarias
 
   const desde = data ? data.number * data.size + 1 : 0
   const hasta = data ? Math.min((data.number + 1) * data.size, data.totalElements) : 0
@@ -213,9 +227,9 @@ export default function GestionAgenciasPage() {
             aplicar()
           }}
         >
-          <option value="">Todos los estados</option>
-          <option value="true">Activo</option>
-          <option value="false">Inactivo</option>
+          <option value="true">Activas</option>
+          <option value="false">Desactivadas</option>
+          <option value="">Todas</option>
         </select>
 
         <label className="flex cursor-pointer items-center gap-2 text-[13px] text-gray-600">
@@ -348,16 +362,27 @@ export default function GestionAgenciasPage() {
                               <IconPencil />
                             </button>
                           )}
-                          {puedeEliminar && (
+                          {puedeEliminar && (a.activo ? (
                             <button
                               type="button"
                               className="cursor-pointer rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"
                               onClick={() => eliminar(a.id, a.razonSocial)}
-                              aria-label="Eliminar"
+                              aria-label={`Desactivar ${a.razonSocial}`}
+                              title="Desactivar"
                             >
-                              <IconTrash />
+                              <IconPower />
                             </button>
-                          )}
+                          ) : (
+                            <button
+                              type="button"
+                              className="cursor-pointer rounded-lg p-2 text-gray-400 hover:bg-emerald-50 hover:text-emerald-600"
+                              onClick={() => reactivar(a.id)}
+                              aria-label={`Reactivar ${a.razonSocial}`}
+                              title="Reactivar"
+                            >
+                              <IconCheckCircle />
+                            </button>
+                          ))}
                         </div>
                       </td>
                     </tr>

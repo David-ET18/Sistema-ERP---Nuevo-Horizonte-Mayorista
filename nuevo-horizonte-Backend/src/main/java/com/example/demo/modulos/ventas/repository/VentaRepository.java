@@ -28,6 +28,12 @@ public interface VentaRepository extends JpaRepository<Venta, Long>, JpaSpecific
 
 	boolean existsByNumero(String numero);
 
+	/** Consumido por TarifaService para decidir si una tarifa se puede borrar o solo vencer. */
+	boolean existsByTarifaId(Long tarifaId);
+
+	/** Consumido por PaqueteService para decidir si un paquete se puede borrar o solo desactivar. */
+	boolean existsByProductoId(Long productoId);
+
 	@Query("select count(v) from Venta v where v.estado = 'PAGADA'")
 	long countPagadas();
 

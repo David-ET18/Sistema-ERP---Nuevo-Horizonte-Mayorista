@@ -55,3 +55,7 @@ export function actualizarProveedor(id: number, payload: ProveedorPayload): Prom
 export function eliminarProveedor(id: number): Promise<void> {
   return http.delete(`${BASE}/${id}`).then(() => undefined)
 }
+
+export function activarProveedor(id: number): Promise<void> {
+  return http.patch(`${BASE}/${id}/activar`).then(() => undefined)
+}

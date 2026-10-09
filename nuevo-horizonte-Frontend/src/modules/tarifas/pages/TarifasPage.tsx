@@ -151,7 +151,9 @@ export default function TarifasPage() {
   }
 
   async function eliminar(id: number, etiqueta: string) {
-    if (!window.confirm(`¿Eliminar la tarifa de ${etiqueta}?`)) return
+    if (!window.confirm(
+      `¿Eliminar la tarifa de ${etiqueta}? Si ya fue usada en una cotización o venta, en vez de borrarla se marcará como vencida.`,
+    )) return
     try {
       await eliminarTarifa(id)
       recargar(true)

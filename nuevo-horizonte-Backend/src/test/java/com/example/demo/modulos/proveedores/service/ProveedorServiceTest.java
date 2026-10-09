@@ -185,16 +185,19 @@ class ProveedorServiceTest {
 	}
 
 	@Test
-	void eliminar_borraElProveedorExistente() {
+	void eliminar_desactivaElProveedorExistenteEnVezDeBorrarlo() {
 		Proveedor proveedor = new Proveedor();
 		proveedor.setId(5L);
+		proveedor.setActivo(true);
 		when(proveedorRepository.findById(5L)).thenReturn(Optional.of(proveedor));
 
 		service.eliminar(5L);
 
+		assertThat(proveedor.isActivo()).isFalse();
+		verify(proveedorRepository).save(proveedor);
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		org.springframework.data.repository.CrudRepository rawRepository = proveedorRepository;
-		verify(rawRepository).delete(proveedor);
+		verify(rawRepository, never()).delete(any());
 	}
 
 	@Test

@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -58,6 +59,20 @@ public class UsuarioController {
 	@PreAuthorize("@permisoEvaluator.puedeEliminar('gestion-usuarios-roles-permisos')")
 	public ResponseEntity<Void> desactivar(@PathVariable Long id) {
 		usuarioService.desactivar(id);
+		return ResponseEntity.noContent().build();
+	}
+
+	@DeleteMapping("/{id}/definitivo")
+	@PreAuthorize("@permisoEvaluator.puedeEliminar('gestion-usuarios-roles-permisos')")
+	public ResponseEntity<Void> eliminarDefinitivo(@PathVariable Long id) {
+		usuarioService.eliminarDefinitivo(id);
+		return ResponseEntity.noContent().build();
+	}
+
+	@PatchMapping("/{id}/anonimizar")
+	@PreAuthorize("@permisoEvaluator.puedeEliminar('gestion-usuarios-roles-permisos')")
+	public ResponseEntity<Void> anonimizar(@PathVariable Long id) {
+		usuarioService.anonimizar(id);
 		return ResponseEntity.noContent().build();
 	}
 }

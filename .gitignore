@@ -21,3 +21,9 @@ dist-ssr/
 
 ### Archivos subidos en local (logos de agencia, respaldos de tarifas) ###
 nuevo-horizonte-Backend/uploads/
+
+### Secretos locales (API keys, credenciales de BD, etc.) - nunca al repo ###
+.env
+.env.*
+!.env.example
+nuevo-horizonte-Backend/config/

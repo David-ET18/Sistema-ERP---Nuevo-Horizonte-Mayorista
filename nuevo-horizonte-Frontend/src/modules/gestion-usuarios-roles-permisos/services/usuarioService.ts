@@ -37,3 +37,11 @@ export async function actualizarUsuario(
 export async function desactivarUsuario(id: number): Promise<void> {
   await http.delete(ENDPOINTS.usuarios.byId(id))
 }
+
+export async function eliminarUsuarioDefinitivo(id: number): Promise<void> {
+  await http.delete(`${ENDPOINTS.usuarios.byId(id)}/definitivo`)
+}
+
+export async function anonimizarUsuario(id: number): Promise<void> {
+  await http.patch(`${ENDPOINTS.usuarios.byId(id)}/anonimizar`)
+}

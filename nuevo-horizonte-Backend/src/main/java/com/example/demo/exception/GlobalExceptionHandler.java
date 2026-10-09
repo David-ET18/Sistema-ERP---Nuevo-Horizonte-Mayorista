@@ -2,6 +2,7 @@ package com.example.demo.exception;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -26,6 +27,13 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(BusinessException.class)
 	public ResponseEntity<Map<String, Object>> handleBusiness(BusinessException ex) {
 		return build(HttpStatus.BAD_REQUEST, ex.getMessage());
+	}
+
+	@ExceptionHandler(DataIntegrityViolationException.class)
+	public ResponseEntity<Map<String, Object>> handleIntegridad(DataIntegrityViolationException ex) {
+		log.warn("Violacion de integridad referencial: {}", ex.getMessage());
+		return build(HttpStatus.CONFLICT,
+				"No se puede eliminar: el registro todavía está siendo usado por otros datos del sistema.");
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)

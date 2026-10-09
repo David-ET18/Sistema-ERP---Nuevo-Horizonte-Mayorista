@@ -118,9 +118,23 @@ public class ProveedorService {
 		return ProveedorMapper.toDetalleDTO(proveedorRepository.save(proveedor));
 	}
 
+	/**
+	 * Baja logica: un proveedor con tarifas (historicas o vigentes) no se puede
+	 * borrar fisicamente sin romper esos registros, asi que "eliminar" solo lo
+	 * desactiva. Mismo criterio que UsuarioService.desactivar.
+	 */
 	@Transactional
 	public void eliminar(Long id) {
-		proveedorRepository.delete(obtener(id));
+		Proveedor proveedor = obtener(id);
+		proveedor.setActivo(false);
+		proveedorRepository.save(proveedor);
+	}
+
+	@Transactional
+	public void activar(Long id) {
+		Proveedor proveedor = obtener(id);
+		proveedor.setActivo(true);
+		proveedorRepository.save(proveedor);
 	}
 
 	private Destino resolverDestino(Long destinoId) {

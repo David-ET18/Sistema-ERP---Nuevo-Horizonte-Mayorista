@@ -4,12 +4,24 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import Layout from '@/components/Layout'
 import ProtectedRoute, { PermisoRequerido } from './ProtectedRoute'
 import { CLAVES_MODULOS_DESARROLLADOS } from '@/config/modulos'
-import { primeraRutaAccesible } from '@/modules/gestion-usuarios-roles-permisos/utils/permissions'
+import { usePrimeraRutaAccesible } from '@/modules/gestion-usuarios-roles-permisos/utils/permissions'
 
 /** Envoltura de permisos por clave de modulo (ver src/config/modulos.ts). */
 function ConPermiso({ modulo, children }: { modulo: string; children: ReactNode }) {
   if (!CLAVES_MODULOS_DESARROLLADOS.includes(modulo)) return <SinDesarrollar />
   return <PermisoRequerido modulo={modulo}>{children}</PermisoRequerido>
+}
+
+/**
+ * Suscrita de verdad al store (ver usePrimeraRutaAccesible): a diferencia de
+ * calcular el destino una sola vez con `primeraRutaAccesible()` dentro del
+ * JSX de la ruta indice, este componente se re-renderiza solo cuando React
+ * confirma un `user` nuevo, nunca con una instantanea de un render a medias
+ * justo despues del login.
+ */
+function IndexRedirect() {
+  const destino = usePrimeraRutaAccesible()
+  return <Navigate to={destino} replace />
 }
 
 function SinDesarrollar() {
@@ -58,7 +70,7 @@ export default function AppRoutes() {
         }
       >
         {/* La raiz entra a la primera pantalla que el usuario puede ver. */}
-        <Route index element={<Navigate to={primeraRutaAccesible()} replace />} />
+        <Route index element={<IndexRedirect />} />
         <Route
           path="dashboard"
           element={

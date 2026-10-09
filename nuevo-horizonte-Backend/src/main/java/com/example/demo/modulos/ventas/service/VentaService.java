@@ -191,11 +191,16 @@ public class VentaService {
 		return toDTO(venta);
 	}
 
+	/**
+	 * Una venta es un registro contable/financiero: borrarla fisicamente
+	 * destruye el historial de facturacion y reportes, ademas de romper por
+	 * llave foranea en cuanto tenga pagos o historial de estado asociados.
+	 * "Eliminar" en la practica significa anularla (ya es un estado valido
+	 * del flujo), igual que haria cualquier ERP.
+	 */
 	@Transactional
 	public void eliminar(Long id) {
-		Venta venta = ventaRepository.findById(id)
-				.orElseThrow(() -> new NotFoundException("Venta no encontrada con id " + id));
-		ventaRepository.delete(venta);
+		cambiarEstado(id, new CambioEstadoVentaRequest("ANULADA"));
 	}
 
 	@Transactional(readOnly = true)

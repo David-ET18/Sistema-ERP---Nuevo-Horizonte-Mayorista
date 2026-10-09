@@ -34,6 +34,10 @@ public class Usuario {
 	@Column(name = "activo", nullable = false)
 	private boolean activo = true;
 
+	/** Username/email ya sobreescritos con un valor generico; ver UsuarioService.anonimizar. */
+	@Column(name = "anonimizado", nullable = false)
+	private boolean anonimizado = false;
+
 	@Column(name = "fecha_creacion", nullable = false)
 	private LocalDateTime fechaCreacion = LocalDateTime.now();
 
@@ -78,6 +82,14 @@ public class Usuario {
 
 	public void setActivo(boolean activo) {
 		this.activo = activo;
+	}
+
+	public boolean isAnonimizado() {
+		return anonimizado;
+	}
+
+	public void setAnonimizado(boolean anonimizado) {
+		this.anonimizado = anonimizado;
 	}
 
 	public LocalDateTime getFechaCreacion() {

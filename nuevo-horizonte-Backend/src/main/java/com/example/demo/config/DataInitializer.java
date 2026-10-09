@@ -7,6 +7,7 @@ import com.example.demo.modulos.gestionUsuariosRolesPermisos.entity.Usuario;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.repository.RolRepository;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.repository.UsuarioRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,12 +43,15 @@ public class DataInitializer implements CommandLineRunner {
 	private final RolRepository rolRepository;
 	private final UsuarioRepository usuarioRepository;
 	private final PasswordEncoder passwordEncoder;
+	private final boolean seedDemoUsuarios;
 
 	public DataInitializer(RolRepository rolRepository,
-			UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
+			UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder,
+			@Value("${app.seguridad.seed-demo-usuarios:true}") boolean seedDemoUsuarios) {
 		this.rolRepository = rolRepository;
 		this.usuarioRepository = usuarioRepository;
 		this.passwordEncoder = passwordEncoder;
+		this.seedDemoUsuarios = seedDemoUsuarios;
 	}
 
 	@Override
@@ -81,10 +85,16 @@ public class DataInitializer implements CommandLineRunner {
 						crud(ModuloCatalogo.RESERVAS), crud(ModuloCatalogo.PAGOS), crud(ModuloCatalogo.GESTION_AGENCIAS),
 						crud(ModuloCatalogo.SEGUIMIENTO_COMERCIAL), crud(ModuloCatalogo.MARKETING)));
 
-		sembrarUsuario("ADM", "adm@nuevohorizonte.com", "Administración");
-		sembrarUsuario("GRT", "grt@nuevohorizonte.com", "Gerencia");
-		sembrarUsuario("AP", "ap@nuevohorizonte.com", "Area de Producto");
-		sembrarUsuario("AV", "av@nuevohorizonte.com", "Area de Ventas");
+		// Los roles del sistema siempre se siembran (la app los necesita para
+		// funcionar). Los usuarios demo (admin123) solo en desarrollo: en
+		// produccion se apagan con SEED_DEMO_USUARIOS=false, despues de crear
+		// el admin real. OJO: apagarlo en una BD sin usuarios deja lockout.
+		if (seedDemoUsuarios) {
+			sembrarUsuario("ADM", "adm@nuevohorizonte.com", "Administración");
+			sembrarUsuario("GRT", "grt@nuevohorizonte.com", "Gerencia");
+			sembrarUsuario("AP", "ap@nuevohorizonte.com", "Area de Producto");
+			sembrarUsuario("AV", "av@nuevohorizonte.com", "Area de Ventas");
+		}
 	}
 
 	private void sembrarRol(String nombre, String descripcion, String color, Map<String, boolean[]> deseados) {

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { etiquetaDeModulo } from '@/config/modulos'
-import { primeraRutaAccesible } from '@/modules/gestion-usuarios-roles-permisos/utils/permissions'
+import { usePrimeraRutaAccesible } from '@/modules/gestion-usuarios-roles-permisos/utils/permissions'
 
 interface ForbiddenPageProps {
   modulo?: string
@@ -22,7 +22,7 @@ export default function ForbiddenPage({ modulo }: ForbiddenPageProps) {
   const navigate = useNavigate()
   const [restante, setRestante] = useState(SEGUNDOS_REDIRECT)
   const nombre = modulo ? etiquetaDeModulo(modulo) : null
-  const destino = primeraRutaAccesible()
+  const destino = usePrimeraRutaAccesible()
 
   useEffect(() => {
     if (restante <= 0) {

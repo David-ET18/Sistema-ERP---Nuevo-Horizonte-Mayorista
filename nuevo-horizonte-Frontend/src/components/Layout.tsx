@@ -230,17 +230,6 @@ export default function Layout() {
               <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
             </button>
 
-            {/* Ver perfil */}
-            <button
-              type="button"
-              onClick={() => navigate('/gestion-usuarios-roles-permisos/perfil')}
-              className="cursor-pointer rounded-lg p-2 text-gray-500 hover:bg-gray-100"
-              aria-label="Ver perfil"
-              title="Ver perfil"
-            >
-              <UsersIcon className="h-5 w-5" />
-            </button>
-
             {/* Menú de usuario */}
             <div className="relative">
               <button

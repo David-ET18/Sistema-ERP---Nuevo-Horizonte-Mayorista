@@ -10,7 +10,6 @@ import type {
 } from '../types'
 import {
   actualizarVenta,
-  cambiarEstadoVenta,
   crearVenta,
   listarAgencias,
   listarCotizacionesCerradas,
@@ -144,7 +143,8 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
       igv: igvNum,
       notasOperativas: notas.trim(),
       estado: 'CONFIRMADA',
-      fechaVenta: fechaVenta || null,
+      // El input es type="date" (solo "AAAA-MM-DD"); el backend espera LocalDateTime.
+      fechaVenta: fechaVenta ? `${fechaVenta}T00:00:00` : null,
     }
   }
 
@@ -195,8 +195,8 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
     }
     setSaving(true)
     try {
-      const g = await guardar()
-      await cambiarEstadoVenta(g.id, 'CONFIRMADA')
+      // buildRequest() ya envia estado: 'CONFIRMADA', no hace falta un PATCH aparte.
+      await guardar()
       limpiarFormulario()
       onSaved()
       onClose()

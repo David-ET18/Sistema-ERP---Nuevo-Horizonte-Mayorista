@@ -30,6 +30,7 @@ import com.example.demo.modulos.paquetes.entity.Paquete;
 import com.example.demo.modulos.paquetes.entity.PaqueteOpcion;
 import com.example.demo.modulos.paquetes.entity.PaqueteVuelo;
 import com.example.demo.modulos.paquetes.repository.PaqueteRepository;
+import com.example.demo.modulos.ventas.repository.VentaRepository;
 
 @ExtendWith(MockitoExtension.class)
 class PaqueteServiceTest {
@@ -40,11 +41,14 @@ class PaqueteServiceTest {
 	@Mock
 	private DestinoRepository destinoRepository;
 
+	@Mock
+	private VentaRepository ventaRepository;
+
 	private PaqueteService service;
 
 	@BeforeEach
 	void setUp() {
-		service = new PaqueteService(paqueteRepository, destinoRepository);
+		service = new PaqueteService(paqueteRepository, destinoRepository, ventaRepository);
 		org.mockito.Mockito.lenient().when(paqueteRepository.save(any(Paquete.class)))
 				.thenAnswer(inv -> inv.getArgument(0));
 	}

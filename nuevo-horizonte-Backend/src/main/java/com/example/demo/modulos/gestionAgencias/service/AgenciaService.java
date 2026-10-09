@@ -101,9 +101,22 @@ public class AgenciaService {
 		return AgenciaMapper.toDetalleDTO(agenciaRepository.save(agencia));
 	}
 
+	/**
+	 * Baja logica: una agencia con cotizaciones o ventas no se puede borrar
+	 * fisicamente sin romper esos registros (igual que proveedores).
+	 */
 	@Transactional
 	public void eliminar(Long id) {
-		agenciaRepository.delete(obtener(id));
+		Agencia agencia = obtener(id);
+		agencia.setActivo(false);
+		agenciaRepository.save(agencia);
+	}
+
+	@Transactional
+	public void activar(Long id) {
+		Agencia agencia = obtener(id);
+		agencia.setActivo(true);
+		agenciaRepository.save(agencia);
 	}
 
 	@Transactional

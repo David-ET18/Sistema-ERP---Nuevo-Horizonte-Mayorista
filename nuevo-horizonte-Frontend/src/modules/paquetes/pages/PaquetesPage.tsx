@@ -105,7 +105,9 @@ export default function PaquetesPage() {
   }
 
   async function eliminar(id: number, nombre: string) {
-    if (!window.confirm(`¿Eliminar el paquete "${nombre}"?`)) return
+    if (!window.confirm(
+      `¿Eliminar el paquete "${nombre}"? Si ya tiene ventas registradas, en vez de borrarlo se marcará como inactivo.`,
+    )) return
     try {
       await eliminarPaquete(id)
       recargar(true)

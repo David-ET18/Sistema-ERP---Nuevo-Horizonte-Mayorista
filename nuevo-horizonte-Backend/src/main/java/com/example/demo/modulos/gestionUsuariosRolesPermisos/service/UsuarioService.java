@@ -82,6 +82,9 @@ public class UsuarioService {
 		}
 
 		if (request.activo() != null) {
+			if (request.activo() && usuario.isAnonimizado()) {
+				throw new BusinessException("Este usuario fue anonimizado y ya no se puede reactivar");
+			}
 			usuario.setActivo(request.activo());
 		}
 
@@ -101,6 +104,53 @@ public class UsuarioService {
 			throw new BusinessException("No puedes desactivar tu propia cuenta");
 		}
 		usuario.setActivo(false);
+	}
+
+	/**
+	 * Sobreescribe los datos identificables (username, email, password) sin
+	 * tocar la fila: las ventas, cotizaciones y cambios de precio que dejo
+	 * siguen apuntando a un usuario valido, pero ya no se puede saber quien
+	 * era ni iniciar sesion con esa cuenta. Es la salida para cuando alguien
+	 * se va de la empresa y "eliminarDefinitivo" no es viable porque tiene
+	 * historial asociado.
+	 */
+	@Transactional
+	public void anonimizar(Long id) {
+		Usuario usuario = obtenerUsuario(id);
+		if (usuario.isActivo()) {
+			throw new BusinessException("Primero debes desactivar al usuario antes de anonimizarlo");
+		}
+		if (usuario.isAnonimizado()) {
+			return;
+		}
+		usuario.setUsername("usuario_eliminado_" + id);
+		usuario.setEmail("eliminado+" + id + "@baja.local");
+		usuario.setPasswordHash(passwordEncoder.encode(java.util.UUID.randomUUID().toString()));
+		usuario.setAnonimizado(true);
+	}
+
+	/**
+	 * Borrado fisico, solo para cuando alguien se va de la empresa y ya esta
+	 * desactivado. Si el usuario tiene historial real (ventas, cotizaciones,
+	 * cambios de precio que registro, etc.) la base rechaza el borrado: ese
+	 * historial tiene que conservarse, asi que se queda desactivado para
+	 * siempre en lugar de eliminarse.
+	 */
+	@Transactional
+	public void eliminarDefinitivo(Long id) {
+		Usuario usuario = obtenerUsuario(id);
+		if (usuario.isActivo()) {
+			throw new BusinessException("Primero debes desactivar al usuario antes de eliminarlo definitivamente");
+		}
+		try {
+			usuarioRepository.delete(usuario);
+			usuarioRepository.flush();
+		}
+		catch (org.springframework.dao.DataIntegrityViolationException ex) {
+			throw new org.springframework.web.server.ResponseStatusException(
+					org.springframework.http.HttpStatus.CONFLICT,
+					"Este usuario tiene historial asociado (ventas, cotizaciones, cambios de precio, etc.) y no se puede eliminar definitivamente. Debe permanecer desactivado.");
+		}
 	}
 
 	private Usuario obtenerUsuario(Long id) {

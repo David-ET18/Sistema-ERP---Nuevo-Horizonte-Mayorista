@@ -56,15 +56,21 @@ public class TarifaService {
 	private final ServicioRepository servicioRepository;
 	private final DestinoRepository destinoRepository;
 	private final UsuarioRepository usuarioRepository;
+	private final com.example.demo.modulos.ventas.repository.VentaRepository ventaRepository;
+	private final com.example.demo.modulos.cotizaciones.repository.CotizacionDetalleRepository cotizacionDetalleRepository;
 
 	public TarifaService(TarifaRepository tarifaRepository, ProveedorRepository proveedorRepository,
 			ServicioRepository servicioRepository, DestinoRepository destinoRepository,
-			UsuarioRepository usuarioRepository) {
+			UsuarioRepository usuarioRepository,
+			com.example.demo.modulos.ventas.repository.VentaRepository ventaRepository,
+			com.example.demo.modulos.cotizaciones.repository.CotizacionDetalleRepository cotizacionDetalleRepository) {
 		this.tarifaRepository = tarifaRepository;
 		this.proveedorRepository = proveedorRepository;
 		this.servicioRepository = servicioRepository;
 		this.destinoRepository = destinoRepository;
 		this.usuarioRepository = usuarioRepository;
+		this.ventaRepository = ventaRepository;
+		this.cotizacionDetalleRepository = cotizacionDetalleRepository;
 	}
 
 	public List<TarifaDTO> listarVigentes() {
@@ -143,9 +149,25 @@ public class TarifaService {
 		return TarifaMapper.toDetalleDTO(tarifaRepository.save(tarifa));
 	}
 
+	/**
+	 * Una tarifa ya usada en cotizaciones o ventas no se puede borrar sin
+	 * romper ese historial (igual que proveedores). En ese caso se vence de
+	 * inmediato en vez de eliminarla: deja de ofrecerse como vigente sin
+	 * perder el precio que ya se cotizo o vendio con ella.
+	 */
 	@Transactional
 	public void eliminar(Long id) {
-		tarifaRepository.delete(obtener(id));
+		Tarifa tarifa = obtener(id);
+		boolean enUso = ventaRepository.existsByTarifaId(id) || cotizacionDetalleRepository.existsByTarifaId(id);
+		if (!enUso) {
+			tarifaRepository.delete(tarifa);
+			return;
+		}
+		LocalDate ayer = LocalDate.now().minusDays(1);
+		if (tarifa.getFechaHasta().isAfter(ayer)) {
+			tarifa.setFechaHasta(ayer);
+			tarifaRepository.save(tarifa);
+		}
 	}
 
 	@Transactional

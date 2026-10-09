@@ -10,8 +10,7 @@ import com.example.demo.modulos.gestionUsuariosRolesPermisos.repository.Historia
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.repository.PasswordResetTokenRepository;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.repository.UsuarioRepository;
 import com.example.demo.exception.BusinessException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.example.demo.integration.EmailService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,12 +23,11 @@ import java.util.UUID;
 @Service
 public class PasswordResetService {
 
-	private static final Logger log = LoggerFactory.getLogger(PasswordResetService.class);
-
 	private final UsuarioRepository usuarioRepository;
 	private final PasswordResetTokenRepository tokenRepository;
 	private final HistorialPasswordRepository historialRepository;
 	private final PasswordEncoder passwordEncoder;
+	private final EmailService emailService;
 
 	@Value("${app.frontend-url}")
 	private String frontendUrl;
@@ -40,11 +38,13 @@ public class PasswordResetService {
 	public PasswordResetService(UsuarioRepository usuarioRepository,
 			PasswordResetTokenRepository tokenRepository,
 			HistorialPasswordRepository historialRepository,
-			PasswordEncoder passwordEncoder) {
+			PasswordEncoder passwordEncoder,
+			EmailService emailService) {
 		this.usuarioRepository = usuarioRepository;
 		this.tokenRepository = tokenRepository;
 		this.historialRepository = historialRepository;
 		this.passwordEncoder = passwordEncoder;
+		this.emailService = emailService;
 	}
 
 	/**
@@ -110,12 +110,34 @@ public class PasswordResetService {
 	}
 
 	/**
-	 * Envia el enlace de recuperacion. Durante el desarrollo se registra en consola;
-	 * para produccion integrar JavaMailSender (spring-boot-starter-mail) con SMTP.
+	 * Envia el enlace de recuperacion al correo registrado. EmailService ya
+	 * resuelve el "como" (Resend si app.email.enabled=true, consola/log si no);
+	 * aqui no hace falta manejar fallos de red: la implementacion de consola
+	 * nunca falla, y ResendEmailService absorbe sus propios errores sin
+	 * interrumpir este flujo.
 	 */
 	private void enviarEnlace(String email, String link) {
-		log.info("=== RECUPERACION DE CONTRASENA ===");
-		log.info("Destinatario: {}", email);
-		log.info("Enlace de recuperacion (modo desarrollo): {}", link);
+		emailService.enviar(email, "Recupera tu contraseña - Nuevo Horizonte", cuerpoCorreo(link));
+	}
+
+	private String cuerpoCorreo(String link) {
+		return """
+				<div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #1f2937;">
+					<h2 style="color: #143b72;">Recupera tu contraseña</h2>
+					<p>Recibimos una solicitud para restablecer la contraseña de tu cuenta en Nuevo Horizonte Mayorista.</p>
+					<p>
+						<a href="%s"
+							style="display: inline-block; margin: 16px 0; padding: 10px 20px; background-color: #143b72; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold;">
+							Crear nueva contraseña
+						</a>
+					</p>
+					<p>Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
+					<p style="word-break: break-all; color: #143b72;">%s</p>
+					<p style="color: #6b7280; font-size: 13px;">
+						Este enlace vence en %d minutos. Si tú no solicitaste este cambio, puedes ignorar este correo.
+					</p>
+				</div>
+				"""
+				.formatted(link, link, expirationMinutes);
 	}
 }

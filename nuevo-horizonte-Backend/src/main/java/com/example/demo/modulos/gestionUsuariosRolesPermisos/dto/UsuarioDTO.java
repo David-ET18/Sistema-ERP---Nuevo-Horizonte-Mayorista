@@ -8,6 +8,7 @@ public record UsuarioDTO(
 		String username,
 		String email,
 		boolean activo,
+		boolean anonimizado,
 		LocalDateTime fechaCreacion,
 		List<RolDTO> roles) {
 }

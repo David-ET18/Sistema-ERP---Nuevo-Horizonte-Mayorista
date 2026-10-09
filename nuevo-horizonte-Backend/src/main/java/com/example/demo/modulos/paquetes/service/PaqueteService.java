@@ -41,10 +41,13 @@ public class PaqueteService {
 
 	private final PaqueteRepository paqueteRepository;
 	private final DestinoRepository destinoRepository;
+	private final com.example.demo.modulos.ventas.repository.VentaRepository ventaRepository;
 
-	public PaqueteService(PaqueteRepository paqueteRepository, DestinoRepository destinoRepository) {
+	public PaqueteService(PaqueteRepository paqueteRepository, DestinoRepository destinoRepository,
+			com.example.demo.modulos.ventas.repository.VentaRepository ventaRepository) {
 		this.paqueteRepository = paqueteRepository;
 		this.destinoRepository = destinoRepository;
+		this.ventaRepository = ventaRepository;
 	}
 
 	public List<PaqueteDTO> listarActivos() {
@@ -115,9 +118,20 @@ public class PaqueteService {
 		return PaqueteMapper.toDetalleDTO(paqueteRepository.save(paquete));
 	}
 
+	/**
+	 * Un paquete ya vendido no se puede borrar sin romper esa venta (igual que
+	 * proveedores y tarifas). En ese caso se desactiva en vez de eliminarse,
+	 * reutilizando el mismo campo "estado" que ya usa el publicado/borrador.
+	 */
 	@Transactional
 	public void eliminar(Long id) {
-		paqueteRepository.delete(obtener(id));
+		Paquete paquete = obtener(id);
+		if (ventaRepository.existsByProductoId(id)) {
+			paquete.setEstado("INACTIVO");
+			paqueteRepository.save(paquete);
+			return;
+		}
+		paqueteRepository.delete(paquete);
 	}
 
 	/**

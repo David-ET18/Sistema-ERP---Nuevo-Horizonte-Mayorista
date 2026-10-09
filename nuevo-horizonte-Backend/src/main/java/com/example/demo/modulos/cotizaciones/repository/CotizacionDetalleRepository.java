@@ -9,4 +9,7 @@ import java.util.List;
 public interface CotizacionDetalleRepository extends JpaRepository<CotizacionDetalle, Long> {
 
 	List<CotizacionDetalle> findByCotizacionIdIn(Collection<Long> ids);
+
+	/** Consumido por TarifaService para decidir si una tarifa se puede borrar o solo vencer. */
+	boolean existsByTarifaId(Long tarifaId);
 }
