@@ -85,10 +85,7 @@ public class DataInitializer implements CommandLineRunner {
 						crud(ModuloCatalogo.RESERVAS), crud(ModuloCatalogo.PAGOS), crud(ModuloCatalogo.GESTION_AGENCIAS),
 						crud(ModuloCatalogo.SEGUIMIENTO_COMERCIAL), crud(ModuloCatalogo.MARKETING)));
 
-		// Los roles del sistema siempre se siembran (la app los necesita para
-		// funcionar). Los usuarios demo (admin123) solo en desarrollo: en
-		// produccion se apagan con SEED_DEMO_USUARIOS=false, despues de crear
-		// el admin real. OJO: apagarlo en una BD sin usuarios deja lockout.
+		// Seeds demo solo en desarrollo (SEED_DEMO_USUARIOS=false en produccion).
 		if (seedDemoUsuarios) {
 			sembrarUsuario("ADM", "adm@nuevohorizonte.com", "Administración");
 			sembrarUsuario("GRT", "grt@nuevohorizonte.com", "Gerencia");

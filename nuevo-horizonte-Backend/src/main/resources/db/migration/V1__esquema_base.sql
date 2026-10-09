@@ -1,12 +1,4 @@
--- V1: linea base del esquema (antes era schema.sql via spring.sql.init).
---
--- Contiene SOLO lo que Hibernate ddl-auto=update no puede hacer solo:
--- crear los schemas y los ajustes manuales de columnas legacy. Las tablas
--- las sigue creando/actualizando Hibernate a partir de las entidades.
---
--- REGLA DE FLYWAY: un migration aplicado jamas se edita. Cambios futuros van
--- en V2, V3, ... nuevos. Todo es IF NOT EXISTS / IF EXISTS para que V1 sea
--- re-ejecutable sin riesgo.
+-- V1 BASE
 CREATE SCHEMA IF NOT EXISTS seguridad;
 CREATE SCHEMA IF NOT EXISTS catalogo;
 CREATE SCHEMA IF NOT EXISTS ventas;
