@@ -1,0 +1,8 @@
+target/
+uploads/
+config/
+*.log
+.idea/
+.vscode/
+*.iml
+.git
