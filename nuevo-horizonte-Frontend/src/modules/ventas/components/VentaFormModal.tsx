@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-
 import type {
   Agencia,
   CotizacionVenta,
@@ -19,6 +18,8 @@ import {
 import { formatMonto } from '../utils'
 import { extractErrorMessage } from '@/api/http'
 import { IconX } from '@/components/icons'
+import ModalMarca from '@/components/ModalMarca'
+import { useToastStore } from '@/store/toastStore'
 import { useFormDraft } from '@/hooks/useFormDraft'
 
 interface Props {
@@ -74,6 +75,8 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
   )
 
   const esEdicion = Boolean(venta)
+
+  const toast = useToastStore((s) => s.show)
 
   // El alta conserva borrador entre cierres; la edicion parte del registro real.
   const borrador = useFormDraft<VentaFormState>('venta:nueva', vacioVenta())
@@ -175,9 +178,11 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
       await guardar()
       limpiarFormulario()
       onSaved()
+      toast(esEdicion ? 'Venta actualizada correctamente' : 'Venta creada correctamente', 'success')
       onClose()
     } catch (err) {
       setDanos(extractErrorMessage(err))
+      toast('No se pudo guardar la venta', 'error')
     } finally {
       setSaving(false)
     }
@@ -199,9 +204,11 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
       await guardar()
       limpiarFormulario()
       onSaved()
+      toast(esEdicion ? 'Venta actualizada y confirmada correctamente' : 'Venta creada y confirmada correctamente', 'success')
       onClose()
     } catch (err) {
       setDanos(extractErrorMessage(err))
+      toast('No se pudo guardar la venta', 'error')
     } finally {
       setSaving(false)
     }
@@ -223,6 +230,7 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
         role="dialog"
         aria-modal="true"
       >
+        <ModalMarca />
         <header className="flex items-center justify-between border-b border-gray-200 bg-white px-5 py-4">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">

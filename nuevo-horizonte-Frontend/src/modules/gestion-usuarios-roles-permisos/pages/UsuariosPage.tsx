@@ -13,11 +13,13 @@ import {
 import { userCanManage } from '../utils/permissions'
 import { formatDate } from '@/utils/format'
 import UsuarioFormModal from '../components/UsuarioFormModal'
+import EditarRolesModal from '../components/EditarRolesModal'
 import RoleBadge from '../components/RoleBadge'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import { useToastStore } from '@/store/toastStore'
 import {
   IconCheckCircle,
+  IconEdit,
   IconEyeOff,
   IconPlus,
   IconPower,
@@ -56,6 +58,7 @@ export default function UsuariosPage() {
   const [error, setError] = useState<string | null>(null)
   const [busqueda, setBusqueda] = useState('')
   const [showForm, setShowForm] = useState(false)
+  const [aEditarRoles, setAEditarRoles] = useState<Usuario | null>(null)
   const [aDesactivar, setADesactivar] = useState<Usuario | null>(null)
   const [aEliminar, setAEliminar] = useState<Usuario | null>(null)
   const [aAnonimizar, setAAnonimizar] = useState<Usuario | null>(null)
@@ -94,6 +97,10 @@ export default function UsuariosPage() {
     setShowForm(false)
     await load()
     toast('Usuario creado correctamente', 'success')
+  }
+
+  async function handleRolesGuardados() {
+    await load()
   }
 
   async function confirmarDesactivar() {
@@ -284,27 +291,38 @@ export default function UsuariosPage() {
                         <div className="flex items-center justify-center">
                           {usuario.anonimizado ? (
                             <span className="text-[12px] text-gray-400">Sin acciones</span>
-                          ) : usuario.activo ? (
-                            <button
-                              type="button"
-                              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
-                              onClick={() => setADesactivar(usuario)}
-                              aria-label={`Desactivar ${usuario.username}`}
-                              title="Desactivar"
-                            >
-                              <IconPower className="h-4 w-4" />
-                            </button>
                           ) : (
                             <>
                               <button
                                 type="button"
-                                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-emerald-50 hover:text-emerald-600"
-                                onClick={() => reactivar(usuario)}
-                                aria-label={`Reactivar ${usuario.username}`}
-                                title="Reactivar"
+                                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-brand/10 hover:text-brand"
+                                onClick={() => setAEditarRoles(usuario)}
+                                aria-label={`Editar roles de ${usuario.username}`}
+                                title="Editar roles"
                               >
-                                <IconCheckCircle className="h-4 w-4" />
+                                <IconEdit className="h-4 w-4" />
                               </button>
+                              {usuario.activo ? (
+                                <button
+                                  type="button"
+                                  className="ml-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                                  onClick={() => setADesactivar(usuario)}
+                                  aria-label={`Desactivar ${usuario.username}`}
+                                  title="Desactivar"
+                                >
+                                  <IconPower className="h-4 w-4" />
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="ml-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-emerald-50 hover:text-emerald-600"
+                                  onClick={() => reactivar(usuario)}
+                                  aria-label={`Reactivar ${usuario.username}`}
+                                  title="Reactivar"
+                                >
+                                  <IconCheckCircle className="h-4 w-4" />
+                                </button>
+                              )}
                               <button
                                 type="button"
                                 className="ml-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
@@ -373,6 +391,14 @@ export default function UsuariosPage() {
         <UsuarioFormModal
           onClose={() => setShowForm(false)}
           onSubmit={handleCreate}
+        />
+      )}
+
+      {aEditarRoles && (
+        <EditarRolesModal
+          usuario={aEditarRoles}
+          onClose={() => setAEditarRoles(null)}
+          onGuardado={handleRolesGuardados}
         />
       )}
 

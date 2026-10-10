@@ -12,6 +12,8 @@ import {
   logoAgenciaUrl,
 } from '../services/agenciaService'
 import { extractErrorMessage } from '@/api/http'
+import ConfirmDialog from '@/components/ConfirmDialog'
+import { useToastStore } from '@/store/toastStore'
 import {
   canCreateModule,
   canDeleteModule,
@@ -57,11 +59,14 @@ export default function GestionAgenciasPage() {
   const [showForm, setShowForm] = useState(false)
   const [editando, setEditando] = useState<Agencia | null>(null)
   const [detalleId, setDetalleId] = useState<number | null>(null)
+  const [aEliminar, setAEliminar] = useState<AgenciaLista | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
 
   const puedeCrear = canCreateModule(MODULO)
   const puedeEditar = canUpdateModule(MODULO)
   const puedeEliminar = canDeleteModule(MODULO)
+
+  const toast = useToastStore((s) => s.show)
 
   useEffect(() => {
     listarCategorias().then(setCategorias).catch(() => undefined)
@@ -106,13 +111,14 @@ export default function GestionAgenciasPage() {
     }
   }
 
-  async function eliminar(id: number, razonSocial: string) {
-    if (!window.confirm(`¿Desactivar la agencia ${razonSocial}? Sus cotizaciones y ventas no se eliminan.`)) return
+  async function eliminar(id: number) {
     try {
       await eliminarAgencia(id)
       recargar(true)
+      toast(aEliminar ? `Agencia "${aEliminar.nombreComercial ?? aEliminar.razonSocial}" desactivada` : 'Agencia desactivada correctamente', 'success')
     } catch (err) {
       setError(extractErrorMessage(err))
+      toast(`No se pudo desactivar la agencia: ${extractErrorMessage(err)}`, 'error')
     }
   }
 
@@ -120,8 +126,10 @@ export default function GestionAgenciasPage() {
     try {
       await activarAgencia(id)
       recargar(true)
+      toast('Agencia reactivada correctamente', 'success')
     } catch (err) {
       setError(extractErrorMessage(err))
+      toast(`No se pudo reactivar la agencia: ${extractErrorMessage(err)}`, 'error')
     }
   }
 
@@ -362,17 +370,18 @@ export default function GestionAgenciasPage() {
                               <IconPencil />
                             </button>
                           )}
-                          {puedeEliminar && (a.activo ? (
+                          {puedeEliminar && a.activo && (
                             <button
                               type="button"
                               className="cursor-pointer rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"
-                              onClick={() => eliminar(a.id, a.razonSocial)}
+                              onClick={() => setAEliminar(a)}
                               aria-label={`Desactivar ${a.razonSocial}`}
                               title="Desactivar"
                             >
                               <IconPower />
                             </button>
-                          ) : (
+                          )}
+                          {puedeEditar && !a.activo && (
                             <button
                               type="button"
                               className="cursor-pointer rounded-lg p-2 text-gray-400 hover:bg-emerald-50 hover:text-emerald-600"
@@ -382,7 +391,7 @@ export default function GestionAgenciasPage() {
                             >
                               <IconCheckCircle />
                             </button>
-                          ))}
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -493,6 +502,23 @@ export default function GestionAgenciasPage() {
           puedeEditar={puedeEditar}
         />
       )}
+
+      <ConfirmDialog
+        open={aEliminar !== null}
+        tono="danger"
+        title="Desactivar agencia"
+        description={
+          aEliminar
+            ? `¿Desactivar la agencia ${aEliminar.razonSocial}? Sus cotizaciones y ventas no se eliminan.`
+            : ''
+        }
+        confirmLabel="Desactivar"
+        onConfirm={async () => {
+          if (aEliminar) await eliminar(aEliminar.id)
+          setAEliminar(null)
+        }}
+        onCancel={() => setAEliminar(null)}
+      />
     </section>
   )
 }

@@ -14,6 +14,8 @@ import {
 } from '../services/paqueteService'
 import { extractErrorMessage } from '@/api/http'
 import { IconPlus, IconSave, IconSend, IconTrash, IconX } from '@/components/icons'
+import { useToastStore } from '@/store/toastStore'
+import { soloTexto } from '@/utils/validacion'
 
 const VUELO_VACIO: PaqueteVuelo = {
   aerolinea: '',
@@ -65,6 +67,8 @@ export default function PaqueteFormPage() {
   const [cargando, setCargando] = useState(editando)
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const toast = useToastStore((s) => s.show)
 
   useEffect(() => {
     listarDestinos().then(setDestinos).catch(() => undefined)
@@ -167,9 +171,16 @@ export default function PaqueteFormPage() {
       } else {
         await crearPaquete(payload)
       }
+      toast(
+        editando
+          ? `Paquete "${nombre.trim()}" actualizado correctamente`
+          : `Paquete "${nombre.trim()}" creado correctamente (${estado === 'BORRADOR' ? 'borrador' : 'activo'})`,
+        'success',
+      )
       navigate('/paquetes')
     } catch (err) {
       setError(extractErrorMessage(err))
+      toast('No se pudo guardar el paquete', 'error')
     } finally {
       setGuardando(false)
     }
@@ -201,7 +212,7 @@ export default function PaqueteFormPage() {
                 type="text"
                 className={inputClase}
                 value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
+                onChange={(e) => setNombre(soloTexto(e.target.value))}
                 placeholder="Ej: Maravillas de Europa 15 días"
               />
             </Campo>
@@ -210,7 +221,7 @@ export default function PaqueteFormPage() {
               <textarea
                 className={`${inputClase} min-h-[80px] resize-y`}
                 value={descripcion}
-                onChange={(e) => setDescripcion(e.target.value)}
+                onChange={(e) => setDescripcion(soloTexto(e.target.value))}
                 placeholder="Resumen atractivo para la tarjeta..."
               />
             </Campo>
@@ -287,7 +298,7 @@ export default function PaqueteFormPage() {
                             type="text"
                             className={celdaClase}
                             value={v.aerolinea}
-                            onChange={(e) => actualizarVuelo(i, 'aerolinea', e.target.value)}
+                            onChange={(e) => actualizarVuelo(i, 'aerolinea', soloTexto(e.target.value))}
                             placeholder="Ej: LATAM"
                           />
                         </td>
@@ -296,7 +307,7 @@ export default function PaqueteFormPage() {
                             type="text"
                             className={celdaClase}
                             value={v.origen}
-                            onChange={(e) => actualizarVuelo(i, 'origen', e.target.value)}
+                            onChange={(e) => actualizarVuelo(i, 'origen', soloTexto(e.target.value))}
                             placeholder="Lima"
                           />
                         </td>
@@ -305,7 +316,7 @@ export default function PaqueteFormPage() {
                             type="text"
                             className={celdaClase}
                             value={v.destino}
-                            onChange={(e) => actualizarVuelo(i, 'destino', e.target.value)}
+                            onChange={(e) => actualizarVuelo(i, 'destino', soloTexto(e.target.value))}
                             placeholder="Cusco"
                           />
                         </td>
@@ -379,7 +390,7 @@ export default function PaqueteFormPage() {
                             type="text"
                             className={`${celdaClase} w-36`}
                             value={o.hotelServicio}
-                            onChange={(e) => actualizarOpcion(i, 'hotelServicio', e.target.value)}
+                            onChange={(e) => actualizarOpcion(i, 'hotelServicio', soloTexto(e.target.value))}
                             placeholder="Ej: Hotel Paracas"
                           />
                         </td>

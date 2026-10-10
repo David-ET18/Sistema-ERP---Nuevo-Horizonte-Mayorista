@@ -19,6 +19,8 @@ import {
   listarTiposServicio,
 } from '../services/proveedorService'
 import { extractErrorMessage } from '@/api/http'
+import ConfirmDialog from '@/components/ConfirmDialog'
+import { useToastStore } from '@/store/toastStore'
 import {
   canCreateModule,
   canDeleteModule,
@@ -26,11 +28,13 @@ import {
 } from '@/modules/gestion-usuarios-roles-permisos/utils/permissions'
 import { formatDate } from '@/utils/format'
 import ProveedorFormModal from '../components/ProveedorFormModal'
+import ProveedorDetalleModal from '../components/ProveedorDetalleModal'
 import {
   IconAlertTriangle,
   IconChevronLeft,
   IconChevronRight,
   IconCheckCircle,
+  IconEye,
   IconPencil,
   IconPower,
   IconSearch,
@@ -62,11 +66,15 @@ export default function ProveedoresPage() {
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [editando, setEditando] = useState<Proveedor | null>(null)
+  const [detalleId, setDetalleId] = useState<number | null>(null)
+  const [aEliminar, setAEliminar] = useState<ProveedorLista | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
 
   const puedeCrear = canCreateModule(MODULO)
   const puedeEditar = canUpdateModule(MODULO)
   const puedeEliminar = canDeleteModule(MODULO)
+
+  const toast = useToastStore((s) => s.show)
 
   useEffect(() => {
     listarTiposServicio().then(setTiposServicio).catch(() => undefined)
@@ -114,13 +122,14 @@ export default function ProveedoresPage() {
     }
   }
 
-  async function eliminar(id: number, razonSocial: string) {
-    if (!window.confirm(`¿Desactivar el proveedor ${razonSocial}? Sus tarifas e historial no se eliminan.`)) return
+  async function eliminar(id: number) {
     try {
       await eliminarProveedor(id)
       recargar(true)
+      toast('Proveedor desactivado correctamente', 'success')
     } catch (err) {
       setError(extractErrorMessage(err))
+      toast(`No se pudo eliminar: ${extractErrorMessage(err)}`, 'error')
     }
   }
 
@@ -128,8 +137,10 @@ export default function ProveedoresPage() {
     try {
       await activarProveedor(id)
       recargar(true)
+      toast('Proveedor reactivado correctamente', 'success')
     } catch (err) {
       setError(extractErrorMessage(err))
+      toast(`No se pudo reactivar: ${extractErrorMessage(err)}`, 'error')
     }
   }
 
@@ -329,6 +340,15 @@ export default function ProveedoresPage() {
                     <td className="px-4 py-3 text-xs text-gray-500">{formatDate(p.fechaActualizacion)}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          className="cursor-pointer rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                          onClick={() => setDetalleId(p.id)}
+                          aria-label={`Ver ${p.razonSocial}`}
+                          title="Ver"
+                        >
+                          <IconEye />
+                        </button>
                         {puedeEditar && (
                           <button
                             type="button"
@@ -339,17 +359,18 @@ export default function ProveedoresPage() {
                             <IconPencil />
                           </button>
                         )}
-                        {puedeEliminar && (p.activo ? (
+                        {puedeEliminar && p.activo && (
                           <button
                             type="button"
                             className="cursor-pointer rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"
-                            onClick={() => eliminar(p.id, p.razonSocial)}
+                            onClick={() => setAEliminar(p)}
                             aria-label={`Desactivar ${p.razonSocial}`}
                             title="Desactivar"
                           >
                             <IconPower />
                           </button>
-                        ) : (
+                        )}
+                        {puedeEditar && !p.activo && (
                           <button
                             type="button"
                             className="cursor-pointer rounded-lg p-2 text-gray-400 hover:bg-emerald-50 hover:text-emerald-600"
@@ -359,7 +380,7 @@ export default function ProveedoresPage() {
                           >
                             <IconCheckCircle />
                           </button>
-                        ))}
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -447,6 +468,27 @@ export default function ProveedoresPage() {
           }}
         />
       )}
+
+      {detalleId !== null && (
+        <ProveedorDetalleModal id={detalleId} onClose={() => setDetalleId(null)} />
+      )}
+
+      <ConfirmDialog
+        open={aEliminar !== null}
+        tono="danger"
+        title="Desactivar proveedor"
+        description={
+          aEliminar
+            ? `¿Desactivar el proveedor ${aEliminar.razonSocial}? Sus tarifas e historial no se eliminan.`
+            : ''
+        }
+        confirmLabel="Desactivar"
+        onConfirm={async () => {
+          if (aEliminar) await eliminar(aEliminar.id)
+          setAEliminar(null)
+        }}
+        onCancel={() => setAEliminar(null)}
+      />
     </section>
   )
 }

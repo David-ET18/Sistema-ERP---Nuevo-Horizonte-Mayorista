@@ -10,17 +10,21 @@ import {
   listarPaquetes,
 } from '../services/paqueteService'
 import { extractErrorMessage } from '@/api/http'
+import ConfirmDialog from '@/components/ConfirmDialog'
+import { useToastStore } from '@/store/toastStore'
 import {
   canCreateModule,
   canDeleteModule,
   canUpdateModule,
 } from '@/modules/gestion-usuarios-roles-permisos/utils/permissions'
 import { formatDate } from '@/utils/format'
+import PaqueteDetalleModal from '../components/PaqueteDetalleModal'
 import {
   IconCheckCircle,
   IconChevronLeft,
   IconChevronRight,
   IconClock,
+  IconEye,
   IconPencil,
   IconSearch,
   IconStar,
@@ -62,11 +66,15 @@ export default function PaquetesPage() {
   const [destinos, setDestinos] = useState<Destino[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [detalleId, setDetalleId] = useState<number | null>(null)
+  const [aEliminar, setAEliminar] = useState<PaqueteLista | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
 
   const puedeCrear = canCreateModule(MODULO)
   const puedeEditar = canUpdateModule(MODULO)
   const puedeEliminar = canDeleteModule(MODULO)
+
+  const toast = useToastStore((s) => s.show)
 
   useEffect(() => {
     listarCategorias().then(setCategorias).catch(() => undefined)
@@ -104,15 +112,14 @@ export default function PaquetesPage() {
     recargar(true)
   }
 
-  async function eliminar(id: number, nombre: string) {
-    if (!window.confirm(
-      `¿Eliminar el paquete "${nombre}"? Si ya tiene ventas registradas, en vez de borrarlo se marcará como inactivo.`,
-    )) return
+  async function eliminar(id: number) {
     try {
       await eliminarPaquete(id)
       recargar(true)
+      toast(aEliminar ? `Paquete "${aEliminar.nombre}" eliminado` : 'Paquete eliminado correctamente', 'success')
     } catch (err) {
       setError(extractErrorMessage(err))
+      toast(`No se pudo eliminar el paquete: ${extractErrorMessage(err)}`, 'error')
     }
   }
 
@@ -321,6 +328,15 @@ export default function PaquetesPage() {
                     <td className="px-4 py-3 text-xs text-gray-500">{formatDate(p.fechaActualizacion)}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          className="cursor-pointer rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                          onClick={() => setDetalleId(p.id)}
+                          aria-label={`Ver ${p.nombre}`}
+                          title="Ver"
+                        >
+                          <IconEye />
+                        </button>
                         {puedeEditar && (
                           <button
                             type="button"
@@ -335,7 +351,7 @@ export default function PaquetesPage() {
                           <button
                             type="button"
                             className="cursor-pointer rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"
-                            onClick={() => eliminar(p.id, p.nombre)}
+                            onClick={() => setAEliminar(p)}
                             aria-label="Eliminar"
                           >
                             <IconTrash />
@@ -414,6 +430,27 @@ export default function PaquetesPage() {
           </div>
         )}
       </div>
+
+      {detalleId !== null && (
+        <PaqueteDetalleModal id={detalleId} onClose={() => setDetalleId(null)} />
+      )}
+
+      <ConfirmDialog
+        open={aEliminar !== null}
+        tono="danger"
+        title="Eliminar paquete"
+        description={
+          aEliminar
+            ? `¿Eliminar el paquete "${aEliminar.nombre}"? Si ya tiene ventas registradas, en vez de borrarlo se marcará como inactivo.`
+            : ''
+        }
+        confirmLabel="Eliminar"
+        onConfirm={async () => {
+          if (aEliminar) await eliminar(aEliminar.id)
+          setAEliminar(null)
+        }}
+        onCancel={() => setAEliminar(null)}
+      />
     </section>
   )
 }

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
+import ModalMarca from '@/components/ModalMarca'
 import { IconAlertTriangle } from '@/components/icons'
 
 interface Props {
@@ -66,9 +67,11 @@ export default function ConfirmDialog({
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
-        className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl"
+        className="animate-modal-pop w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
         onClick={(e) => e.stopPropagation()}
       >
+        <ModalMarca />
+        <div className="p-5">
         <div className="flex items-start gap-3">
           <span
             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
@@ -108,6 +111,7 @@ export default function ConfirmDialog({
             )}
             {procesando ? 'Procesando…' : confirmLabel}
           </button>
+        </div>
         </div>
       </div>
     </div>

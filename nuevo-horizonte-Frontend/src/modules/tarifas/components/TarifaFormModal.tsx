@@ -4,7 +4,10 @@ import type { Destino, ProveedorRef, Servicio, Tarifa, TarifaPayload } from '../
 import { actualizarTarifa, crearTarifa, subirArchivoRespaldo } from '../services/tarifaService'
 import { extractErrorMessage } from '@/api/http'
 import { IconUpload, IconX } from '@/components/icons'
+import ModalMarca from '@/components/ModalMarca'
+import { useToastStore } from '@/store/toastStore'
 import { useFormDraft } from '@/hooks/useFormDraft'
+import { soloTexto } from '@/utils/validacion'
 
 interface Props {
   tarifa: Tarifa | null
@@ -64,6 +67,8 @@ export default function TarifaFormModal({
   // El alta conserva borrador entre cierres; la edicion parte del registro real.
   const borrador = useFormDraft<FormState>('tarifa:nueva', VACIO)
   const form = editando ? formEdicion : borrador.valor
+
+  const toast = useToastStore((s) => s.show)
 
   useEffect(() => {
     if (tarifa) {
@@ -161,16 +166,19 @@ export default function TarifaFormModal({
       if (editando && tarifa) {
         await actualizarTarifa(tarifa.id, payload)
         limpiarFormulario()
+        toast('Tarifa actualizada correctamente', 'success')
       } else {
         const creada = await crearTarifa(payload)
         if (archivoPendiente) {
           await subirArchivoRespaldo(creada.id, archivoPendiente)
         }
         limpiarFormulario()
+        toast('Tarifa creada correctamente', 'success')
       }
       onSaved()
     } catch (err) {
       setError(extractErrorMessage(err))
+      toast('No se pudo guardar la tarifa', 'error')
     } finally {
       setGuardando(false)
     }
@@ -182,6 +190,7 @@ export default function TarifaFormModal({
         className="flex h-full w-[480px] max-w-full flex-col bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
+        <ModalMarca />
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
           <h3 className="text-base font-semibold text-gray-900">{editando ? 'Editar tarifa' : 'Nueva Tarifa'}</h3>
           <button
@@ -313,7 +322,7 @@ export default function TarifaFormModal({
               <textarea
                 className={`${inputClase} min-h-[70px] resize-y`}
                 value={form.condiciones}
-                onChange={(e) => setCampo('condiciones', e.target.value)}
+                onChange={(e) => setCampo('condiciones', soloTexto(e.target.value))}
                 placeholder="Condiciones de la tarifa..."
               />
             </Campo>
@@ -342,7 +351,7 @@ export default function TarifaFormModal({
               <textarea
                 className={`${inputClase} min-h-[70px] resize-y`}
                 value={form.observaciones}
-                onChange={(e) => setCampo('observaciones', e.target.value)}
+                onChange={(e) => setCampo('observaciones', soloTexto(e.target.value))}
                 placeholder="Observaciones adicionales..."
               />
             </Campo>
