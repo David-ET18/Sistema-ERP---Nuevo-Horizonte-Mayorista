@@ -6,6 +6,8 @@ import { ESTADOS_COTIZACION, formatDateDDMMYYYY, formatFechaHora, formatMonto } 
 import { extractErrorMessage } from '@/api/http'
 import EstadoBadge from './EstadoBadge'
 import { IconX } from '@/components/icons'
+import ModalMarca from '@/components/ModalMarca'
+import { useToastStore } from '@/store/toastStore'
 
 interface Props {
   id: number
@@ -24,6 +26,8 @@ export default function CotizacionDetailModal({
   const [nuevoEstado, setNuevoEstado] = useState<EstadoCotizacion>('PENDIENTE')
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+
+  const toast = useToastStore((s) => s.show)
 
   async function cargar() {
     try {
@@ -49,8 +53,10 @@ export default function CotizacionDetailModal({
       await cambiarEstadoCotizacion(detalle.id, nuevoEstado)
       await cargar()
       await onEstadoCambiado()
+      toast('Estado de la cotización actualizado', 'success')
     } catch (err) {
       setError(extractErrorMessage(err))
+      toast(`No se pudo actualizar el estado: ${extractErrorMessage(err)}`, 'error')
     } finally {
       setSaving(false)
     }
@@ -72,9 +78,12 @@ export default function CotizacionDetailModal({
       onClick={onClose}
     >
       <div
-        className="flex max-h-[90vh] w-[720px] max-w-[95vw] flex-col gap-4 overflow-y-auto rounded-xl bg-white p-6"
+        className="animate-modal-pop flex max-h-[90vh] w-[720px] max-w-[95vw] flex-col gap-4 overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-black/5"
         onClick={(e) => e.stopPropagation()}
       >
+        <div className="-mx-6 -mt-6 mb-1 rounded-t-2xl">
+          <ModalMarca />
+        </div>
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <h3 className="text-lg font-semibold">{detalle?.numero}</h3>

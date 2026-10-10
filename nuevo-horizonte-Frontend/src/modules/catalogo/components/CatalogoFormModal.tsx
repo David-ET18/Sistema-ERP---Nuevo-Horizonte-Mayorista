@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 
 import { extractErrorMessage } from '@/api/http'
 import Alert from '@/components/Alert'
+import ModalMarca from '@/components/ModalMarca'
 import { IconX } from '@/components/icons'
 import { useFormDraft } from '@/hooks/useFormDraft'
+import { soloTexto } from '@/utils/validacion'
 
 export interface ValoresCatalogo {
   nombre: string
@@ -103,6 +105,7 @@ export default function CatalogoFormModal({
         className="animate-panel-in flex h-full w-[460px] max-w-full flex-col bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
+        <ModalMarca />
         <div className="flex items-start justify-between gap-3 border-b border-gray-100 px-6 py-5">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600">
@@ -135,7 +138,7 @@ export default function CatalogoFormModal({
               autoFocus
               className={inputClase}
               value={valores.nombre}
-              onChange={(e) => set('nombre', e.target.value)}
+              onChange={(e) => set('nombre', soloTexto(e.target.value))}
               placeholder={`Ej. ${etiquetaNombre === 'Nombre' ? 'Cusco' : ''}`}
             />
           </label>
@@ -151,7 +154,7 @@ export default function CatalogoFormModal({
               list="sugerencias-grupo"
               className={inputClase}
               value={valores.grupo}
-              onChange={(e) => set('grupo', e.target.value)}
+              onChange={(e) => set('grupo', soloTexto(e.target.value))}
               autoComplete="off"
             />
             <datalist id="sugerencias-grupo">
@@ -171,7 +174,7 @@ export default function CatalogoFormModal({
             <textarea
               className={`${inputClase} min-h-[100px] resize-y`}
               value={valores.descripcion}
-              onChange={(e) => set('descripcion', e.target.value)}
+              onChange={(e) => set('descripcion', soloTexto(e.target.value))}
               placeholder="Notas internas, referencias u observaciones (opcional)"
             />
           </label>

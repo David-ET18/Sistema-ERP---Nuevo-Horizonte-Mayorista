@@ -22,6 +22,8 @@ import {
   listarTiposTarifa,
 } from '../services/tarifaService'
 import { extractErrorMessage } from '@/api/http'
+import ConfirmDialog from '@/components/ConfirmDialog'
+import { useToastStore } from '@/store/toastStore'
 import {
   canCreateModule,
   canDeleteModule,
@@ -29,11 +31,13 @@ import {
 } from '@/modules/gestion-usuarios-roles-permisos/utils/permissions'
 import { formatDate } from '@/utils/format'
 import TarifaFormModal from '../components/TarifaFormModal'
+import TarifaDetalleModal from '../components/TarifaDetalleModal'
 import {
   IconCalendar,
   IconChevronDown,
   IconChevronLeft,
   IconChevronRight,
+  IconEye,
   IconInfo,
   IconMoney,
   IconPencil,
@@ -80,6 +84,10 @@ export default function TarifasPage() {
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [editando, setEditando] = useState<Tarifa | null>(null)
+  const [detalleId, setDetalleId] = useState<number | null>(null)
+
+  const toast = useToastStore((s) => s.show)
+  const [aEliminar, setAEliminar] = useState<TarifaLista | null>(null)
   const [expandidoId, setExpandidoId] = useState<number | null>(null)
   const [detalleExpandido, setDetalleExpandido] = useState<Tarifa | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
@@ -150,15 +158,14 @@ export default function TarifasPage() {
     }
   }
 
-  async function eliminar(id: number, etiqueta: string) {
-    if (!window.confirm(
-      `¿Eliminar la tarifa de ${etiqueta}? Si ya fue usada en una cotización o venta, en vez de borrarla se marcará como vencida.`,
-    )) return
+  async function eliminar(id: number) {
     try {
       await eliminarTarifa(id)
       recargar(true)
+      toast('Tarifa eliminada correctamente', 'success')
     } catch (err) {
       setError(extractErrorMessage(err))
+      toast(`No se pudo eliminar la tarifa: ${extractErrorMessage(err)}`, 'error')
     }
   }
 
@@ -382,8 +389,17 @@ export default function TarifasPage() {
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-500">{formatDate(t.fechaActualizacion)}</td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-1">
-                          {puedeEditar && (
+<div className="flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          className="cursor-pointer rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                          onClick={() => setDetalleId(t.id)}
+                          aria-label={`Ver tarifa de ${t.proveedor}`}
+                          title="Ver"
+                        >
+                          <IconEye />
+                        </button>
+                        {puedeEditar && (
                             <button
                               type="button"
                               className="cursor-pointer rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
@@ -397,8 +413,8 @@ export default function TarifasPage() {
                             <button
                               type="button"
                               className="cursor-pointer rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"
-                              onClick={() => eliminar(t.id, `${t.proveedor} - ${t.servicio}`)}
-                              aria-label="Eliminar"
+onClick={() => setAEliminar(t)}
+                            aria-label="Eliminar"
                             >
                               <IconTrash />
                             </button>
@@ -539,6 +555,27 @@ export default function TarifasPage() {
           }}
         />
       )}
+
+      {detalleId !== null && (
+        <TarifaDetalleModal id={detalleId} onClose={() => setDetalleId(null)} />
+      )}
+
+      <ConfirmDialog
+        open={aEliminar !== null}
+        tono="danger"
+        title="Eliminar tarifa"
+        description={
+          aEliminar
+            ? `¿Eliminar la tarifa de ${aEliminar.proveedor} - ${aEliminar.servicio}? Si ya fue usada en una cotización o venta, en vez de borrarla se marcará como vencida.`
+            : ''
+        }
+        confirmLabel="Eliminar"
+        onConfirm={async () => {
+          if (aEliminar) await eliminar(aEliminar.id)
+          setAEliminar(null)
+        }}
+        onCancel={() => setAEliminar(null)}
+      />
     </section>
   )
 }

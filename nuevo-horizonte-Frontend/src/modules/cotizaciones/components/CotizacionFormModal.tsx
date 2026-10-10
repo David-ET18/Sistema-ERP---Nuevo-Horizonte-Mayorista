@@ -18,7 +18,10 @@ import {
 import { formatDateDDMMYYYY, formatMonto } from '../utils'
 import { extractErrorMessage } from '@/api/http'
 import { IconX } from '@/components/icons'
+import ModalMarca from '@/components/ModalMarca'
+import { useToastStore } from '@/store/toastStore'
 import { useFormDraft } from '@/hooks/useFormDraft'
+import { soloTexto } from '@/utils/validacion'
 
 interface Props {
   cotizacion?: Cotizacion | null
@@ -71,6 +74,8 @@ export default function CotizacionFormModal({
   )
 
   const esEdicion = Boolean(cotizacion)
+
+  const toast = useToastStore((s) => s.show)
 
   // El alta conserva borrador entre cierres; la edicion parte del registro real.
   const borrador = useFormDraft<CotizacionFormState>('cotizacion:nueva', VACIO)
@@ -187,11 +192,17 @@ export default function CotizacionFormModal({
     const payload = prepararDatos()
     if (!payload) return
     setSaving(true)
+    const eraEdicion = Boolean(guardado)
     try {
       await guardar(payload)
       onSaved()
+      toast(
+        eraEdicion ? 'Cotización actualizada correctamente' : 'Borrador de cotización creado correctamente',
+        'success',
+      )
     } catch (err) {
       setDanos(extractErrorMessage(err))
+      toast('No se pudo guardar la cotización', 'error')
     } finally {
       setSaving(false)
     }
@@ -201,12 +212,18 @@ export default function CotizacionFormModal({
     const payload = prepararDatos()
     if (!payload) return
     setSaving(true)
+    const eraEdicion = Boolean(guardado)
     try {
       await guardar(payload)
       onSaved()
+      toast(
+        eraEdicion ? 'Cotización actualizada correctamente' : 'Cotización guardada correctamente',
+        'success',
+      )
       setPaso(2)
     } catch (err) {
       setDanos(extractErrorMessage(err))
+      toast('No se pudo guardar la cotización', 'error')
     } finally {
       setSaving(false)
     }
@@ -221,6 +238,7 @@ export default function CotizacionFormModal({
         await guardar(payload)
       } catch (err) {
         setDanos(extractErrorMessage(err))
+        toast('No se pudo guardar la cotización', 'error')
         setSaving(false)
         return
       }
@@ -232,9 +250,11 @@ export default function CotizacionFormModal({
       await cambiarEstadoCotizacion(idFinal, 'ENVIADA')
       limpiarFormulario()
       onSaved()
+      toast('Cotización enviada correctamente', 'success')
       onClose()
     } catch (err) {
       setDanos(extractErrorMessage(err))
+      toast('No se pudo enviar la cotización', 'error')
     } finally {
       setSaving(false)
     }
@@ -322,6 +342,7 @@ export default function CotizacionFormModal({
         role="dialog"
         aria-modal="true"
       >
+        <ModalMarca />
         <header className="flex items-center justify-between border-b border-gray-200 bg-white px-5 py-4">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">
@@ -367,21 +388,6 @@ export default function CotizacionFormModal({
                     </select>
                   </label>
                   <label className="flex flex-col gap-1 text-[13px] text-gray-500">
-                    <span>Producto *</span>
-                    <select
-                      className={SECCION_CAMPO}
-                      value={tarifaId}
-                      onChange={(e) => elegirProducto(e.target.value)}
-                    >
-                      <option value="">Seleccionar producto</option>
-                      {tarifasDelDestino.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.servicio} · {t.proveedor} · {formatMonto(t.precio)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="flex flex-col gap-1 text-[13px] text-gray-500">
                     <span>Destino *</span>
                     <select
                       className={SECCION_CAMPO}
@@ -395,6 +401,21 @@ export default function CotizacionFormModal({
                       {destinos.map((d) => (
                         <option key={d.id} value={d.id}>
                           {d.nombre} · {d.pais}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex flex-col gap-1 text-[13px] text-gray-500">
+                    <span>Producto *</span>
+                    <select
+                      className={SECCION_CAMPO}
+                      value={tarifaId}
+                      onChange={(e) => elegirProducto(e.target.value)}
+                    >
+                      <option value="">Seleccionar producto</option>
+                      {tarifasDelDestino.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.servicio} · {t.proveedor} · {formatMonto(t.precio)}
                         </option>
                       ))}
                     </select>
@@ -437,7 +458,7 @@ export default function CotizacionFormModal({
                     placeholder="Describir los servicios adicionales..."
                     className="resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand"
                     value={serviciosAdicionales}
-                    onChange={(e) => setCampo('serviciosAdicionales', e.target.value)}
+                    onChange={(e) => setCampo('serviciosAdicionales', soloTexto(e.target.value))}
                   />
                 </section>
               </>

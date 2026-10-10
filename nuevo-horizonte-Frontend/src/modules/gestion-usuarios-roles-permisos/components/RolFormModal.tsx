@@ -9,6 +9,7 @@ import { MODULOS } from '@/config/modulos'
 import { useFormDraft } from '@/hooks/useFormDraft'
 import Alert from '@/components/Alert'
 import { IconX } from '@/components/icons'
+import { soloTexto } from '@/utils/validacion'
 
 interface RolFormModalProps {
   onClose: () => void
@@ -249,7 +250,7 @@ export default function RolFormModal({ onClose, onSubmit, rol }: RolFormModalPro
                 <input
                   className={inputClase}
                   value={nombre}
-                  onChange={(e) => patch({ nombre: e.target.value })}
+                  onChange={(e) => patch({ nombre: soloTexto(e.target.value) })}
                   placeholder="Ej. Coordinador de Ventas"
                   required
                 />
@@ -286,7 +287,7 @@ export default function RolFormModal({ onClose, onSubmit, rol }: RolFormModalPro
               <textarea
                 className={`${inputClase} min-h-[70px] resize-y`}
                 value={descripcion}
-                onChange={(e) => patch({ descripcion: e.target.value })}
+                onChange={(e) => patch({ descripcion: soloTexto(e.target.value) })}
                 placeholder="¿A qué se dedica este rol dentro del equipo?"
               />
             </label>

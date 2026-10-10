@@ -6,8 +6,10 @@ import com.example.demo.modulos.gestionUsuariosRolesPermisos.dto.RolDTO;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.dto.RolRequest;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.entity.Rol;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.entity.RolPermiso;
+import com.example.demo.modulos.gestionUsuariosRolesPermisos.entity.UsuarioRol;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.mapper.RolMapper;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.repository.RolRepository;
+import com.example.demo.modulos.notificaciones.service.NotificacionService;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.NotFoundException;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -26,9 +29,11 @@ public class RolService {
 			"#2563eb", "#7c3aed", "#059669", "#d97706", "#0ea5e9", "#dc2626");
 
 	private final RolRepository rolRepository;
+	private final NotificacionService notificacionService;
 
-	public RolService(RolRepository rolRepository) {
+	public RolService(RolRepository rolRepository, NotificacionService notificacionService) {
 		this.rolRepository = rolRepository;
+		this.notificacionService = notificacionService;
 	}
 
 	@Transactional(readOnly = true)
@@ -84,9 +89,30 @@ public class RolService {
 		}
 		rol.setFechaActualizacion(LocalDateTime.now());
 
-		rol.getRolPermisos().clear();
-		cargarPermisos(rol, request);
-		return RolMapper.toDTO(rol);
+		boolean cambioPermisos = false;
+		if (request.permisos() != null) {
+			Set<String> antes = snapshotPermisos(rol.getRolPermisos());
+			rol.getRolPermisos().clear();
+			cargarPermisos(rol, request);
+			cambioPermisos = !antes.equals(snapshotPermisos(rol.getRolPermisos()));
+		}
+		else {
+			rol.getRolPermisos().clear();
+			cargarPermisos(rol, request);
+		}
+
+		RolDTO dto = RolMapper.toDTO(rol);
+		// Solo avisamos a los usuarios que tienen este rol: son quien se ve
+		// afectado por el cambio de permisos (ver "solo ver las actualizaciones
+		// a las personas con el rol modificado").
+		if (cambioPermisos && !rol.getUsuarioRoles().isEmpty()) {
+			notificacionService.crearParaUsuarios(
+					rol.getUsuarioRoles().stream().map(UsuarioRol::getUsuario).toList(),
+					"Permisos actualizados",
+					"Se actualizaron los permisos del rol \u00AB" + rol.getNombre() + "\u00BB",
+					NotificacionService.TIPO_PERMISOS);
+		}
+		return dto;
 	}
 
 	@Transactional
@@ -141,6 +167,20 @@ public class RolService {
 			rolPermiso.setPuedeEliminar(Boolean.TRUE.equals(permiso.puedeEliminar()));
 			rol.getRolPermisos().add(rolPermiso);
 		}
+	}
+
+	/**
+	 * Representa cada permiso del rol como una clave única (modulo + banderas).
+	 * Sirve para comparar los permisos antes y después de una edición y solo
+	 * notificar cuando realmente cambiaron, evitando ruido en cada guardado.
+	 */
+	private Set<String> snapshotPermisos(Collection<RolPermiso> permisos) {
+		Set<String> claves = new HashSet<>();
+		for (RolPermiso rp : permisos) {
+			claves.add(rp.getModulo() + "|" + rp.isPuedeLeer() + "|" + rp.isPuedeCrear()
+					+ "|" + rp.isPuedeActualizar() + "|" + rp.isPuedeEliminar());
+		}
+		return claves;
 	}
 
 	private String normalizarColor(String color, String nombre) {

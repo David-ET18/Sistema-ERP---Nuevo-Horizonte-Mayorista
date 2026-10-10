@@ -7,7 +7,9 @@ import { extractErrorMessage } from '@/api/http'
 import { getRoleColor } from '../utils/roleColor'
 import { useFormDraft } from '@/hooks/useFormDraft'
 import Alert from '@/components/Alert'
+import ModalMarca from '@/components/ModalMarca'
 import { IconEye, IconEyeOff, IconX } from '@/components/icons'
+import { quitarDigitos } from '@/utils/validacion'
 
 interface UsuarioFormModalProps {
   onClose: () => void
@@ -19,6 +21,8 @@ interface UsuarioFormState {
   email: string
   rolIds: number[]
 }
+
+type ErroresUsuario = Partial<Record<'username' | 'email' | 'password' | 'confirmacion', string>>
 
 const VACIO: UsuarioFormState = { username: '', email: '', rolIds: [] }
 
@@ -33,6 +37,8 @@ export default function UsuarioFormModal({
 
   // La contrasena nunca se guarda en sessionStorage: solo vive en memoria.
   const [password, setPassword] = useState('')
+  const [confirmacion, setConfirmacion] = useState('')
+  const [errores, setErrores] = useState<ErroresUsuario>({})
 
   const borrador = useFormDraft<UsuarioFormState>('usuario:nuevo', VACIO)
   const { username, email, rolIds } = borrador.valor
@@ -59,23 +65,31 @@ export default function UsuarioFormModal({
     )
   }
 
+  function limpiarError(campo: keyof ErroresUsuario) {
+    setErrores((prev) => {
+      if (!(campo in prev)) return prev
+      const next = { ...prev }
+      delete next[campo]
+      return next
+    })
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    const e: ErroresUsuario = {}
+    if (!username.trim()) e.username = 'El nombre de usuario es obligatorio'
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) e.email = 'Ingresa un email válido'
+    if (password.length < 6) e.password = 'La contraseña debe tener al menos 6 caracteres'
+    if (confirmacion !== password) e.confirmacion = 'Las contraseñas no coinciden'
+    setErrores(e)
+    if (Object.keys(e).length > 0) return
     setError(null)
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setError('Ingresa un email válido')
-      return
-    }
-    if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres')
-      return
-    }
 
     setSaving(true)
     try {
       await onSubmit({ username, password, email: email.trim(), rolIds })
       borrador.reset()
+      setConfirmacion('')
     } catch (err) {
       setError(extractErrorMessage(err))
     } finally {
@@ -85,6 +99,9 @@ export default function UsuarioFormModal({
 
   const inputClase =
     'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10'
+
+  const inputClaseError =
+    'w-full rounded-lg border border-red-400 bg-red-50/40 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-red-500 focus:outline-none focus:ring-4 focus:ring-red-500/10'
 
   const inicial = (username || '?').trim().charAt(0).toUpperCase() || '?'
 
@@ -101,6 +118,7 @@ export default function UsuarioFormModal({
         className="animate-panel-in flex h-full w-[480px] max-w-full flex-col bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
+        <ModalMarca />
         <form className="flex h-full flex-col" onSubmit={handleSubmit}>
           <div className="flex items-start justify-between gap-3 border-b border-gray-100 px-6 py-5">
             <div className="flex items-center gap-3">
@@ -132,14 +150,18 @@ export default function UsuarioFormModal({
                 Nombre de usuario <span className="text-red-500">*</span>
               </span>
               <input
-                className={inputClase}
+                className={errores.username ? inputClaseError : inputClase}
                 value={username}
-                onChange={(e) => borrador.setCampo('username', e.target.value)}
+                onChange={(e) => {
+                  borrador.setCampo('username', quitarDigitos(e.target.value))
+                  limpiarError('username')
+                }}
                 placeholder="Ej. jperez"
                 maxLength={60}
                 autoComplete="off"
                 required
               />
+              {errores.username && <span className="text-xs text-red-600">{errores.username}</span>}
             </label>
 
             <label className="flex flex-col gap-1.5">
@@ -149,9 +171,12 @@ export default function UsuarioFormModal({
               <div className="relative">
                 <input
                   type={verPassword ? 'text' : 'password'}
-                  className={`${inputClase} pr-10`}
+                  className={`${errores.password ? inputClaseError : inputClase} pr-10`}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    limpiarError('password')
+                  }}
                   placeholder="Mínimo 6 caracteres"
                   autoComplete="new-password"
                   required
@@ -166,6 +191,28 @@ export default function UsuarioFormModal({
                   {verPassword ? <IconEyeOff /> : <IconEye />}
                 </button>
               </div>
+              {errores.password && <span className="text-xs text-red-600">{errores.password}</span>}
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[13px] font-medium text-gray-700">
+                Confirmar contraseña <span className="text-red-500">*</span>
+              </span>
+              <div className="relative">
+                <input
+                  type={verPassword ? 'text' : 'password'}
+                  className={`${errores.confirmacion ? inputClaseError : inputClase} pr-10`}
+                  value={confirmacion}
+                  onChange={(e) => {
+                    setConfirmacion(e.target.value)
+                    limpiarError('confirmacion')
+                  }}
+                  placeholder="Repite la contraseña"
+                  autoComplete="new-password"
+                  required
+                />
+              </div>
+              {errores.confirmacion && <span className="text-xs text-red-600">{errores.confirmacion}</span>}
             </label>
 
             <label className="flex flex-col gap-1.5">
@@ -174,13 +221,17 @@ export default function UsuarioFormModal({
               </span>
               <input
                 type="email"
-                className={inputClase}
+                className={errores.email ? inputClaseError : inputClase}
                 value={email}
-                onChange={(e) => borrador.setCampo('email', e.target.value)}
+                onChange={(e) => {
+                  borrador.setCampo('email', quitarDigitos(e.target.value))
+                  limpiarError('email')
+                }}
                 placeholder="nombre@nuevohorizonte.pe"
                 maxLength={100}
                 required
               />
+              {errores.email && <span className="text-xs text-red-600">{errores.email}</span>}
             </label>
 
             <div className="flex flex-col gap-2 rounded-xl border border-gray-200">

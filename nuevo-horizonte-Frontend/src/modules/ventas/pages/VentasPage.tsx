@@ -7,6 +7,7 @@ import type {
   KpisVentas,
   PaginacionVentas,
   Venta,
+  VentaLista,
 } from '../types'
 import {
   cambiarEstadoVenta,
@@ -16,8 +17,10 @@ import {
   listarAgencias,
   listarVentas,
 } from '../services/ventaService'
-import { ESTADOS_VENTA, formatDateDDMMYYYY, formatMonto } from '../utils'
+import { ESTADOS_VENTA, estadoInfo, formatDateDDMMYYYY, formatMonto } from '../utils'
 import { extractErrorMessage } from '@/api/http'
+import ConfirmDialog from '@/components/ConfirmDialog'
+import { useToastStore } from '@/store/toastStore'
 import {
   canCreateModule,
   canDeleteModule,
@@ -62,10 +65,13 @@ export default function VentasPage() {
   const [showForm, setShowForm] = useState(false)
   const [editando, setEditando] = useState<Venta | null>(null)
   const [detalleId, setDetalleId] = useState<number | null>(null)
+  const [aAnular, setAAnular] = useState<VentaLista | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const puedeCrear = canCreateModule('ventas')
   const puedeEditar = canUpdateModule('ventas')
   const puedeEliminar = canDeleteModule('ventas')
+
+  const toast = useToastStore((s) => s.show)
 
   async function load() {
     setLoading(true)
@@ -131,18 +137,21 @@ export default function VentasPage() {
     try {
       await cambiarEstadoVenta(id, estado)
       recargar(false)
+      toast(`Venta actualizada a "${estadoInfo(estado).etiqueta}"`, 'success')
     } catch (err) {
       setError(extractErrorMessage(err))
+      toast(`No se pudo actualizar el estado: ${extractErrorMessage(err)}`, 'error')
     }
   }
 
-  async function eliminar(id: number, numero: string) {
-    if (!window.confirm(`¿Anular la venta ${numero}? Queda registrada como anulada, no se borra del historial.`)) return
+  async function eliminar(id: number) {
     try {
       await eliminarVenta(id)
       recargar(true)
+      toast('Venta anulada correctamente', 'success')
     } catch (err) {
       setError(extractErrorMessage(err))
+      toast(`No se pudo anular la venta: ${extractErrorMessage(err)}`, 'error')
     }
   }
 
@@ -369,7 +378,7 @@ export default function VentasPage() {
                           <button
                             type="button"
                             className="cursor-pointer rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"
-                            onClick={() => eliminar(v.id, v.numero)}
+                            onClick={() => setAAnular(v)}
                             aria-label={`Anular venta ${v.numero}`}
                             title="Anular"
                           >
@@ -473,6 +482,23 @@ export default function VentasPage() {
           puedeEditar={puedeEditar}
         />
       )}
+
+      <ConfirmDialog
+        open={aAnular !== null}
+        tono="danger"
+        title="Anular venta"
+        description={
+          aAnular
+            ? `¿Anular la venta ${aAnular.numero}? Queda registrada como anulada, no se borra del historial.`
+            : ''
+        }
+        confirmLabel="Anular"
+        onConfirm={async () => {
+          if (aAnular) await eliminar(aAnular.id)
+          setAAnular(null)
+        }}
+        onCancel={() => setAAnular(null)}
+      />
     </section>
   )
 }

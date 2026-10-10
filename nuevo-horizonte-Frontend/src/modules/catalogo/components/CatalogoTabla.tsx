@@ -6,6 +6,7 @@ import { colorEtiqueta } from '../utils/tagColor'
 import CatalogoFormModal, { type ValoresCatalogo } from './CatalogoFormModal'
 import { extractErrorMessage } from '@/api/http'
 import ConfirmDialog from '@/components/ConfirmDialog'
+import DetalleModal from '@/components/DetalleModal'
 import {
   canCreateModule,
   canDeleteModule,
@@ -20,6 +21,7 @@ import {
   IconChevronsLeft,
   IconChevronsRight,
   IconEdit,
+  IconEye,
   IconFilter,
   IconPlus,
   IconSearch,
@@ -136,6 +138,7 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
   const [formAbierto, setFormAbierto] = useState(false)
   const [editando, setEditando] = useState<T | null>(null)
   const [aEliminar, setAEliminar] = useState<T | null>(null)
+  const [aVer, setAVer] = useState<T | null>(null)
   const toast = useToastStore((s) => s.show)
 
   const puedeCrear = canCreateModule(MODULO)
@@ -388,6 +391,16 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
                       <td className="px-4 py-3.5">
                         <div className="flex items-center justify-center">
                           <div className="inline-flex items-center overflow-hidden rounded-lg border border-gray-200">
+                            <button
+                              type="button"
+                              className="flex h-8 w-8 cursor-pointer items-center justify-center text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600"
+                              onClick={() => setAVer(item)}
+                              aria-label={`Ver ${item.nombre}`}
+                              title="Ver"
+                            >
+                              <IconEye className="h-4 w-4" />
+                            </button>
+                            {puedeEditar && <span className="h-8 w-px bg-gray-200" />}
                             {puedeEditar && (
                               <button
                                 type="button"
@@ -596,6 +609,20 @@ export default function CatalogoTabla<T extends ItemCatalogo>({
         onConfirm={confirmarEliminar}
         onCancel={() => setAEliminar(null)}
       />
+
+      {aVer && (
+        <DetalleModal
+          titulo={aVer.nombre}
+          subtitulo={capitalizar(singular)}
+          filas={[
+            { etiqueta: etiquetaGrupo, valor: obtenerGrupo(aVer) ?? '-' },
+            { etiqueta: 'Descripción', valor: aVer.descripcion || '-' },
+            { etiqueta: 'Estado', valor: aVer.activo ? 'Activo' : 'Inactivo' },
+            { etiqueta: 'Registrado', valor: formatDate(aVer.fechaCreacion) },
+          ]}
+          onClose={() => setAVer(null)}
+        />
+      )}
     </div>
   )
 }

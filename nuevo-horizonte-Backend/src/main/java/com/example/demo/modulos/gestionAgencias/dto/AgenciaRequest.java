@@ -7,9 +7,11 @@ import jakarta.validation.constraints.Size;
 
 public record AgenciaRequest(
 		@NotBlank(message = "La razon social es obligatoria")
+		@Pattern(regexp = "^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\\s&.,'()-]*$", message = "La razon social no debe contener numeros")
 		@Size(max = 200, message = "La razon social es muy larga")
 		String razonSocial,
 
+		@Pattern(regexp = "^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\\s&.,'()-]*$", message = "El nombre comercial no debe contener numeros")
 		@Size(max = 200, message = "El nombre comercial es muy largo")
 		String nombreComercial,
 
@@ -23,7 +25,7 @@ public record AgenciaRequest(
 		@Size(max = 100, message = "El nombre de contacto es muy largo")
 		String contactoNombre,
 
-		@Size(max = 20, message = "El telefono es muy largo")
+		@Pattern(regexp = "^\\d{9}$", message = "El telefono debe tener 9 digitos")
 		String contactoTelefono,
 
 		@Email(message = "El email no es valido")

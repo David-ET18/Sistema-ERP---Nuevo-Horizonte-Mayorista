@@ -3,25 +3,30 @@ import type { ReactElement } from 'react'
 import { useToastStore } from '@/store/toastStore'
 import type { ToastType } from '@/store/toastStore'
 
-const STYLES: Record<
-  ToastType,
-  { container: string; icon: string }
-> = {
+const CONFIG: Record<ToastType, { accent: string; chip: string; bar: string; titulo: string }> = {
   success: {
-    container: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-    icon: 'text-emerald-500',
+    accent: 'bg-emerald-500',
+    chip: 'bg-emerald-100 text-emerald-600',
+    bar: 'bg-emerald-500',
+    titulo: '¡Todo listo!',
   },
   error: {
-    container: 'border-red-200 bg-red-50 text-red-800',
-    icon: 'text-red-500',
-  },
-  info: {
-    container: 'border-blue-200 bg-blue-50 text-blue-800',
-    icon: 'text-blue-500',
+    accent: 'bg-red-500',
+    chip: 'bg-red-100 text-red-600',
+    bar: 'bg-red-500',
+    titulo: 'Ocurrió un error',
   },
   warning: {
-    container: 'border-amber-200 bg-amber-50 text-amber-800',
-    icon: 'text-amber-500',
+    accent: 'bg-amber-400',
+    chip: 'bg-amber-100 text-amber-600',
+    bar: 'bg-amber-400',
+    titulo: 'Aviso',
+  },
+  info: {
+    accent: 'bg-blue-500',
+    chip: 'bg-blue-100 text-blue-600',
+    bar: 'bg-blue-500',
+    titulo: 'Información',
   },
 }
 
@@ -52,8 +57,16 @@ function InfoIcon() {
 const ICONS: Record<ToastType, () => ReactElement> = {
   success: CheckIcon,
   error: ExclamationIcon,
-  info: InfoIcon,
   warning: ExclamationIcon,
+  info: InfoIcon,
+}
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+      <path d="M6 18 18 6M6 6l12 12" />
+    </svg>
+  )
 }
 
 export default function Toast() {
@@ -61,27 +74,32 @@ export default function Toast() {
   if (!visible) return null
 
   const Icon = ICONS[type]
-  const styles = STYLES[type]
+  const config = CONFIG[type]
 
   return (
     <div
       role="status"
-      className={`toast-in fixed top-6 right-6 z-[100] flex max-w-sm items-center gap-3 rounded-xl border px-4 py-3 shadow-lg ${styles.container}`}
+      className="toast-in fixed top-6 right-6 z-[100] flex w-full max-w-sm overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-gray-200/80"
     >
-      <span className={styles.icon}>
-        <Icon />
-      </span>
-      <p className="text-[13px] font-medium">{message}</p>
-      <button
-        type="button"
-        onClick={hide}
-        className="ml-2 cursor-pointer rounded p-0.5 opacity-60 hover:opacity-100"
-        aria-label="Cerrar notificación"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-          <path d="M6 18 18 6M6 6l12 12" />
-        </svg>
-      </button>
+      <span className={`w-1.5 shrink-0 ${config.accent}`} />
+      <div className="flex min-w-0 flex-1 items-start gap-3 py-3.5 pl-4 pr-3">
+        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${config.chip}`}>
+          <Icon />
+        </span>
+        <div className="min-w-0 flex-1 pt-0.5">
+          <p className="text-[13px] font-semibold text-gray-900">{config.titulo}</p>
+          <p className="mt-0.5 text-[12.5px] leading-relaxed text-gray-500">{message}</p>
+        </div>
+        <button
+          type="button"
+          onClick={hide}
+          className="mt-1 cursor-pointer rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+          aria-label="Cerrar notificación"
+        >
+          <CloseIcon />
+        </button>
+      </div>
+      <span className={`toast-progress absolute bottom-0 left-0 h-0.5 ${config.bar}`} />
     </div>
   )
 }

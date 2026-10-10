@@ -8,6 +8,7 @@ import com.example.demo.modulos.gestionUsuariosRolesPermisos.entity.Usuario;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.mapper.UsuarioMapper;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.repository.RolRepository;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.repository.UsuarioRepository;
+import com.example.demo.modulos.notificaciones.service.NotificacionService;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.NotFoundException;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,7 +16,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class UsuarioService {
@@ -23,12 +27,14 @@ public class UsuarioService {
 	private final UsuarioRepository usuarioRepository;
 	private final RolRepository rolRepository;
 	private final PasswordEncoder passwordEncoder;
+	private final NotificacionService notificacionService;
 
 	public UsuarioService(UsuarioRepository usuarioRepository, RolRepository rolRepository,
-			PasswordEncoder passwordEncoder) {
+			PasswordEncoder passwordEncoder, NotificacionService notificacionService) {
 		this.usuarioRepository = usuarioRepository;
 		this.rolRepository = rolRepository;
 		this.passwordEncoder = passwordEncoder;
+		this.notificacionService = notificacionService;
 	}
 
 	@Transactional(readOnly = true)
@@ -89,8 +95,13 @@ public class UsuarioService {
 		}
 
 		if (request.rolIds() != null) {
+			Set<Long> antes = usuario.getUsuarioRoles().stream()
+					.map(ur -> ur.getRol().getId())
+					.collect(Collectors.toSet());
 			usuario.getUsuarioRoles().clear();
 			asignarRoles(usuario, request.rolIds());
+			Set<Long> despues = new HashSet<>(request.rolIds());
+			notificarCambioRoles(usuario, antes, despues);
 		}
 
 		return UsuarioMapper.toDTO(usuario);
@@ -166,6 +177,35 @@ public class UsuarioService {
 			Rol rol = rolRepository.findById(rolId)
 					.orElseThrow(() -> new NotFoundException("Rol no encontrado con id " + rolId));
 			usuario.addRol(rol);
+		}
+	}
+
+	/**
+	 * Avisa al usuario de los roles que se le agregaron y de los que se le
+	 * quitaron. Cada cambio genera una notificacion individual para el
+	 * usuario afectado (solo el ve su propio cambio).
+	 */
+	private void notificarCambioRoles(Usuario usuario, Set<Long> antes, Set<Long> despues) {
+		List<Long> asignados = despues.stream().filter(id -> !antes.contains(id)).toList();
+		List<Long> quitados = antes.stream().filter(id -> !despues.contains(id)).toList();
+
+		for (Long rolId : asignados) {
+			Rol rol = rolRepository.findById(rolId).orElse(null);
+			if (rol != null) {
+				notificacionService.crearParaUsuario(usuario.getId(),
+						"Rol asignado",
+						"Se te asign\u00f3 el rol \u00AB" + rol.getNombre() + "\u00BB",
+						NotificacionService.TIPO_ROL_ASIGNADO);
+			}
+		}
+		for (Long rolId : quitados) {
+			Rol rol = rolRepository.findById(rolId).orElse(null);
+			if (rol != null) {
+				notificacionService.crearParaUsuario(usuario.getId(),
+						"Rol retirado",
+						"Se te quit\u00f3 el rol \u00AB" + rol.getNombre() + "\u00BB",
+						NotificacionService.TIPO_ROL_QUITADO);
+			}
 		}
 	}
 }

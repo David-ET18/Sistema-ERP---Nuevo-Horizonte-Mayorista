@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import type { ReactElement, SVGProps } from 'react'
 
 import BrandLogo from '@/components/BrandLogo'
+import NotificacionesModal from '@/components/NotificacionesModal'
 import { useAuthStore } from '@/modules/gestion-usuarios-roles-permisos/store/authStore'
+import { useNotificacionesStore } from '@/store/notificacionesStore'
 import {
   DEFAULT_ROLE_COLOR,
   getRoleColor,
@@ -97,8 +99,19 @@ export default function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [notifOpen, setNotifOpen] = useState(false)
   const logout = useAuthStore((state) => state.logout)
   const user = useAuthStore((state) => state.user)
+  const noLeidasNotifs = useNotificacionesStore((state) => state.noLeidas)
+  const refrescarNotifs = useNotificacionesStore((state) => state.refrescar)
+
+  useEffect(() => {
+    void refrescarNotifs()
+    const timer = setInterval(() => {
+      void refrescarNotifs()
+    }, 30000)
+    return () => clearInterval(timer)
+  }, [refrescarNotifs])
 
   const roles = user?.roles ?? []
   const firstName = user?.username ?? 'Usuario'
@@ -223,11 +236,18 @@ export default function Layout() {
             {/* Notificaciones */}
             <button
               type="button"
+              onClick={() => setNotifOpen(true)}
               className="relative cursor-pointer rounded-lg p-2 text-gray-500 hover:bg-gray-100"
               aria-label="Notificaciones"
+              title="Notificaciones"
             >
               <BellIcon className="h-5 w-5" />
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
+              {noLeidasNotifs > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] animate-badge-pop items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+                  <span className="absolute inset-0 animate-badge-ping rounded-full bg-red-500" />
+                  <span className="relative">{noLeidasNotifs > 99 ? '99+' : noLeidasNotifs}</span>
+                </span>
+              )}
             </button>
 
             {/* Menú de usuario */}
@@ -293,6 +313,8 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+
+      {notifOpen && <NotificacionesModal onClose={() => setNotifOpen(false)} />}
     </div>
   )
 }

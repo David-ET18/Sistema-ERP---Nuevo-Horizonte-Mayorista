@@ -24,6 +24,7 @@ import {
   formatMonto,
 } from '../utils'
 import { extractErrorMessage } from '@/api/http'
+import { useToastStore } from '@/store/toastStore'
 import {
   canCreateModule,
   canUpdateModule,
@@ -74,6 +75,8 @@ export default function CotizacionesPage() {
   const [refreshKey, setRefreshKey] = useState(0)
   const puedeCrear = canCreateModule('cotizaciones')
   const puedeEditar = canUpdateModule('cotizaciones')
+
+  const toast = useToastStore((s) => s.show)
 
   async function load() {
     setLoading(true)
@@ -147,8 +150,10 @@ export default function CotizacionesPage() {
     try {
       await cambiarEstadoCotizacion(id, estado)
       recargar(false)
+      toast(`Cotización actualizada a "${estadoInfo(estado).etiqueta}"`, 'success')
     } catch (err) {
       setError(extractErrorMessage(err))
+      toast(`No se pudo actualizar el estado: ${extractErrorMessage(err)}`, 'error')
     }
   }
 

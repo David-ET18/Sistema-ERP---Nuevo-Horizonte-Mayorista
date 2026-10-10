@@ -4,7 +4,10 @@ import type { Agencia, AgenciaFormState, AgenciaPayload } from '../types'
 import { actualizarAgencia, crearAgencia, logoAgenciaUrl, subirLogoAgencia } from '../services/agenciaService'
 import { extractErrorMessage } from '@/api/http'
 import { IconUpload, IconX } from '@/components/icons'
+import ModalMarca from '@/components/ModalMarca'
+import { useToastStore } from '@/store/toastStore'
 import { useFormDraft } from '@/hooks/useFormDraft'
+import { esSoloTexto, soloDigitos, soloTexto } from '@/utils/validacion'
 
 const CATEGORIAS_SUGERIDAS = ['Premium', 'Estándar', 'Selectiva', 'Corporativa']
 
@@ -38,11 +41,14 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
   const [error, setError] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
   const [subiendo, setSubiendo] = useState(false)
+  const [errores, setErrores] = useState<Partial<Record<keyof AgenciaFormState, string>>>({})
   const inputLogo = useRef<HTMLInputElement>(null)
 
   // El alta conserva borrador entre cierres; la edicion parte del registro real.
   const borrador = useFormDraft<AgenciaFormState>('agencia:nueva', VACIO)
   const form = editando ? formEdicion : borrador.valor
+
+  const toast = useToastStore((s) => s.show)
 
   useEffect(() => {
     if (agencia) {
@@ -71,11 +77,18 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
     setPreview(null)
     setArchivoPendiente(null)
     borrador.reset()
+    setErrores({})
   }
 
   function setCampo<K extends keyof AgenciaFormState>(campo: K, valor: AgenciaFormState[K]) {
     if (editando) setFormEdicion((prev) => ({ ...prev, [campo]: valor }))
     else borrador.setCampo(campo, valor)
+    setErrores((prev) => {
+      if (!(campo in prev)) return prev
+      const next = { ...prev }
+      delete next[campo]
+      return next
+    })
   }
 
   async function manejarArchivo(evento: React.ChangeEvent<HTMLInputElement>) {
@@ -114,21 +127,27 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
     if (inputLogo.current) inputLogo.current.value = ''
   }
 
-  function validar(): string | null {
-    if (!form.razonSocial.trim()) return 'La razón social es obligatoria'
-    if (!/^\d{11}$/.test(form.ruc.trim())) return 'El RUC debe tener 11 dígitos'
-    if (form.contactoEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contactoEmail.trim())) {
-      return 'El email de contacto no es válido'
+  function validar(): Partial<Record<keyof AgenciaFormState, string>> {
+    const e: Partial<Record<keyof AgenciaFormState, string>> = {}
+    if (!form.razonSocial.trim()) e.razonSocial = 'La razón social es obligatoria'
+    else if (!esSoloTexto(form.razonSocial.trim())) e.razonSocial = 'La razón social solo debe contener letras'
+    if (!/^\d{11}$/.test(form.ruc.trim())) e.ruc = 'El RUC debe tener 11 dígitos'
+    if (form.nombreComercial.trim() && !esSoloTexto(form.nombreComercial.trim())) {
+      e.nombreComercial = 'El nombre comercial no debe contener números'
     }
-    return null
+    if (form.contactoTelefono.trim() && !/^\d{9}$/.test(form.contactoTelefono.trim())) {
+      e.contactoTelefono = 'El teléfono debe tener 9 dígitos'
+    }
+    if (form.contactoEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contactoEmail.trim())) {
+      e.contactoEmail = 'El email de contacto no es válido'
+    }
+    return e
   }
 
   async function guardar() {
-    const problema = validar()
-    if (problema) {
-      setError(problema)
-      return
-    }
+    const problemas = validar()
+    setErrores(problemas)
+    if (Object.keys(problemas).length > 0) return
 
     setGuardando(true)
     setError(null)
@@ -149,6 +168,7 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
       if (editando && agencia) {
         await actualizarAgencia(agencia.id, payload)
         limpiarFormulario()
+        toast(`Agencia "${payload.nombreComercial || payload.razonSocial}" actualizada correctamente`, 'success')
       } else {
         const creada = await crearAgencia(payload)
         // en alta la agencia todavia no tiene id, por eso el logo se sube despues
@@ -156,10 +176,12 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
           await subirLogoAgencia(creada.id, archivoPendiente)
         }
         limpiarFormulario()
+        toast(`Agencia "${payload.nombreComercial || payload.razonSocial}" creada correctamente`, 'success')
       }
       onSaved()
     } catch (err) {
       setError(extractErrorMessage(err))
+      toast('No se pudo guardar la agencia', 'error')
     } finally {
       setGuardando(false)
     }
@@ -173,6 +195,7 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
         className="flex h-full w-[480px] max-w-full flex-col bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
+        <ModalMarca />
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
           <div>
             <h3 className="text-base font-semibold text-gray-900">
@@ -241,34 +264,34 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
           </div>
 
           <div className="mt-6 flex flex-col gap-4">
-            <Campo label="Razón social" obligatorio>
+            <Campo label="Razón social" obligatorio error={errores.razonSocial}>
               <input
                 type="text"
                 maxLength={200}
-                className={inputClase}
+                className={errores.razonSocial ? inputClaseError : inputClase}
                 value={form.razonSocial}
-                onChange={(e) => setCampo('razonSocial', e.target.value)}
+                onChange={(e) => setCampo('razonSocial', soloTexto(e.target.value))}
                 placeholder="Viajes Horizonte SAC"
               />
             </Campo>
 
-            <Campo label="Nombre comercial">
+            <Campo label="Nombre comercial" error={errores.nombreComercial}>
               <input
                 type="text"
                 maxLength={200}
-                className={inputClase}
+                className={errores.nombreComercial ? inputClaseError : inputClase}
                 value={form.nombreComercial}
-                onChange={(e) => setCampo('nombreComercial', e.target.value)}
+                onChange={(e) => setCampo('nombreComercial', soloTexto(e.target.value))}
                 placeholder="Agencia Norte"
               />
             </Campo>
 
-            <Campo label="RUC" obligatorio>
+            <Campo label="RUC" obligatorio error={errores.ruc}>
               <input
                 type="text"
                 inputMode="numeric"
                 maxLength={11}
-                className={inputClase}
+                className={errores.ruc ? inputClaseError : inputClase}
                 value={form.ruc}
                 onChange={(e) => setCampo('ruc', e.target.value.replace(/\D/g, '').slice(0, 11))}
                 placeholder="20123456789"
@@ -303,7 +326,7 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
                 maxLength={100}
                 className={inputClase}
                 value={form.ciudad}
-                onChange={(e) => setCampo('ciudad', e.target.value)}
+                onChange={(e) => setCampo('ciudad', soloTexto(e.target.value))}
                 placeholder="Cusco"
               />
             </Campo>
@@ -314,7 +337,7 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
                 maxLength={150}
                 className={inputClase}
                 value={form.ejecutivoAsignado}
-                onChange={(e) => setCampo('ejecutivoAsignado', e.target.value)}
+                onChange={(e) => setCampo('ejecutivoAsignado', soloTexto(e.target.value))}
                 placeholder="María López"
               />
             </Campo>
@@ -327,27 +350,28 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
                 maxLength={100}
                 className={inputClase}
                 value={form.contactoNombre}
-                onChange={(e) => setCampo('contactoNombre', e.target.value)}
+                onChange={(e) => setCampo('contactoNombre', soloTexto(e.target.value))}
                 placeholder="María Gonzáles"
               />
             </Campo>
 
-            <Campo label="Teléfono de contacto">
+            <Campo label="Teléfono de contacto" error={errores.contactoTelefono}>
               <input
                 type="text"
-                maxLength={20}
-                className={inputClase}
+                inputMode="numeric"
+                maxLength={9}
+                className={errores.contactoTelefono ? inputClaseError : inputClase}
                 value={form.contactoTelefono}
-                onChange={(e) => setCampo('contactoTelefono', e.target.value)}
+                onChange={(e) => setCampo('contactoTelefono', soloDigitos(e.target.value, 9))}
                 placeholder="999 999 999"
               />
             </Campo>
 
-            <Campo label="Email de contacto">
+            <Campo label="Email de contacto" error={errores.contactoEmail}>
               <input
                 type="email"
                 maxLength={100}
-                className={inputClase}
+                className={errores.contactoEmail ? inputClaseError : inputClase}
                 value={form.contactoEmail}
                 onChange={(e) => setCampo('contactoEmail', e.target.value)}
                 placeholder="contacto@agencia.com"
@@ -405,13 +429,18 @@ export default function AgenciaFormModal({ agencia, registradasEsteMes, onClose,
 const inputClase =
   'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand'
 
+const inputClaseError =
+  'w-full rounded-lg border border-red-400 bg-red-50/40 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-300'
+
 function Campo({
   label,
   obligatorio,
+  error,
   children,
 }: {
   label: string
   obligatorio?: boolean
+  error?: string
   children: React.ReactNode
 }) {
   return (
@@ -421,6 +450,7 @@ function Campo({
         {obligatorio && <span className="text-red-500"> *</span>}
       </span>
       {children}
+      {error && <span className="text-xs text-red-600">{error}</span>}
     </label>
   )
 }
