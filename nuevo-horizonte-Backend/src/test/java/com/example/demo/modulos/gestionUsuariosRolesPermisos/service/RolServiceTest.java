@@ -21,6 +21,7 @@ import com.example.demo.modulos.gestionUsuariosRolesPermisos.dto.RolRequest;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.entity.Rol;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.entity.UsuarioRol;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.repository.RolRepository;
+import com.example.demo.modulos.notificaciones.service.NotificacionService;
 
 /**
  * Cubre la validacion de "modulo" contra el catalogo real (ER: el formulario
@@ -34,11 +35,16 @@ class RolServiceTest {
 	@Mock
 	private RolRepository rolRepository;
 
+	
+
+	@Mock
+	private NotificacionService notificacionService;
+
 	private RolService service;
 
 	@BeforeEach
 	void setUp() {
-		service = new RolService(rolRepository);
+		service = new RolService(rolRepository, notificacionService);
 	}
 
 	private RolRequest requestCon(List<PermisoRequest> permisos) {
@@ -134,3 +140,4 @@ class RolServiceTest {
 				.hasMessageContaining("asignado a usuarios");
 	}
 }
+
