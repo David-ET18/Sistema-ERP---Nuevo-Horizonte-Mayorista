@@ -12,6 +12,22 @@ export async function contarNoLeidas(): Promise<number> {
   return data
 }
 
+export async function marcarNotificacionLeida(id: number): Promise<void> {
+  await http.post(ENDPOINTS.notificaciones.leida(id))
+}
+
 export async function marcarNotificacionesLeidas(ids: number[]): Promise<void> {
   await http.post(ENDPOINTS.notificaciones.leidas, { ids })
+}
+
+export async function marcarTodasNotificacionesLeidas(): Promise<void> {
+  await http.post(ENDPOINTS.notificaciones.leidasTodas)
+}
+
+export async function eliminarNotificacion(id: number): Promise<void> {
+  await http.delete(ENDPOINTS.notificaciones.porId(id))
+}
+
+export async function eliminarNotificacionesLeidas(): Promise<void> {
+  await http.delete(ENDPOINTS.notificaciones.leidas)
 }

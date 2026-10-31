@@ -32,12 +32,19 @@ public class Notificacion {
 	@Column(name = "mensaje", nullable = false, length = 500)
 	private String mensaje;
 
-	/** Tipo de fuente: ROL_PERMISOS, ROL_ASIGNADO, ROL_QUITADO. */
+	/** Tipo de fuente: ROL_PERMISOS, ROL_ASIGNADO, ROL_QUITADO, PROMOCION... */
 	@Column(name = "tipo", nullable = false, length = 40)
 	private String tipo = "SISTEMA";
 
+	/** Ruta interna a la que puede navegar el usuario al abrir la notificacion. */
+	@Column(name = "enlace", length = 200)
+	private String enlace;
+
 	@Column(name = "leida", nullable = false)
 	private boolean leida = false;
+
+	@Column(name = "fecha_leida")
+	private LocalDateTime fechaLeida;
 
 	@Column(name = "fecha_creacion", nullable = false)
 	private LocalDateTime fechaCreacion = LocalDateTime.now();
@@ -82,12 +89,28 @@ public class Notificacion {
 		this.tipo = tipo;
 	}
 
+	public String getEnlace() {
+		return enlace;
+	}
+
+	public void setEnlace(String enlace) {
+		this.enlace = enlace;
+	}
+
 	public boolean isLeida() {
 		return leida;
 	}
 
 	public void setLeida(boolean leida) {
 		this.leida = leida;
+	}
+
+	public LocalDateTime getFechaLeida() {
+		return fechaLeida;
+	}
+
+	public void setFechaLeida(LocalDateTime fechaLeida) {
+		this.fechaLeida = fechaLeida;
 	}
 
 	public LocalDateTime getFechaCreacion() {

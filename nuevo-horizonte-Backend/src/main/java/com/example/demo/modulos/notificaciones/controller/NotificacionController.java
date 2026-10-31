@@ -4,7 +4,9 @@ import com.example.demo.modulos.notificaciones.dto.MarcarLeidasRequest;
 import com.example.demo.modulos.notificaciones.dto.NotificacionDTO;
 import com.example.demo.modulos.notificaciones.service.NotificacionService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,9 +34,33 @@ public class NotificacionController {
 		return ResponseEntity.ok(notificacionService.noLeidas());
 	}
 
+	@PostMapping("/{id}/leida")
+	public ResponseEntity<Void> marcarLeida(@PathVariable Long id) {
+		notificacionService.marcarLeida(id);
+		return ResponseEntity.noContent().build();
+	}
+
 	@PostMapping("/leidas")
 	public ResponseEntity<Void> marcarLeidas(@RequestBody MarcarLeidasRequest request) {
 		notificacionService.marcarLeidas(request.ids());
+		return ResponseEntity.noContent().build();
+	}
+
+	@PostMapping("/leidas-todas")
+	public ResponseEntity<Void> marcarTodasLeidas() {
+		notificacionService.marcarTodasLeidas();
+		return ResponseEntity.noContent().build();
+	}
+
+	@DeleteMapping("/{id}")
+	public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+		notificacionService.eliminar(id);
+		return ResponseEntity.noContent().build();
+	}
+
+	@DeleteMapping("/leidas")
+	public ResponseEntity<Void> eliminarLeidas() {
+		notificacionService.eliminarLeidas();
 		return ResponseEntity.noContent().build();
 	}
 }

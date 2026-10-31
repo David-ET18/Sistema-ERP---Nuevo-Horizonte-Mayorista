@@ -27,7 +27,7 @@ export const MODULOS: ModuloApp[] = [
   { clave: 'proveedores', etiqueta: 'Proveedores', ruta: '/proveedores', grupo: 'Producto', desarrollado: true },
   { clave: 'tarifas', etiqueta: 'Tarifas', ruta: '/tarifas', grupo: 'Producto', desarrollado: true },
   { clave: 'paquetes', etiqueta: 'Paquetes Turísticos', ruta: '/paquetes', grupo: 'Producto', desarrollado: true },
-  { clave: 'promociones', etiqueta: 'Promociones', ruta: '/promociones', grupo: 'Producto', desarrollado: false },
+  { clave: 'promociones', etiqueta: 'Promociones', ruta: '/promociones', grupo: 'Producto', desarrollado: true },
 
   { clave: 'cotizaciones', etiqueta: 'Cotizaciones', ruta: '/cotizaciones', grupo: 'Ventas', desarrollado: true },
   { clave: 'ventas', etiqueta: 'Gestión de Ventas', ruta: '/ventas', grupo: 'Ventas', desarrollado: true },
@@ -38,7 +38,7 @@ export const MODULOS: ModuloApp[] = [
   { clave: 'marketing', etiqueta: 'Difusión y Marketing', ruta: '/marketing', grupo: 'Ventas', desarrollado: false },
 
   { clave: 'documentos', etiqueta: 'Documentos', ruta: '/documentos', grupo: 'General', desarrollado: false },
-  { clave: 'notificaciones', etiqueta: 'Notificaciones', ruta: '/notificaciones', grupo: 'General', desarrollado: false },
+  { clave: 'notificaciones', etiqueta: 'Notificaciones', ruta: '/notificaciones', grupo: 'General', desarrollado: true },
 
   { clave: 'gestion-usuarios-roles-permisos', etiqueta: 'Usuarios', ruta: '/gestion-usuarios-roles-permisos/usuarios', grupo: 'Gestion', desarrollado: true },
   { clave: 'gestion-usuarios-roles-permisos', etiqueta: 'Roles y Permisos', ruta: '/gestion-usuarios-roles-permisos/roles', grupo: 'Gestion', desarrollado: true },
