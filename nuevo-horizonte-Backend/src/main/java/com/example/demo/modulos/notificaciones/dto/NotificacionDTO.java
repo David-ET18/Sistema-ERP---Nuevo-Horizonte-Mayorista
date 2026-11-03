@@ -8,5 +8,7 @@ public record NotificacionDTO(
 		String mensaje,
 		String tipo,
 		boolean leida,
+		String enlace,
+		LocalDateTime fechaLeida,
 		LocalDateTime fechaCreacion) {
 }
