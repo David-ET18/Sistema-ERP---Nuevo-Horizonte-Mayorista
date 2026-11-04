@@ -49,6 +49,8 @@ import ProveedoresPage from '@/modules/proveedores/pages/ProveedoresPage'
 import TarifasPage from '@/modules/tarifas/pages/TarifasPage'
 import PaquetesPage from '@/modules/paquetes/pages/PaquetesPage'
 import PaqueteFormPage from '@/modules/paquetes/pages/PaqueteFormPage'
+import PromocionesPage from '@/modules/promociones/pages/PromocionesPage'
+import NotificacionesPage from '@/modules/notificaciones/pages/NotificacionesPage'
 import CotizacionesPage from '@/modules/cotizaciones/pages/CotizacionesPage'
 import VentasPage from '@/modules/ventas/pages/VentasPage'
 import GestionAgenciasPage from '@/modules/gestion-agencias/pages/GestionAgenciasPage'
@@ -127,7 +129,14 @@ export default function AppRoutes() {
             </ConPermiso>
           }
         />
-        <Route path="promociones" element={<SinDesarrollar />} />
+        <Route
+          path="promociones"
+          element={
+            <ConPermiso modulo="promociones">
+              <PromocionesPage />
+            </ConPermiso>
+          }
+        />
         <Route
           path="cotizaciones"
           element={
@@ -173,7 +182,14 @@ export default function AppRoutes() {
           }
         />
         <Route path="documentos" element={<SinDesarrollar />} />
-        <Route path="notificaciones" element={<SinDesarrollar />} />
+        <Route
+          path="notificaciones"
+          element={
+            <ConPermiso modulo="notificaciones">
+              <NotificacionesPage />
+            </ConPermiso>
+          }
+        />
         <Route
           path="gestion-usuarios-roles-permisos/usuarios"
           element={

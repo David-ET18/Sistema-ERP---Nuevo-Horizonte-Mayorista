@@ -35,8 +35,6 @@ class RolServiceTest {
 	@Mock
 	private RolRepository rolRepository;
 
-	
-
 	@Mock
 	private NotificacionService notificacionService;
 
@@ -140,4 +138,3 @@ class RolServiceTest {
 				.hasMessageContaining("asignado a usuarios");
 	}
 }
-
