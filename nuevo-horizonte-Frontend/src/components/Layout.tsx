@@ -107,10 +107,17 @@ export default function Layout() {
 
   useEffect(() => {
     void refrescarNotifs()
-    const timer = setInterval(() => {
-      void refrescarNotifs()
-    }, 30000)
-    return () => clearInterval(timer)
+    const actualizar = () => {
+      if (document.visibilityState === 'visible') void refrescarNotifs()
+    }
+    const timer = setInterval(actualizar, 5000)
+    window.addEventListener('focus', actualizar)
+    document.addEventListener('visibilitychange', actualizar)
+    return () => {
+      clearInterval(timer)
+      window.removeEventListener('focus', actualizar)
+      document.removeEventListener('visibilitychange', actualizar)
+    }
   }, [refrescarNotifs])
 
   const roles = user?.roles ?? []
@@ -236,7 +243,10 @@ export default function Layout() {
             {/* Notificaciones */}
             <button
               type="button"
-              onClick={() => setNotifOpen(true)}
+              onClick={() => {
+                setNotifOpen(true)
+                void refrescarNotifs()
+              }}
               className="relative cursor-pointer rounded-lg p-2 text-gray-500 hover:bg-gray-100"
               aria-label="Notificaciones"
               title="Notificaciones"

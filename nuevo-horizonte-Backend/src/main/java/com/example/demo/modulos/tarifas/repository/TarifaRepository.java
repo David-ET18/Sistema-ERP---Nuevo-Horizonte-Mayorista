@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -34,6 +35,24 @@ public interface TarifaRepository extends JpaRepository<Tarifa, Long>, JpaSpecif
 
 	@Query("select distinct t.tipoTarifa from Tarifa t where t.tipoTarifa is not null and trim(t.tipoTarifa) <> '' order by t.tipoTarifa")
 	List<String> findTiposTarifa();
+
+	/**
+	 * Precio vigente mas bajo por servicio. Lo usa el formulario de promociones
+	 * para proponer el precio original (catalogo.servicio no guarda precio).
+	 */
+	@Query("""
+			select t.servicio.id as servicioId, min(t.precio) as precio
+			from Tarifa t
+			where t.fechaDesde <= current_date and t.fechaHasta >= current_date
+			group by t.servicio.id
+			""")
+	List<PrecioMinimoServicio> findPrecioMinimoVigentePorServicio();
+
+	interface PrecioMinimoServicio {
+		Long getServicioId();
+
+		BigDecimal getPrecio();
+	}
 
 	/** Consumido por el modulo de Reportes. */
 	@Query("select t.proveedor as proveedor, count(t) as cantidad from Tarifa t "

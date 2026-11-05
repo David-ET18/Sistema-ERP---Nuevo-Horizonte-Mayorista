@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { ReactElement, SVGProps } from 'react'
 
 import type {
   FiltrosNotificaciones,
@@ -21,17 +20,17 @@ import ConfirmDialog from '@/components/ConfirmDialog'
 import { formatDate } from '@/utils/format'
 import { useNotificacionesStore } from '@/store/notificacionesStore'
 import { useToastStore } from '@/store/toastStore'
+import NotificacionDetallePanel from '../components/NotificacionDetallePanel'
+import { estiloTipo } from '../utils/formato'
 import {
   IconCheckCircle,
   IconChevronLeft,
   IconChevronRight,
   IconInfo,
   IconMail,
-  IconPencil,
   IconSearch,
   IconStar,
   IconTrash,
-  IconUsers,
 } from '@/components/icons'
 
 const FILTROS_INICIALES: FiltrosNotificaciones = { q: '', leida: '', tipo: '' }
@@ -44,23 +43,6 @@ const TIPOS = [
   { valor: 'SISTEMA', etiqueta: 'Sistema' },
 ]
 
-type IconoTipo = (props: SVGProps<SVGSVGElement>) => ReactElement
-
-function estiloTipo(tipo: string): { bg: string; text: string; Icon: IconoTipo; etiqueta: string } {
-  switch (tipo) {
-    case 'PROMOCION':
-      return { bg: 'bg-fuchsia-100', text: 'text-fuchsia-700', Icon: IconStar, etiqueta: 'Promoción' }
-    case 'ROL_PERMISOS':
-      return { bg: 'bg-amber-100', text: 'text-amber-700', Icon: IconPencil, etiqueta: 'Permisos' }
-    case 'ROL_ASIGNADO':
-      return { bg: 'bg-emerald-100', text: 'text-emerald-700', Icon: IconUsers, etiqueta: 'Rol asignado' }
-    case 'ROL_QUITADO':
-      return { bg: 'bg-red-100', text: 'text-red-700', Icon: IconTrash, etiqueta: 'Rol retirado' }
-    default:
-      return { bg: 'bg-blue-100', text: 'text-blue-700', Icon: IconInfo, etiqueta: 'Sistema' }
-  }
-}
-
 export default function NotificacionesPage() {
   const [filtros, setFiltros] = useState<FiltrosNotificaciones>(FILTROS_INICIALES)
   const [page, setPage] = useState(0)
@@ -72,13 +54,15 @@ export default function NotificacionesPage() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [confirmarLimpiar, setConfirmarLimpiar] = useState(false)
   const [aEliminar, setAEliminar] = useState<Notificacion | null>(null)
+  const [detalle, setDetalle] = useState<Notificacion | null>(null)
+  const yaCargado = useRef(false)
 
   const refrescarContador = useNotificacionesStore((s) => s.refrescar)
   const toast = useToastStore((s) => s.show)
   const navigate = useNavigate()
 
   useEffect(() => {
-    setLoading(true)
+    if (!yaCargado.current) setLoading(true)
     Promise.all([listarNotificacionesPaginadas(filtros, page, size), kpisNotificaciones()])
       .then(([lista, kpi]) => {
         setData(lista)
@@ -86,9 +70,28 @@ export default function NotificacionesPage() {
         setError(null)
       })
       .catch((err) => setError(extractErrorMessage(err)))
-      .finally(() => setLoading(false))
+      .finally(() => {
+        yaCargado.current = true
+        setLoading(false)
+      })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, size, refreshKey])
+
+  // Refresco silencioso: las notificaciones nuevas aparecen sin recargar la
+  // pagina y sin mostrar de nuevo los esqueletos de carga.
+  useEffect(() => {
+    const actualizar = () => {
+      if (document.visibilityState === 'visible') setRefreshKey((k) => k + 1)
+    }
+    const timer = setInterval(actualizar, 10000)
+    window.addEventListener('focus', actualizar)
+    document.addEventListener('visibilitychange', actualizar)
+    return () => {
+      clearInterval(timer)
+      window.removeEventListener('focus', actualizar)
+      document.removeEventListener('visibilitychange', actualizar)
+    }
+  }, [])
 
   const recargar = useCallback((resetPagina = false) => {
     if (resetPagina) setPage(0)
@@ -131,27 +134,56 @@ export default function NotificacionesPage() {
     }
   }
 
-  async function abrir(notificacion: Notificacion) {
-    if (!notificacion.leida) {
-      try {
-        await marcarNotificacionLeida(notificacion.id)
-        recargar(false)
-      } catch (err) {
-        toast(`No se pudo abrir la notificación: ${extractErrorMessage(err)}`, 'error')
-        return
-      }
+  async function abrirDetalle(notificacion: Notificacion) {
+    setDetalle(notificacion)
+    if (notificacion.leida) return
+    try {
+      await marcarNotificacionLeida(notificacion.id)
+      setDetalle((actual) =>
+        actual && actual.id === notificacion.id
+          ? { ...actual, leida: true, fechaLeida: new Date().toISOString() }
+          : actual,
+      )
+      recargar(false)
+    } catch (err) {
+      toast(`No se pudo marcar la notificación: ${extractErrorMessage(err)}`, 'error')
     }
+  }
+
+  async function marcarDesdePanel(notificacion: Notificacion) {
+    try {
+      await marcarNotificacionLeida(notificacion.id)
+      setDetalle((actual) =>
+        actual && actual.id === notificacion.id
+          ? { ...actual, leida: true, fechaLeida: new Date().toISOString() }
+          : actual,
+      )
+      recargar(false)
+      toast('Notificación marcada como leída', 'success')
+    } catch (err) {
+      toast(`No se pudo marcar la notificación: ${extractErrorMessage(err)}`, 'error')
+    }
+  }
+
+  function irAlModulo(notificacion: Notificacion) {
+    setDetalle(null)
     if (notificacion.enlace) navigate(notificacion.enlace)
   }
 
-  async function eliminar(notificacion: Notificacion) {
+  async function eliminar(notificacion: Notificacion): Promise<boolean> {
     try {
       await eliminarNotificacion(notificacion.id)
       recargar(false)
       toast('Notificación eliminada', 'success')
+      return true
     } catch (err) {
       toast(`No se pudo eliminar la notificación: ${extractErrorMessage(err)}`, 'error')
+      return false
     }
+  }
+
+  async function eliminarDesdePanel(notificacion: Notificacion) {
+    if (await eliminar(notificacion)) setDetalle(null)
   }
 
   async function limpiarLeidas() {
@@ -337,37 +369,44 @@ export default function NotificacionesPage() {
                   n.leida ? 'ring-gray-100' : 'ring-brand/20'
                 }`}
               >
-                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${bg} ${text}`}>
-                  <Icon className="h-5 w-5" />
-                </span>
+                <button
+                  type="button"
+                  onClick={() => void abrirDetalle(n)}
+                  className="flex min-w-0 flex-1 cursor-pointer items-start gap-3 text-left focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:outline-none"
+                  aria-label={`Ver detalle de ${n.titulo}`}
+                >
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${bg} ${text}`}>
+                    <Icon className="h-5 w-5" />
+                  </span>
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className={`truncate text-sm ${n.leida ? 'font-medium text-gray-700' : 'font-semibold text-gray-900'}`}>
-                      {n.titulo}
-                    </p>
-                    {!n.leida && <span className="h-2 w-2 shrink-0 rounded-full bg-brand" />}
-                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-500">
-                      {etiqueta}
+                  <span className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={`truncate text-sm ${n.leida ? 'font-medium text-gray-700' : 'font-semibold text-gray-900'}`}
+                      >
+                        {n.titulo}
+                      </span>
+                      {!n.leida && <span className="h-2 w-2 shrink-0 rounded-full bg-brand" />}
+                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase text-gray-500">
+                        {etiqueta}
+                      </span>
+                      {n.actorNombre && (
+                        <span className="text-[11px] text-gray-400">por {n.actorNombre}</span>
+                      )}
                     </span>
-                  </div>
-                  <p className="mt-0.5 text-[13px] leading-relaxed text-gray-600">{n.mensaje}</p>
-                  <p className="mt-1 text-[11px] text-gray-400">
-                    {formatDate(n.fechaCreacion)}
-                    {n.fechaLeida ? ` · Leída el ${formatDate(n.fechaLeida)}` : ''}
-                  </p>
-                </div>
+                    <span className="mt-0.5 block text-[13px] leading-relaxed text-gray-600">
+                      {n.mensaje}
+                    </span>
+                    <span className="mt-1 block text-[11px] text-gray-400">
+                      {formatDate(n.fechaCreacion)}
+                      {n.fechaLeida ? ` · Leída el ${formatDate(n.fechaLeida)}` : ''}
+                      {' · '}
+                      <span className="font-medium text-brand">Ver detalle</span>
+                    </span>
+                  </span>
+                </button>
 
                 <div className="flex shrink-0 items-center gap-1">
-                  {n.enlace && (
-                    <button
-                      type="button"
-                      onClick={() => void abrir(n)}
-                      className="cursor-pointer rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-brand hover:bg-brand/5"
-                    >
-                      Abrir
-                    </button>
-                  )}
                   {!n.leida && (
                     <button
                       type="button"
@@ -467,6 +506,16 @@ export default function NotificacionesPage() {
         }}
         onCancel={() => setAEliminar(null)}
       />
+
+      {detalle && (
+        <NotificacionDetallePanel
+          notificacion={detalle}
+          onClose={() => setDetalle(null)}
+          onMarcarLeida={marcarDesdePanel}
+          onEliminar={eliminarDesdePanel}
+          onIrAlModulo={irAlModulo}
+        />
+      )}
     </section>
   )
 }

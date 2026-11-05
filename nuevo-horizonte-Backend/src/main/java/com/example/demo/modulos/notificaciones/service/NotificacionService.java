@@ -45,24 +45,42 @@ public class NotificacionService {
 
 	@Transactional
 	public Notificacion crearParaUsuario(Long idUsuario, String titulo, String mensaje, String tipo, String enlace) {
+		return crearParaUsuario(idUsuario, titulo, mensaje, tipo, enlace, null, null);
+	}
+
+	/**
+	 * Crea una notificacion con contexto ampliado: quien la provoco
+	 * (actorNombre) y el detalle largo del cambio (detalle). Ambos pueden ser
+	 * null; el panel de detalle del frontend cae al mensaje cuando faltan.
+	 */
+	@Transactional
+	public Notificacion crearParaUsuario(Long idUsuario, String titulo, String mensaje, String tipo, String enlace,
+			String actorNombre, String detalle) {
 		Usuario usuario = usuarioRepository.findById(idUsuario)
 				.orElseThrow(() -> new NotFoundException("Usuario no encontrado con id " + idUsuario));
-		return notificacionRepository.save(construirPorUsuario(usuario, titulo, mensaje, tipo, enlace));
+		return notificacionRepository
+				.save(construirPorUsuario(usuario, titulo, mensaje, tipo, enlace, actorNombre, detalle));
 	}
 
 	@Transactional
 	public void crearParaUsuarios(Collection<Usuario> usuarios, String titulo, String mensaje, String tipo) {
-		crearParaUsuarios(usuarios, titulo, mensaje, tipo, null);
+		crearParaUsuarios(usuarios, titulo, mensaje, tipo, null, null, null);
 	}
 
 	@Transactional
 	public void crearParaUsuarios(Collection<Usuario> usuarios, String titulo, String mensaje, String tipo,
 			String enlace) {
+		crearParaUsuarios(usuarios, titulo, mensaje, tipo, enlace, null, null);
+	}
+
+	@Transactional
+	public void crearParaUsuarios(Collection<Usuario> usuarios, String titulo, String mensaje, String tipo,
+			String enlace, String actorNombre, String detalle) {
 		if (usuarios == null || usuarios.isEmpty()) {
 			return;
 		}
 		List<Notificacion> nuevas = usuarios.stream()
-				.map(usuario -> construirPorUsuario(usuario, titulo, mensaje, tipo, enlace))
+				.map(usuario -> construirPorUsuario(usuario, titulo, mensaje, tipo, enlace, actorNombre, detalle))
 				.toList();
 		notificacionRepository.saveAll(nuevas);
 	}
@@ -70,7 +88,13 @@ public class NotificacionService {
 	/** Notificacion masiva para todos los usuarios con la cuenta activa. */
 	@Transactional
 	public void crearParaUsuariosActivos(String titulo, String mensaje, String tipo, String enlace) {
-		crearParaUsuarios(usuarioRepository.findByActivoTrue(), titulo, mensaje, tipo, enlace);
+		crearParaUsuariosActivos(titulo, mensaje, tipo, enlace, null, null);
+	}
+
+	@Transactional
+	public void crearParaUsuariosActivos(String titulo, String mensaje, String tipo, String enlace,
+			String actorNombre, String detalle) {
+		crearParaUsuarios(usuarioRepository.findByActivoTrue(), titulo, mensaje, tipo, enlace, actorNombre, detalle);
 	}
 
 	@Transactional(readOnly = true)
@@ -144,16 +168,38 @@ public class NotificacionService {
 	}
 
 	private Notificacion construirPorUsuario(Usuario usuario, String titulo, String mensaje, String tipo,
-			String enlace) {
+			String enlace, String actorNombre, String detalle) {
 		Notificacion notificacion = new Notificacion();
 		notificacion.setUsuario(usuario);
 		notificacion.setTitulo(titulo);
 		notificacion.setMensaje(mensaje);
 		notificacion.setTipo(tipo);
 		notificacion.setEnlace(Textos.sinEspacios(enlace));
+		notificacion.setActorNombre(Textos.noVacio(actorNombre) ? recortar(actorNombre.trim(), 120) : null);
+		notificacion.setDetalle(Textos.noVacio(detalle) ? recortar(detalle.trim(), 1000) : null);
 		notificacion.setLeida(false);
 		notificacion.setFechaCreacion(LocalDateTime.now());
 		return notificacion;
+	}
+
+	/**
+	 * Usuario autenticado que ejecuta la accion, para mostrarlo como autor del
+	 * cambio. Devuelve null en procesos automaticos (sin sesion).
+	 */
+	public String actorActual() {
+		var autenticacion = SecurityContextHolder.getContext().getAuthentication();
+		if (autenticacion == null || !autenticacion.isAuthenticated()) {
+			return null;
+		}
+		String nombre = autenticacion.getName();
+		if (!Textos.noVacio(nombre) || "anonymousUser".equalsIgnoreCase(nombre)) {
+			return null;
+		}
+		return nombre.trim();
+	}
+
+	private String recortar(String valor, int maximo) {
+		return valor.length() <= maximo ? valor : valor.substring(0, maximo);
 	}
 
 	private Usuario usuarioActual() {

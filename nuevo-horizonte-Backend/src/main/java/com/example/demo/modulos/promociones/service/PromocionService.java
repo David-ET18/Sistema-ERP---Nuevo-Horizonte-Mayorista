@@ -2,18 +2,18 @@ package com.example.demo.modulos.promociones.service;
 
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.NotFoundException;
-import com.example.demo.modulos.catalogo.dto.ServicioDTO;
 import com.example.demo.modulos.catalogo.entity.Servicio;
-import com.example.demo.modulos.catalogo.mapper.ServicioMapper;
 import com.example.demo.modulos.catalogo.repository.ServicioRepository;
 import com.example.demo.modulos.notificaciones.service.NotificacionService;
 import com.example.demo.modulos.promociones.dto.ImagenPromocionDTO;
 import com.example.demo.modulos.promociones.dto.KpiPromocionesDTO;
 import com.example.demo.modulos.promociones.dto.PromocionDTO;
 import com.example.demo.modulos.promociones.dto.PromocionRequest;
+import com.example.demo.modulos.promociones.dto.ServicioPromocionDTO;
 import com.example.demo.modulos.promociones.entity.Promocion;
 import com.example.demo.modulos.promociones.mapper.PromocionMapper;
 import com.example.demo.modulos.promociones.repository.PromocionRepository;
+import com.example.demo.modulos.tarifas.repository.TarifaRepository;
 import com.example.demo.util.Textos;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,7 +29,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -41,13 +43,16 @@ public class PromocionService {
 
 	private final PromocionRepository promocionRepository;
 	private final ServicioRepository servicioRepository;
+	private final TarifaRepository tarifaRepository;
 	private final NotificacionService notificacionService;
 
 	public PromocionService(PromocionRepository promocionRepository,
 			ServicioRepository servicioRepository,
+			TarifaRepository tarifaRepository,
 			NotificacionService notificacionService) {
 		this.promocionRepository = promocionRepository;
 		this.servicioRepository = servicioRepository;
+		this.tarifaRepository = tarifaRepository;
 		this.notificacionService = notificacionService;
 	}
 
@@ -69,10 +74,24 @@ public class PromocionService {
 				promocionRepository.countPorVencer(hoy, hoy.plusDays(7)));
 	}
 
-	/** Servicios activos del catalogo para el selector (opcional) de la promocion. */
-	public List<ServicioDTO> serviciosDisponibles() {
+	/**
+	 * Servicios activos del catalogo para el selector (opcional) de la
+	 * promocion. El precio de referencia es la tarifa vigente mas baja del
+	 * servicio; si no tiene tarifas vigentes queda en null.
+	 */
+	public List<ServicioPromocionDTO> serviciosDisponibles() {
+		Map<Long, BigDecimal> precios = tarifaRepository.findPrecioMinimoVigentePorServicio().stream()
+				.filter(item -> item.getServicioId() != null && item.getPrecio() != null)
+				.collect(Collectors.toMap(
+						TarifaRepository.PrecioMinimoServicio::getServicioId,
+						TarifaRepository.PrecioMinimoServicio::getPrecio,
+						(actual, siguiente) -> actual));
 		return servicioRepository.findByActivoTrueOrderByNombreAsc().stream()
-				.map(ServicioMapper::toDTO)
+				.map(servicio -> new ServicioPromocionDTO(
+						servicio.getId(),
+						servicio.getNombre(),
+						servicio.getCategoria(),
+						precios.get(servicio.getId())))
 				.toList();
 	}
 
@@ -189,16 +208,19 @@ public class PromocionService {
 		}
 	}
 
-	/** Si se informa precio original y descuento, se calcula el precio final. */
+	/**
+	 * El precio promocional se deriva siempre del precio original y el
+	 * descuento: no se acepta un valor manual para evitar incoherencias.
+	 */
 	private void calcularPrecioPromocional(Promocion promocion) {
-		if (promocion.getPrecioPromocional() == null
-				&& promocion.getPrecioOriginal() != null
-				&& promocion.getDescuentoPorcentaje() != null) {
-			BigDecimal factor = BigDecimal.valueOf(100).subtract(promocion.getDescuentoPorcentaje());
-			promocion.setPrecioPromocional(promocion.getPrecioOriginal()
-					.multiply(factor)
-					.divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP));
+		if (promocion.getPrecioOriginal() == null || promocion.getDescuentoPorcentaje() == null) {
+			promocion.setPrecioPromocional(null);
+			return;
 		}
+		BigDecimal factor = BigDecimal.valueOf(100).subtract(promocion.getDescuentoPorcentaje());
+		promocion.setPrecioPromocional(promocion.getPrecioOriginal()
+				.multiply(factor)
+				.divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP));
 	}
 
 	private void aplicarImagen(Promocion promocion, MultipartFile imagen, Boolean quitarImagen) {
@@ -283,7 +305,42 @@ public class PromocionService {
 				titulo,
 				recortar(mensaje.toString(), 500),
 				NotificacionService.TIPO_PROMOCION,
-				"/promociones");
+				"/promociones",
+				notificacionService.actorActual(),
+				detallePromocion(promocion));
+	}
+
+	/** Texto ampliado que ve el usuario al abrir el detalle de la notificacion. */
+	private String detallePromocion(Promocion promocion) {
+		StringBuilder detalle = new StringBuilder();
+		detalle.append("Promoción \u00AB").append(promocion.getNombre()).append("\u00BB");
+		detalle.append(" · ")
+				.append(promocion.getDescuentoPorcentaje().stripTrailingZeros().toPlainString())
+				.append("% de descuento");
+		if (promocion.getServicio() != null) {
+			detalle.append(" en \u00AB").append(promocion.getServicio().getNombre()).append("\u00BB");
+		}
+		detalle.append(". Vigencia: ");
+		if (promocion.getFechaInicio() != null) {
+			detalle.append("desde el ").append(promocion.getFechaInicio().format(FECHA_CORTA)).append(" ");
+		}
+		detalle.append(promocion.getFechaFin() != null
+				? "hasta el " + promocion.getFechaFin().format(FECHA_CORTA)
+				: "sin fecha límite");
+		if (promocion.getPrecioOriginal() != null) {
+			detalle.append(". Precio original: S/ ")
+					.append(promocion.getPrecioOriginal().setScale(2, RoundingMode.HALF_UP).toPlainString());
+		}
+		if (promocion.getPrecioPromocional() != null) {
+			detalle.append(". Precio promocional: S/ ")
+					.append(promocion.getPrecioPromocional().setScale(2, RoundingMode.HALF_UP).toPlainString());
+		}
+		detalle.append(". Estado: ").append(promocion.isActiva() ? "activa" : "inactiva");
+		if (promocion.isDestacada()) {
+			detalle.append(" y destacada");
+		}
+		detalle.append(".");
+		return detalle.toString();
 	}
 
 	private String recortar(String valor, int maximo) {

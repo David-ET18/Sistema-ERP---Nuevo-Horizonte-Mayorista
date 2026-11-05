@@ -53,6 +53,8 @@ export interface ServicioOpcion {
   id: number
   nombre: string
   categoria: string | null
+  /** Tarifa vigente mas baja del servicio; null si no tiene tarifas vigentes. */
+  precioReferencia: number | null
 }
 
 export interface PaginacionPromociones<T> {

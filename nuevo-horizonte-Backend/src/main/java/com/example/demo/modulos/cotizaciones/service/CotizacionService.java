@@ -59,6 +59,9 @@ public class CotizacionService {
 	private static final Set<String> ESTADOS_VALIDOS = Set.of(
 			"PENDIENTE", "EN_NEGOCIACION", "ENVIADA", "CERRADA", "PERDIDA", "ANULADA");
 
+	/** Clave arbitraria del advisory lock que serializa la numeracion de cotizaciones. */
+	private static final long CLAVE_NUMERO_COTIZACION = 918_273_645L;
+
 	private final CotizacionRepository cotizacionRepository;
 	private final CotizacionDetalleRepository detalleRepository;
 	private final AgenciaService agenciaService;
@@ -200,6 +203,7 @@ public class CotizacionService {
 
 	@Transactional
 	public CotizacionDTO actualizar(Long id, CotizacionRequest request) {
+		validarRequest(request);
 		Cotizacion cotizacion = obtenerConRelaciones(id);
 
 		if (request.agenciaId() != null) {
@@ -213,10 +217,25 @@ public class CotizacionService {
 		if (request.margenPorcentaje() != null) {
 			cotizacion.setMargenPorcentaje(request.margenPorcentaje());
 		}
-		if (request.lineas() != null && !request.lineas().isEmpty()) {
-			cotizacion.getDetalles().clear();
-			request.lineas().forEach(linea -> agregarLinea(cotizacion, linea));
+
+		// Se actualizan las lineas existentes en lugar de borrarlas y recrearlas:
+		// asi se conserva el precio con el que se cotizo (tarifa.getPrecio() pudo
+		// cambiar) y la promocion aplicada, y solo se eliminan las lineas que ya
+		// no vienen en el request.
+		Map<Long, CotizacionDetalle> existentes = cotizacion.getDetalles().stream()
+				.collect(Collectors.toMap(detalle -> detalle.getTarifa().getId(), detalle -> detalle, (a, b) -> a));
+
+		for (CotizacionLineaRequest linea : request.lineas()) {
+			CotizacionDetalle detalle = existentes.remove(linea.tarifaId());
+			if (detalle == null) {
+				cotizacion.addDetalle(construirDetalle(linea.tarifaId(), linea.cantidadPax()));
+			} else {
+				detalle.setCantidadPax(cantidadPax(linea.cantidadPax()));
+			}
 		}
+
+		// Las lineas que ya no estan en el request se borran (orphanRemoval).
+		existentes.values().forEach(cotizacion.getDetalles()::remove);
 
 		return toDTO(cotizacion);
 	}
@@ -278,12 +297,20 @@ public class CotizacionService {
 	}
 
 	private void agregarLinea(Cotizacion cotizacion, CotizacionLineaRequest linea) {
-		Tarifa tarifa = tarifaService.obtener(linea.tarifaId());
+		cotizacion.addDetalle(construirDetalle(linea.tarifaId(), linea.cantidadPax()));
+	}
+
+	private CotizacionDetalle construirDetalle(Long tarifaId, Integer cantidadPax) {
+		Tarifa tarifa = tarifaService.obtener(tarifaId);
 		CotizacionDetalle detalle = new CotizacionDetalle();
 		detalle.setTarifa(tarifa);
 		detalle.setPrecioUnitario(tarifa.getPrecio());
-		detalle.setCantidadPax(linea.cantidadPax() != null && linea.cantidadPax() > 0 ? linea.cantidadPax() : 1);
-		cotizacion.addDetalle(detalle);
+		detalle.setCantidadPax(cantidadPax(cantidadPax));
+		return detalle;
+	}
+
+	private int cantidadPax(Integer cantidadPax) {
+		return cantidadPax != null && cantidadPax > 0 ? cantidadPax : 1;
 	}
 
 	private Cotizacion obtenerConRelaciones(Long id) {
@@ -297,21 +324,16 @@ public class CotizacionService {
 				.orElseThrow(() -> new NotFoundException("Usuario no identificado: " + username));
 	}
 
+	/**
+	 * Genera el siguiente numero de cotizacion de forma segura entre transacciones
+	 * concurrentes. El lock de Postgres se libera solo al terminar la transaccion;
+	 * sin el, dos altas simultaneas calculaban el mismo COT-XXXX y una fallaba por
+	 * la restriccion unique de la columna numero.
+	 */
 	private String siguienteNumero() {
-		int siguiente = 1;
-		var ultima = cotizacionRepository.findTopByNumeroStartingWithOrderByNumeroDesc("COT-");
-		if (ultima.isPresent()) {
-			try {
-				siguiente = Integer.parseInt(ultima.get().getNumero().substring(4)) + 1;
-			} catch (NumberFormatException ignored) {
-				// se mantiene 1
-			}
-		}
-		String numero;
-		do {
-			numero = String.format("COT-%04d", siguiente++);
-		} while (cotizacionRepository.existsByNumero(numero));
-		return numero;
+		cotizacionRepository.bloquearGeneracionDeNumero(CLAVE_NUMERO_COTIZACION);
+		int siguiente = cotizacionRepository.maxSecuenciaNumero() + 1;
+		return String.format("COT-%04d", siguiente);
 	}
 
 	private CotizacionListaDTO toListaDTO(Cotizacion c, List<CotizacionDetalle> lineas) {

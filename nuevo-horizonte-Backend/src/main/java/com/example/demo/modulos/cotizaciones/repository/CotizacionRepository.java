@@ -29,6 +29,21 @@ public interface CotizacionRepository extends JpaRepository<Cotizacion, Long>, J
 
 	boolean existsByNumero(String numero);
 
+	/**
+	 * Toma un advisory lock de Postgres durante la transaccion actual. Se usa para
+	 * que dos altas concurrentes no calculen el mismo numero de cotizacion.
+	 */
+	@Query(value = "select 1 from (select pg_advisory_xact_lock(cast(:clave as bigint))) as bloqueo", nativeQuery = true)
+	Integer bloquearGeneracionDeNumero(@Param("clave") long clave);
+
+	/**
+	 * Mayor secuencia numerica de las cotizaciones existentes. Se ordena por el
+	 * valor numerico y no por texto, para que COT-10000 no quede antes que COT-9999.
+	 */
+	@Query(value = "select coalesce(max(cast(substring(numero from 5) as integer)), 0) " +
+			"from ventas.cotizacion where numero ~ '^COT-[0-9]+$'", nativeQuery = true)
+	int maxSecuenciaNumero();
+
 	long countByEstado(String estado);
 
 	/** Consumido por la ficha 360 de Agencias (resumen comercial / historial). */

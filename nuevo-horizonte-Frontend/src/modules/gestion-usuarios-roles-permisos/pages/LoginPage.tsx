@@ -4,9 +4,17 @@ import { Navigate, useNavigate } from 'react-router-dom'
 
 import { extractErrorMessage } from '@/api/http'
 import SuccessOverlay from '@/components/SuccessOverlay'
+import { IconSoporte } from '@/components/icons'
 import { useAuthStore } from '../store/authStore'
 import AuthBranding, { AUTH_INPUT_CLASSES, LocationBox } from '../components/AuthBranding'
 import ForgotPasswordModal from '../components/ForgotPasswordModal'
+
+/**
+ * URL de la pagina de soporte.
+ * EDITAR: pega aca el link que quieras abrir al presionar el icono.
+ * Mientras este vacio, el icono se muestra pero no redirige.
+ */
+const URL_SOPORTE = 'https://aplicaciones-de-solicitud-en-nuevo.onrender.com/login'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -77,7 +85,7 @@ export default function LoginPage() {
       <AuthBranding />
 
       {/* Panel derecho: formulario */}
-      <main className="flex items-center justify-center bg-white p-6">
+      <main className="relative flex items-center justify-center bg-white p-6 pb-24">
         <form
           className="flex w-full max-w-md flex-col gap-5"
           onSubmit={handleSubmit}
@@ -140,6 +148,31 @@ export default function LoginPage() {
             </p>
           </footer>
         </form>
+
+        {/* Soporte: tooltip al pasar el mouse y al enfocar con el teclado. */}
+        <div className="absolute inset-x-0 bottom-6 flex flex-col items-center gap-1.5">
+          <a
+            href={URL_SOPORTE || undefined}
+            target={URL_SOPORTE ? '_blank' : undefined}
+            rel={URL_SOPORTE ? 'noopener noreferrer' : undefined}
+            aria-label="Ir a soporte"
+            aria-disabled={!URL_SOPORTE}
+            onClick={(e) => {
+              if (!URL_SOPORTE) e.preventDefault()
+            }}
+            className="group relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-colors hover:border-[#0b1b3a] hover:bg-[#0b1b3a] hover:text-white focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:outline-none"
+          >
+            <IconSoporte width={22} height={22} />
+            <span
+              role="tooltip"
+              className="pointer-events-none absolute bottom-full left-1/2 mb-3 -translate-x-1/2 rounded-lg bg-[#0b1b3a] px-3 py-1.5 text-xs font-medium whitespace-nowrap text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
+            >
+              ¿Necesitas ayuda? Contacta a soporte
+              <span className="absolute top-full left-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-[#0b1b3a]" />
+            </span>
+          </a>
+          <span className="text-[11px] text-gray-400">Soporte</span>
+        </div>
       </main>
 
       {forgotOpen && (

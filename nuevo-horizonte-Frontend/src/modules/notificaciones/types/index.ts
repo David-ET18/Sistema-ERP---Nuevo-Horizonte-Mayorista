@@ -13,6 +13,10 @@ export interface Notificacion {
   leida: boolean
   /** Ruta interna del modulo relacionado (ej. /promociones). */
   enlace: string | null
+  /** Usuario que provoco el cambio; null en avisos automaticos. */
+  actorNombre: string | null
+  /** Detalle ampliado con el antes/despues del cambio. */
+  detalle: string | null
   fechaLeida: string | null
   fechaCreacion: string
 }

@@ -9,6 +9,8 @@ public record NotificacionDTO(
 		String tipo,
 		boolean leida,
 		String enlace,
+		String actorNombre,
+		String detalle,
 		LocalDateTime fechaLeida,
 		LocalDateTime fechaCreacion) {
 }

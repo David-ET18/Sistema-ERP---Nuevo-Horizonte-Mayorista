@@ -52,8 +52,8 @@ function vacioVenta(): VentaFormState {
     tarifaId: '',
     agenciaId: '',
     montoAPagar: '',
-    comision: '',
-    igv: '',
+    comision: '0',
+    igv: '0.00',
     notas: '',
     fechaVenta: new Date().toISOString().slice(0, 10),
   }
@@ -61,6 +61,9 @@ function vacioVenta(): VentaFormState {
 
 const SECCION_CAMPO =
   'rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand'
+
+/** Tasa de IGV usada para proponer el impuesto a partir del monto a pagar. */
+const TASA_IGV = 0.18
 
 export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
   const [agencias, setAgencias] = useState<Agencia[]>([])
@@ -75,6 +78,9 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
   )
 
   const esEdicion = Boolean(venta)
+
+  // Si el usuario escribe el IGV a mano se respeta y deja de recalcularse.
+  const [igvManual, setIgvManual] = useState(false)
 
   const toast = useToastStore((s) => s.show)
 
@@ -91,6 +97,7 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
   function limpiarFormulario() {
     setFormEdicion(vacioVenta())
     setGuardado(null)
+    setIgvManual(false)
     borrador.reset()
   }
 
@@ -118,6 +125,8 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
             notas: venta.notasOperativas ?? '',
             fechaVenta: venta.fechaVenta ? venta.fechaVenta.slice(0, 10) : '',
           })
+          // Los importes guardados no deben recalcularse al abrir la edicion.
+          setIgvManual(true)
         }
       })
       .catch((err) => setDanos(extractErrorMessage(err)))
@@ -133,6 +142,30 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
   const total = montoNum + igvNum
 
   const datosValidos = Boolean(agenciaId)
+
+  function igvSugerido(monto: number): string {
+    return (Math.round(monto * TASA_IGV * 100) / 100).toFixed(2)
+  }
+
+  /** Autocompleta el monto (desde cotizacion o tarifa) y su IGV del 18 %. */
+  function aplicarMonto(monto: number) {
+    setCampo('montoAPagar', monto > 0 ? monto.toFixed(2) : '')
+    // Al cambiar el origen del monto el IGV vuelve a calcularse solo.
+    setIgvManual(false)
+    setCampo('igv', monto > 0 ? igvSugerido(monto) : '0.00')
+  }
+
+  function cambiarMonto(valor: string) {
+    setCampo('montoAPagar', valor)
+    if (igvManual) return
+    const monto = Number(valor) || 0
+    setCampo('igv', monto > 0 ? igvSugerido(monto) : '0.00')
+  }
+
+  function cambiarIgv(valor: string) {
+    setIgvManual(true)
+    setCampo('igv', valor)
+  }
 
   function buildRequest(): VentaRequest {
     return {
@@ -219,6 +252,7 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
     const c = cotizaciones.find((x) => String(x.id) === id)
     if (c) {
       setCampo('agenciaId', String(agencias.find((a) => a.nombre === c.agencia)?.id ?? ''))
+      aplicarMonto(c.montoEstimado)
     }
   }
 
@@ -296,8 +330,13 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
                   className={SECCION_CAMPO}
                   value={tarifaId}
                   onChange={(e) => {
-                    setCampo('tarifaId', e.target.value)
-                    if (e.target.value) setCampo('cotizacionId', '')
+                    const valor = e.target.value
+                    setCampo('tarifaId', valor)
+                    if (valor) {
+                      setCampo('cotizacionId', '')
+                      const tarifa = tarifas.find((t) => String(t.id) === valor)
+                      if (tarifa) aplicarMonto(tarifa.precio)
+                    }
                   }}
                 >
                   <option value="">Seleccionar tarifa</option>
@@ -345,17 +384,34 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
             <div className="grid grid-cols-3 gap-3">
               <label className="flex flex-col gap-1 text-[13px] text-gray-500">
                 <span>Monto a pagar (S/)</span>
-                <input type="number" step="0.01" min="0" className={SECCION_CAMPO} value={montoAPagar} onChange={(e) => setCampo('montoAPagar', e.target.value)} />
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  className={SECCION_CAMPO}
+                  value={montoAPagar}
+                  onChange={(e) => cambiarMonto(e.target.value)}
+                />
               </label>
               <label className="flex flex-col gap-1 text-[13px] text-gray-500">
                 <span>Comisión (S/)</span>
                 <input type="number" step="0.01" min="0" className={SECCION_CAMPO} value={comision} onChange={(e) => setCampo('comision', e.target.value)} />
               </label>
               <label className="flex flex-col gap-1 text-[13px] text-gray-500">
-                <span>IGV (S/)</span>
-                <input type="number" step="0.01" min="0" className={SECCION_CAMPO} value={igv} onChange={(e) => setCampo('igv', e.target.value)} />
+                <span>IGV (18 %)</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  className={SECCION_CAMPO}
+                  value={igv}
+                  onChange={(e) => cambiarIgv(e.target.value)}
+                />
               </label>
             </div>
+            <p className="text-[11px] text-gray-400">
+              El IGV se calcula automáticamente sobre el monto a pagar. Si lo editas, se respeta tu valor.
+            </p>
             <div className="flex items-center justify-end gap-2 border-t border-gray-100 pt-2 text-sm">
               <span className="text-gray-500">Total a cobrar</span>
               <span className="font-semibold text-gray-900">{formatMonto(total)}</span>

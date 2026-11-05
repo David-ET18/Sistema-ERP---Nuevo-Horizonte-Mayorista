@@ -14,7 +14,8 @@ export const useNotificacionesStore = create<NotificacionesState>()((set) => ({
     try {
       set({ noLeidas: await contarNoLeidas() })
     } catch {
-      set({ noLeidas: 0 })
+      // Si falla la red se conserva el ultimo valor conocido en vez de
+      // ocultar el contador; el siguiente ciclo lo reintenta.
     }
   },
 }))

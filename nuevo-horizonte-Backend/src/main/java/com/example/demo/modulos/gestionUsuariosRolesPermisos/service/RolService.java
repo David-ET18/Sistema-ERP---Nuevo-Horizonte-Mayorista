@@ -16,10 +16,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -89,12 +92,13 @@ public class RolService {
 		}
 		rol.setFechaActualizacion(LocalDateTime.now());
 
+		Map<String, String> antesPermisos = null;
 		boolean cambioPermisos = false;
 		if (request.permisos() != null) {
-			Set<String> antes = snapshotPermisos(rol.getRolPermisos());
+			antesPermisos = snapshotPermisos(rol.getRolPermisos());
 			rol.getRolPermisos().clear();
 			cargarPermisos(rol, request);
-			cambioPermisos = !antes.equals(snapshotPermisos(rol.getRolPermisos()));
+			cambioPermisos = !antesPermisos.equals(snapshotPermisos(rol.getRolPermisos()));
 		}
 		else {
 			rol.getRolPermisos().clear();
@@ -110,7 +114,10 @@ public class RolService {
 					rol.getUsuarioRoles().stream().map(UsuarioRol::getUsuario).toList(),
 					"Permisos actualizados",
 					"Se actualizaron los permisos del rol \u00AB" + rol.getNombre() + "\u00BB",
-					NotificacionService.TIPO_PERMISOS);
+					NotificacionService.TIPO_PERMISOS,
+					null,
+					notificacionService.actorActual(),
+					describirCambios(antesPermisos, snapshotPermisos(rol.getRolPermisos())));
 		}
 		return dto;
 	}
@@ -170,17 +177,56 @@ public class RolService {
 	}
 
 	/**
-	 * Representa cada permiso del rol como una clave única (modulo + banderas).
-	 * Sirve para comparar los permisos antes y después de una edición y solo
-	 * notificar cuando realmente cambiaron, evitando ruido en cada guardado.
+	 * Representa cada permiso del rol como modulo + acciones legibles. Sirve
+	 * para comparar los permisos antes y despues de una edicion, notificar solo
+	 * cuando realmente cambiaron y describir el antes/despues.
 	 */
-	private Set<String> snapshotPermisos(Collection<RolPermiso> permisos) {
-		Set<String> claves = new HashSet<>();
+	private Map<String, String> snapshotPermisos(Collection<RolPermiso> permisos) {
+		Map<String, String> mapa = new LinkedHashMap<>();
 		for (RolPermiso rp : permisos) {
-			claves.add(rp.getModulo() + "|" + rp.isPuedeLeer() + "|" + rp.isPuedeCrear()
-					+ "|" + rp.isPuedeActualizar() + "|" + rp.isPuedeEliminar());
+			mapa.put(rp.getModulo(), describirPermiso(rp));
 		}
-		return claves;
+		return mapa;
+	}
+
+	private String describirPermiso(RolPermiso rp) {
+		List<String> acciones = new ArrayList<>();
+		if (rp.isPuedeLeer()) {
+			acciones.add("ver");
+		}
+		if (rp.isPuedeCrear()) {
+			acciones.add("crear");
+		}
+		if (rp.isPuedeActualizar()) {
+			acciones.add("editar");
+		}
+		if (rp.isPuedeEliminar()) {
+			acciones.add("eliminar");
+		}
+		return acciones.isEmpty() ? "sin acciones" : String.join(", ", acciones);
+	}
+
+	private String describirCambios(Map<String, String> antes, Map<String, String> despues) {
+		if (antes == null || despues == null) {
+			return null;
+		}
+		List<String> cambios = new ArrayList<>();
+		for (Map.Entry<String, String> entrada : despues.entrySet()) {
+			String previo = antes.get(entrada.getKey());
+			if (previo == null) {
+				cambios.add("Se agregó el módulo \u00AB" + entrada.getKey() + "\u00BB ("
+						+ entrada.getValue() + ")");
+			}
+			else if (!previo.equals(entrada.getValue())) {
+				cambios.add("En \u00AB" + entrada.getKey() + "\u00BB ahora puede " + entrada.getValue());
+			}
+		}
+		for (String modulo : antes.keySet()) {
+			if (!despues.containsKey(modulo)) {
+				cambios.add("Se quitó el módulo \u00AB" + modulo + "\u00BB");
+			}
+		}
+		return cambios.isEmpty() ? null : String.join(". ", cambios) + ".";
 	}
 
 	private String normalizarColor(String color, String nombre) {

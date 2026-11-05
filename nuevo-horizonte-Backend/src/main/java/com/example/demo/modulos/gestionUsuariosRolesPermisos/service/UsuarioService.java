@@ -188,6 +188,8 @@ public class UsuarioService {
 	private void notificarCambioRoles(Usuario usuario, Set<Long> antes, Set<Long> despues) {
 		List<Long> asignados = despues.stream().filter(id -> !antes.contains(id)).toList();
 		List<Long> quitados = antes.stream().filter(id -> !despues.contains(id)).toList();
+		String actor = notificacionService.actorActual();
+		String estadoFinal = "Roles actuales: " + nombresRoles(despues) + ".";
 
 		for (Long rolId : asignados) {
 			Rol rol = rolRepository.findById(rolId).orElse(null);
@@ -195,7 +197,10 @@ public class UsuarioService {
 				notificacionService.crearParaUsuario(usuario.getId(),
 						"Rol asignado",
 						"Se te asign\u00f3 el rol \u00AB" + rol.getNombre() + "\u00BB",
-						NotificacionService.TIPO_ROL_ASIGNADO);
+						NotificacionService.TIPO_ROL_ASIGNADO,
+						null,
+						actor,
+						"Se agregó el rol \u00AB" + rol.getNombre() + "\u00BB a tu cuenta. " + estadoFinal);
 			}
 		}
 		for (Long rolId : quitados) {
@@ -204,8 +209,21 @@ public class UsuarioService {
 				notificacionService.crearParaUsuario(usuario.getId(),
 						"Rol retirado",
 						"Se te quit\u00f3 el rol \u00AB" + rol.getNombre() + "\u00BB",
-						NotificacionService.TIPO_ROL_QUITADO);
+						NotificacionService.TIPO_ROL_QUITADO,
+						null,
+						actor,
+						"Se retiró el rol \u00AB" + rol.getNombre() + "\u00BB de tu cuenta. " + estadoFinal);
 			}
 		}
+	}
+
+	private String nombresRoles(Set<Long> ids) {
+		if (ids == null || ids.isEmpty()) {
+			return "ninguno";
+		}
+		return rolRepository.findAllById(ids).stream()
+				.map(Rol::getNombre)
+				.sorted()
+				.collect(Collectors.joining(", "));
 	}
 }

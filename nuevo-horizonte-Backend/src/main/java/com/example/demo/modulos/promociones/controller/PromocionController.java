@@ -1,10 +1,10 @@
 package com.example.demo.modulos.promociones.controller;
 
-import com.example.demo.modulos.catalogo.dto.ServicioDTO;
 import com.example.demo.modulos.promociones.dto.ImagenPromocionDTO;
 import com.example.demo.modulos.promociones.dto.KpiPromocionesDTO;
 import com.example.demo.modulos.promociones.dto.PromocionDTO;
 import com.example.demo.modulos.promociones.dto.PromocionRequest;
+import com.example.demo.modulos.promociones.dto.ServicioPromocionDTO;
 import com.example.demo.modulos.promociones.service.PromocionService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -69,7 +69,7 @@ public class PromocionController {
 	}
 
 	@GetMapping("/servicios")
-	public List<ServicioDTO> serviciosDisponibles() {
+	public List<ServicioPromocionDTO> serviciosDisponibles() {
 		return promocionService.serviciosDisponibles();
 	}
 

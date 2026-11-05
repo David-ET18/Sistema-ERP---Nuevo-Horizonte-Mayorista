@@ -25,7 +25,6 @@ interface FormState {
   servicioId: string
   descuento: string
   precioOriginal: string
-  precioPromocional: string
   fechaInicio: string
   fechaFin: string
   destacada: boolean
@@ -38,7 +37,6 @@ const VACIO: FormState = {
   servicioId: '',
   descuento: '10',
   precioOriginal: '',
-  precioPromocional: '',
   fechaInicio: '',
   fechaFin: '',
   destacada: false,
@@ -81,7 +79,6 @@ export default function PromocionFormPanel({ promocion, servicios, onClose, onSa
       servicioId: promocion.servicioId != null ? String(promocion.servicioId) : '',
       descuento: String(promocion.descuentoPorcentaje),
       precioOriginal: promocion.precioOriginal != null ? String(promocion.precioOriginal) : '',
-      precioPromocional: promocion.precioPromocional != null ? String(promocion.precioPromocional) : '',
       fechaInicio: promocion.fechaInicio ?? '',
       fechaFin: promocion.fechaFin ?? '',
       destacada: promocion.destacada,
@@ -106,12 +103,45 @@ export default function PromocionFormPanel({ promocion, servicios, onClose, onSa
       : null
   const preview = previewUrl ?? imagenExistente
 
-  const precioSugerido = useMemo(() => {
+  const precioCalculado = useMemo(() => {
+    if (!form.precioOriginal.trim() || !form.descuento.trim()) return null
     const original = Number(form.precioOriginal)
     const descuento = Number(form.descuento)
-    if (!form.precioOriginal || Number.isNaN(original) || Number.isNaN(descuento)) return null
-    return original * (1 - descuento / 100)
+    if (!Number.isFinite(original) || !Number.isFinite(descuento)) return null
+    return Math.round(original * (1 - descuento / 100) * 100) / 100
   }, [form.precioOriginal, form.descuento])
+
+  const servicioSeleccionado = servicios.find((s) => String(s.id) === form.servicioId) ?? null
+
+  /**
+   * Al elegir un servicio se propone su tarifa vigente mas baja como precio
+   * original. Solo se sobrescribe si el campo estaba vacio o si todavia
+   * contenia el precio sugerido del servicio anterior: un precio escrito a
+   * mano se respeta.
+   */
+  function cambiarServicio(valor: string) {
+    const anterior = servicios.find((s) => String(s.id) === form.servicioId) ?? null
+    const nuevo = servicios.find((s) => String(s.id) === valor) ?? null
+    const referencia = nuevo?.precioReferencia ?? null
+    const actual = form.precioOriginal.trim()
+    const eraSugerido =
+      anterior?.precioReferencia != null &&
+      actual !== '' &&
+      Math.abs(Number(actual) - anterior.precioReferencia) < 0.005
+    const usarReferencia = (actual === '' || eraSugerido) && referencia != null
+
+    setForm((prev) => ({
+      ...prev,
+      servicioId: valor,
+      precioOriginal: usarReferencia ? String(referencia) : prev.precioOriginal,
+    }))
+    setErrores((prev) => {
+      if (!('precioOriginal' in prev)) return prev
+      const next = { ...prev }
+      delete next.precioOriginal
+      return next
+    })
+  }
 
   function setCampo<K extends keyof FormState>(campo: K, valor: FormState[K]) {
     setForm((prev) => ({ ...prev, [campo]: valor }))
@@ -160,9 +190,6 @@ export default function PromocionFormPanel({ promocion, servicios, onClose, onSa
     if (form.precioOriginal && Number(form.precioOriginal) < 0) {
       e.precioOriginal = 'No puede ser negativo'
     }
-    if (form.precioPromocional && Number(form.precioPromocional) < 0) {
-      e.precioPromocional = 'No puede ser negativo'
-    }
     if (form.fechaInicio && form.fechaFin && form.fechaFin < form.fechaInicio) {
       e.fechaFin = 'Debe ser igual o posterior al inicio'
     }
@@ -180,7 +207,7 @@ export default function PromocionFormPanel({ promocion, servicios, onClose, onSa
       servicioId: form.servicioId ? Number(form.servicioId) : null,
       descuentoPorcentaje: Number(form.descuento),
       precioOriginal: form.precioOriginal ? Number(form.precioOriginal) : null,
-      precioPromocional: form.precioPromocional ? Number(form.precioPromocional) : null,
+      precioPromocional: precioCalculado,
       fechaInicio: form.fechaInicio || null,
       fechaFin: form.fechaFin || null,
       destacada: form.destacada,
@@ -334,7 +361,7 @@ export default function PromocionFormPanel({ promocion, servicios, onClose, onSa
               <select
                 className={inputClase}
                 value={form.servicioId}
-                onChange={(e) => setCampo('servicioId', e.target.value)}
+                onChange={(e) => cambiarServicio(e.target.value)}
               >
                 <option value="">Promoción general (todos los servicios)</option>
                 {servicios.map((s) => (
@@ -345,6 +372,13 @@ export default function PromocionFormPanel({ promocion, servicios, onClose, onSa
                 ))}
               </select>
             </Campo>
+            {servicioSeleccionado && (
+              <p className="-mt-2 text-[11px] text-gray-400">
+                {servicioSeleccionado.precioReferencia != null
+                  ? `Precio de referencia: S/ ${servicioSeleccionado.precioReferencia.toFixed(2)} (tarifa vigente más baja).`
+                  : 'Este servicio no tiene tarifas vigentes; ingresa el precio original manualmente.'}
+              </p>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <Campo label="Descuento (%)" obligatorio error={errores.descuento}>
@@ -372,25 +406,18 @@ export default function PromocionFormPanel({ promocion, servicios, onClose, onSa
               </Campo>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <Campo label="Precio promocional" error={errores.precioPromocional}>
-                <input
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  className={errores.precioPromocional ? inputClaseError : inputClase}
-                  value={form.precioPromocional}
-                  onChange={(e) => setCampo('precioPromocional', e.target.value)}
-                  placeholder={precioSugerido != null ? precioSugerido.toFixed(2) : '0.00'}
-                />
-              </Campo>
-
-              <div className="flex flex-col justify-end rounded-lg border border-dashed border-gray-200 bg-gray-50 px-3 py-2">
-                <span className="text-[11px] uppercase tracking-wide text-gray-400">Cálculo sugerido</span>
-                <span className="text-sm font-semibold text-gray-800">
-                  {precioSugerido != null ? precioSugerido.toFixed(2) : '—'}
-                </span>
+            <div className="flex items-center justify-between gap-4 rounded-xl border border-brand/20 bg-brand/[0.04] px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-brand">
+                  Precio promocional
+                </p>
+                <p className="mt-0.5 text-[11px] text-gray-500">
+                  Se calcula automáticamente con el precio original y el descuento.
+                </p>
               </div>
+              <p className="shrink-0 text-lg font-semibold text-gray-900">
+                {precioCalculado != null ? `S/ ${precioCalculado.toFixed(2)}` : '—'}
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">

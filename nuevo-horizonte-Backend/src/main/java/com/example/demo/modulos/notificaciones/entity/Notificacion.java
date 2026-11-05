@@ -43,6 +43,14 @@ public class Notificacion {
 	@Column(name = "enlace", length = 255)
 	private String enlace;
 
+	/** Usuario que provoco el cambio (null en avisos automaticos del sistema). */
+	@Column(name = "actor_nombre", length = 120)
+	private String actorNombre;
+
+	/** Detalle ampliado con el antes/despues del cambio. */
+	@Column(name = "detalle", length = 1000)
+	private String detalle;
+
 	/** Se completa cuando el usuario marca la notificacion como leida. */
 	@Column(name = "fecha_leida")
 	private LocalDateTime fechaLeida;
@@ -104,6 +112,22 @@ public class Notificacion {
 
 	public void setEnlace(String enlace) {
 		this.enlace = enlace;
+	}
+
+	public String getActorNombre() {
+		return actorNombre;
+	}
+
+	public void setActorNombre(String actorNombre) {
+		this.actorNombre = actorNombre;
+	}
+
+	public String getDetalle() {
+		return detalle;
+	}
+
+	public void setDetalle(String detalle) {
+		this.detalle = detalle;
 	}
 
 	public LocalDateTime getFechaLeida() {

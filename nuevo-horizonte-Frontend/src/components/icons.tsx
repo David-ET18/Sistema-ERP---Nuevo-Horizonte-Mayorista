@@ -411,3 +411,16 @@ export function IconTrendingUp(props: IconProps) {
     </svg>
   )
 }
+
+/** Icono de soporte: persona con auricular. */
+export function IconSoporte(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" {...iconBase(props)}>
+      <circle cx="12" cy="8.5" r="3.25" />
+      <path d="M5 20.25c0-3.3 3.13-5.75 7-5.75s7 2.45 7 5.75" />
+      <path d="M6.5 9.5v-1a5.5 5.5 0 0 1 11 0v1" />
+      <rect x="4.75" y="9.5" width="3" height="4.5" rx="1.5" />
+      <rect x="16.25" y="9.5" width="3" height="4.5" rx="1.5" />
+    </svg>
+  )
+}

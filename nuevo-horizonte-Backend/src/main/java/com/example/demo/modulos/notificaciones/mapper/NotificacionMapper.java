@@ -16,6 +16,8 @@ public final class NotificacionMapper {
 				notificacion.getTipo(),
 				notificacion.isLeida(),
 				notificacion.getEnlace(),
+				notificacion.getActorNombre(),
+				notificacion.getDetalle(),
 				notificacion.getFechaLeida(),
 				notificacion.getFechaCreacion());
 	}

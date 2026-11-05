@@ -8,9 +8,9 @@ export const http = axios.create({
   // solo, nunca pasa por este codigo. withCredentials hace que axios la
   // incluya en cada request (y reciba el Set-Cookie del login/logout).
   withCredentials: true,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  // Sin Content-Type por defecto: axios lo pone a application/json cuando el
+  // cuerpo es un objeto y deja que el navegador ponga el boundary cuando es
+  // FormData (axios 1.20 ya no lo limpia solo).
 })
 
 function leerCookie(nombre: string): string | null {
@@ -26,6 +26,15 @@ function leerCookie(nombre: string): string | null {
  * no puede leer XSRF-TOKEN de nuestro dominio para copiarlo aqui.
  */
 http.interceptors.request.use((config) => {
+  const esFormData = typeof FormData !== 'undefined' && config.data instanceof FormData
+  if (esFormData) {
+    // El navegador debe generar el boundary del multipart; si se hereda el
+    // Content-Type JSON (o se fija multipart sin boundary) el backend
+    // responde 415. Se elimina en cualquier formato de headers.
+    config.headers.delete?.('Content-Type')
+    delete config.headers['Content-Type']
+  }
+
   const metodo = config.method?.toUpperCase()
   if (metodo && metodo !== 'GET' && metodo !== 'HEAD' && metodo !== 'OPTIONS') {
     const csrfToken = leerCookie('XSRF-TOKEN')

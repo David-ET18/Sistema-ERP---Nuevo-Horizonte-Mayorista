@@ -18,11 +18,11 @@ import java.time.LocalDateTime;
 
 /**
  * Promocion comercial. La imagen se guarda en la misma fila como bytea
- * (promociones.promocion.imagen) y se sirve por separado desde el controller
+ * (catalogo.promocion.imagen) y se sirve por separado desde el controller
  * para no cargar binarios en los listados.
  */
 @Entity
-@Table(name = "promocion", schema = "promociones")
+@Table(name = "promocion", schema = "catalogo")
 public class Promocion {
 
 	@Id
