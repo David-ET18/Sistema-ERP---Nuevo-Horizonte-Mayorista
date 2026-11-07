@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -57,7 +58,25 @@ public class MarketingPublicacionService {
 	public Page<MarketingPublicacionDTO> listar(String q, MarketingPublicacion.Canal canal,
 			MarketingPublicacion.Estado estado, LocalDateTime desde, LocalDateTime hasta, Pageable pageable) {
 		String patron = Textos.patronContiene(q);
-		return publicacionRepository.listar(patron, canal, estado, desde, hasta, pageable)
+		Specification<MarketingPublicacion> especificacion = (root, query, cb) -> cb.conjunction();
+		if (patron != null) {
+			especificacion = especificacion.and((root, query, cb) -> cb.or(
+					cb.like(cb.lower(root.get("textoOriginal")), patron),
+					cb.like(cb.lower(cb.coalesce(root.get("textoPublicado"), "")), patron)));
+		}
+		if (canal != null) {
+			especificacion = especificacion.and((root, query, cb) -> cb.equal(root.get("canal"), canal));
+		}
+		if (estado != null) {
+			especificacion = especificacion.and((root, query, cb) -> cb.equal(root.get("estado"), estado));
+		}
+		if (desde != null) {
+			especificacion = especificacion.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("fechaPublicacion"), desde));
+		}
+		if (hasta != null) {
+			especificacion = especificacion.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("fechaPublicacion"), hasta));
+		}
+		return publicacionRepository.findAll(especificacion, pageable)
 				.map(MarketingPublicacionMapper::toDTO);
 	}
 

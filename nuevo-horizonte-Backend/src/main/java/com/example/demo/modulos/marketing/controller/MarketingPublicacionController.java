@@ -8,6 +8,7 @@ import com.example.demo.modulos.marketing.service.MarketingPublicacionService;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -49,7 +50,8 @@ public class MarketingPublicacionController {
 			@RequestParam(required = false) LocalDateTime hasta,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "10") int size) {
-		return marketingPublicacionService.listar(q, canal, estado, desde, hasta, PageRequest.of(page, size));
+		PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "fechaPublicacion"));
+		return marketingPublicacionService.listar(q, canal, estado, desde, hasta, pageable);
 	}
 
 	@GetMapping("/publicaciones/kpis")
