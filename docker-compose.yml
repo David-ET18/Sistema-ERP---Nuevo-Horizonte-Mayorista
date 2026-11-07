@@ -41,6 +41,7 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       MAIL_FROM: ${MAIL_FROM:-onboarding@resend.dev}
       JPA_SHOW_SQL: ${JPA_SHOW_SQL:-false}
+      N8N_WEBHOOK_MARKETING: ${N8N_WEBHOOK_MARKETING:-}
     volumes:
       - backend_uploads:/app/uploads
     expose:
@@ -74,8 +75,27 @@ services:
       - certbot_www:/var/www/certbot
     entrypoint: sh -c "trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done"
 
+  # n8n
+  n8n:
+    image: n8nio/n8n:latest
+    restart: unless-stopped
+    environment:
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: ${N8N_USER:-admin}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_PASSWORD:?Define N8N_PASSWORD en tu .env}
+      N8N_PATH: /n8n/
+      N8N_PROTOCOL: https
+      N8N_HOST: ${DOMAIN:-localhost}
+      WEBHOOK_URL: https://${DOMAIN:-localhost}/n8n/
+      GENERIC_TIMEZONE: America/Bogota
+    volumes:
+      - n8n_data:/home/node/.n8n
+    expose:
+      - "5678"
+
 volumes:
   db_data:
   backend_uploads:
   certbot_conf:
   certbot_www:
+  n8n_data:

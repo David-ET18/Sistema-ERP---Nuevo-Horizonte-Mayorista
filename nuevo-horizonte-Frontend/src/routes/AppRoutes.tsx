@@ -56,6 +56,7 @@ import VentasPage from '@/modules/ventas/pages/VentasPage'
 import GestionAgenciasPage from '@/modules/gestion-agencias/pages/GestionAgenciasPage'
 import AgenciaFichaPage from '@/modules/gestion-agencias/pages/AgenciaFichaPage'
 import ReportesPage from '@/modules/reportes/pages/ReportesPage'
+import MarketingPage from '@/modules/marketing/pages/MarketingPage'
 
 export default function AppRoutes() {
   return (
@@ -172,7 +173,14 @@ export default function AppRoutes() {
           }
         />
         <Route path="seguimiento-comercial" element={<SinDesarrollar />} />
-        <Route path="marketing" element={<SinDesarrollar />} />
+        <Route
+          path="marketing"
+          element={
+            <ConPermiso modulo="marketing">
+              <MarketingPage />
+            </ConPermiso>
+          }
+        />
         <Route
           path="reportes"
           element={

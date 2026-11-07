@@ -35,7 +35,7 @@ export const MODULOS: ModuloApp[] = [
   { clave: 'pagos', etiqueta: 'Pagos', ruta: '/pagos', grupo: 'Ventas', desarrollado: false },
   { clave: 'gestion-agencias', etiqueta: 'Gestión de Agencias', ruta: '/gestion-agencias', grupo: 'Ventas', desarrollado: true },
   { clave: 'seguimiento-comercial', etiqueta: 'Seguimiento Comercial', ruta: '/seguimiento-comercial', grupo: 'Ventas', desarrollado: false },
-  { clave: 'marketing', etiqueta: 'Difusión y Marketing', ruta: '/marketing', grupo: 'Ventas', desarrollado: false },
+  { clave: 'marketing', etiqueta: 'Difusión y Marketing', ruta: '/marketing', grupo: 'Ventas', desarrollado: true },
 
   { clave: 'documentos', etiqueta: 'Documentos', ruta: '/documentos', grupo: 'General', desarrollado: false },
   { clave: 'notificaciones', etiqueta: 'Notificaciones', ruta: '/notificaciones', grupo: 'General', desarrollado: true },
