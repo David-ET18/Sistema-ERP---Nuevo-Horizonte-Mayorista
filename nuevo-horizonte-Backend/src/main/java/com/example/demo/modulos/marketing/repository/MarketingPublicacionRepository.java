@@ -17,8 +17,8 @@ public interface MarketingPublicacionRepository extends JpaRepository<MarketingP
 			WHERE (:q IS NULL OR LOWER(p.textoOriginal) LIKE :q OR LOWER(COALESCE(p.textoPublicado, '')) LIKE :q)
 				AND (:canal IS NULL OR p.canal = :canal)
 				AND (:estado IS NULL OR p.estado = :estado)
-				AND (:desde IS NULL OR p.fechaPublicacion >= :desde)
-				AND (:hasta IS NULL OR p.fechaPublicacion <= :hasta)
+				AND (CAST(:desde AS timestamp) IS NULL OR p.fechaPublicacion >= CAST(:desde AS timestamp))
+				AND (CAST(:hasta AS timestamp) IS NULL OR p.fechaPublicacion <= CAST(:hasta AS timestamp))
 			ORDER BY p.fechaPublicacion DESC
 			""")
 	Page<MarketingPublicacion> listar(
