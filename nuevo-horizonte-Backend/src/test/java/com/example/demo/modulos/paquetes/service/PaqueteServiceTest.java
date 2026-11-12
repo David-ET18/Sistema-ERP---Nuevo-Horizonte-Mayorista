@@ -21,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.example.demo.exception.NotFoundException;
 import com.example.demo.modulos.catalogo.entity.Destino;
 import com.example.demo.modulos.catalogo.repository.DestinoRepository;
+import com.example.demo.modulos.notificaciones.service.NotificacionService;
 import com.example.demo.modulos.paquetes.dto.KpiPaquetesDTO;
 import com.example.demo.modulos.paquetes.dto.PaqueteDetalleDTO;
 import com.example.demo.modulos.paquetes.dto.PaqueteOpcionRequest;
@@ -44,11 +45,14 @@ class PaqueteServiceTest {
 	@Mock
 	private VentaRepository ventaRepository;
 
+	@Mock
+	private NotificacionService notificacionService;
+
 	private PaqueteService service;
 
 	@BeforeEach
 	void setUp() {
-		service = new PaqueteService(paqueteRepository, destinoRepository, ventaRepository);
+		service = new PaqueteService(paqueteRepository, destinoRepository, ventaRepository, notificacionService);
 		org.mockito.Mockito.lenient().when(paqueteRepository.save(any(Paquete.class)))
 				.thenAnswer(inv -> inv.getArgument(0));
 	}

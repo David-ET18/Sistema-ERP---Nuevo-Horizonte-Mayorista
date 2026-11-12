@@ -208,36 +208,12 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
     }
     setSaving(true)
     try {
+      // buildRequest() ya envia estado: 'CONFIRMADA'; con un solo boton se
+      // evita duplicar la accion de guardado.
       await guardar()
       limpiarFormulario()
       onSaved()
       toast(esEdicion ? 'Venta actualizada correctamente' : 'Venta creada correctamente', 'success')
-      onClose()
-    } catch (err) {
-      setDanos(extractErrorMessage(err))
-      toast('No se pudo guardar la venta', 'error')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  async function guardarYConfirmar() {
-    setDanos(null)
-    if (!agenciaId) {
-      setDanos('Selecciona la agencia')
-      return
-    }
-    if (!cotizacionId && !productoId && !tarifaId) {
-      setDanos('Vincula una cotización o selecciona producto/tarifa')
-      return
-    }
-    setSaving(true)
-    try {
-      // buildRequest() ya envia estado: 'CONFIRMADA', no hace falta un PATCH aparte.
-      await guardar()
-      limpiarFormulario()
-      onSaved()
-      toast(esEdicion ? 'Venta actualizada y confirmada correctamente' : 'Venta creada y confirmada correctamente', 'success')
       onClose()
     } catch (err) {
       setDanos(extractErrorMessage(err))
@@ -441,19 +417,11 @@ export default function VentaFormModal({ venta, onClose, onSaved }: Props) {
           <div className="ml-auto flex items-center justify-end gap-2">
             <button
               type="button"
-              className="cursor-pointer rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+              className="cursor-pointer rounded-lg bg-brand px-5 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-50"
               onClick={guardarVenta}
               disabled={saving || !datosValidos}
             >
               {saving ? 'Guardando...' : 'Guardar venta'}
-            </button>
-            <button
-              type="button"
-              className="cursor-pointer rounded-lg bg-brand px-5 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-50"
-              onClick={guardarYConfirmar}
-              disabled={saving || !datosValidos}
-            >
-              {saving ? 'Guardando...' : 'Guardar y confirmar'}
             </button>
           </div>
         </footer>

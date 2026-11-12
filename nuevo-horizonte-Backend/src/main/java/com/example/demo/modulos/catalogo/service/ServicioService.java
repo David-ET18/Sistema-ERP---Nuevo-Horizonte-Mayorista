@@ -1,8 +1,11 @@
 package com.example.demo.modulos.catalogo.service;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -19,6 +22,7 @@ import com.example.demo.modulos.catalogo.dto.ServicioRequest;
 import com.example.demo.modulos.catalogo.entity.Servicio;
 import com.example.demo.modulos.catalogo.mapper.ServicioMapper;
 import com.example.demo.modulos.catalogo.repository.ServicioRepository;
+import com.example.demo.modulos.notificaciones.service.NotificacionService;
 import com.example.demo.util.Specifications;
 import com.example.demo.util.Textos;
 
@@ -30,10 +34,21 @@ public class ServicioService {
 
 	private static final List<String> CAMPOS_BUSQUEDA = List.of("nombre", "categoria");
 
-	private final ServicioRepository servicioRepository;
+	/**
+	 * Lista base de categorias que se ofrece en el formulario de servicios.
+	 * Las categorias que ya existan en la base se suman automaticamente.
+	 */
+	private static final List<String> CATEGORIAS_PREDETERMINADAS = List.of(
+			"Aéreo", "Alquiler de autos", "Asistencia al viajero", "Cruceros", "Entradas y atracciones",
+			"Excursiones", "Gastronomía", "Hotel", "Marítimo", "Paquetes", "Seguro de viaje",
+			"Terrestre", "Tour", "Traslado", "Tren", "Otros");
 
-	public ServicioService(ServicioRepository servicioRepository) {
+	private final ServicioRepository servicioRepository;
+	private final NotificacionService notificacionService;
+
+	public ServicioService(ServicioRepository servicioRepository, NotificacionService notificacionService) {
 		this.servicioRepository = servicioRepository;
+		this.notificacionService = notificacionService;
 	}
 
 	public Page<ServicioDetalleDTO> listar(String q, String categoria, Boolean activo, Pageable pageable) {
@@ -54,7 +69,24 @@ public class ServicioService {
 	}
 
 	public List<String> categorias() {
-		return servicioRepository.findCategorias();
+		return combinarConExistentes(CATEGORIAS_PREDETERMINADAS, servicioRepository.findCategorias());
+	}
+
+	private static List<String> combinarConExistentes(List<String> predeterminadas, List<String> existentes) {
+		List<String> resultado = new ArrayList<>(predeterminadas);
+		Set<String> vistos = predeterminadas.stream()
+				.map(valor -> valor.toLowerCase(Locale.ROOT))
+				.collect(Collectors.toCollection(LinkedHashSet::new));
+		existentes.stream()
+				.filter(StringUtils::hasText)
+				.map(String::trim)
+				.sorted(String.CASE_INSENSITIVE_ORDER)
+				.forEach(valor -> {
+					if (vistos.add(valor.toLowerCase(Locale.ROOT))) {
+						resultado.add(valor);
+					}
+				});
+		return resultado;
 	}
 
 	public ServicioDetalleDTO detalle(Long id) {
@@ -71,7 +103,12 @@ public class ServicioService {
 		validarUnico(request, null);
 		Servicio servicio = new Servicio();
 		ServicioMapper.aplicar(servicio, request);
-		return ServicioMapper.toDetalleDTO(servicioRepository.save(servicio));
+		Servicio guardado = servicioRepository.save(servicio);
+		notificar("Nuevo servicio: " + guardado.getNombre(),
+				"Se creó el servicio " + guardado.getNombre() + " (" + guardado.getCategoria() + ").",
+				"Categoría: " + guardado.getCategoria() + " · Estado: "
+						+ (guardado.isActivo() ? "activo" : "inactivo"));
+		return ServicioMapper.toDetalleDTO(guardado);
 	}
 
 	@Transactional
@@ -79,7 +116,12 @@ public class ServicioService {
 		validarUnico(request, id);
 		Servicio servicio = obtener(id);
 		ServicioMapper.aplicar(servicio, request);
-		return ServicioMapper.toDetalleDTO(servicioRepository.save(servicio));
+		Servicio guardado = servicioRepository.save(servicio);
+		notificar("Servicio actualizado: " + guardado.getNombre(),
+				"Se actualizó el servicio " + guardado.getNombre() + " (" + guardado.getCategoria() + ").",
+				"Categoría: " + guardado.getCategoria() + " · Estado: "
+						+ (guardado.isActivo() ? "activo" : "inactivo"));
+		return ServicioMapper.toDetalleDTO(guardado);
 	}
 
 	/**
@@ -89,14 +131,25 @@ public class ServicioService {
 	@Transactional
 	public void eliminar(Long id) {
 		Servicio servicio = obtener(id);
+		String nombre = servicio.getNombre();
+		String categoria = servicio.getCategoria();
 		try {
 			servicioRepository.delete(servicio);
 			servicioRepository.flush();
+			notificar("Servicio eliminado: " + nombre,
+					"Se eliminó el servicio " + nombre + " (" + categoria + ").",
+					"Categoría: " + categoria);
 		}
 		catch (DataIntegrityViolationException ex) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT,
 					"El servicio esta en uso (tarifas u otros registros). Desactivalo en lugar de eliminarlo");
 		}
+	}
+
+	private void notificar(String titulo, String mensaje, String detalle) {
+		notificacionService.crearParaUsuariosActivos(titulo, mensaje,
+				NotificacionService.TIPO_CATALOGO, "/catalogo",
+				notificacionService.actorActual(), detalle);
 	}
 
 	private void validarUnico(ServicioRequest request, Long idExcluido) {

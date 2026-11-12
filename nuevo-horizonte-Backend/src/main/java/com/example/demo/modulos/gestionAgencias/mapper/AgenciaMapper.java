@@ -14,9 +14,6 @@ public final class AgenciaMapper {
 	private AgenciaMapper() {
 	}
 
-	/**
-	 * Nombre a mostrar: nombre comercial si existe, si no la razon social.
-	 */
 	public static String nombre(Agencia agencia) {
 		if (agencia == null) {
 			return null;
@@ -24,9 +21,6 @@ public final class AgenciaMapper {
 		return Textos.primeroConContenido(agencia.getNombreComercial(), agencia.getRazonSocial());
 	}
 
-	/**
-	 * Version resumida que consumen otros modulos (cotizaciones, ventas).
-	 */
 	public static AgenciaDTO toRefDTO(Agencia agencia) {
 		return new AgenciaDTO(
 				agencia.getId(),
@@ -38,6 +32,9 @@ public final class AgenciaMapper {
 	}
 
 	public static AgenciaListaDTO toListaDTO(Agencia agencia) {
+		// Corregido: se incluye "gestion-agencias" en la ruta
+		String logoUrl = (agencia.getLogo() != null) ? "/api/gestion-agencias/" + agencia.getId() + "/logo" : null;
+
 		return new AgenciaListaDTO(
 				agencia.getId(),
 				agencia.getRazonSocial(),
@@ -46,13 +43,16 @@ public final class AgenciaMapper {
 				agencia.getCategoria(),
 				agencia.getContactoNombre(),
 				agencia.getContactoEmail(),
-				agencia.getLogoUrl(),
+				logoUrl,
 				agencia.isEsPrioritaria(),
 				agencia.isActivo(),
 				agencia.getFechaCreacion());
 	}
 
 	public static AgenciaDetalleDTO toDetalleDTO(Agencia agencia) {
+		// Corregido: se incluye "gestion-agencias" en la ruta
+		String logoUrl = (agencia.getLogo() != null) ? "/api/gestion-agencias/" + agencia.getId() + "/logo" : null;
+
 		return new AgenciaDetalleDTO(
 				agencia.getId(),
 				agencia.getRazonSocial(),
@@ -64,16 +64,12 @@ public final class AgenciaMapper {
 				agencia.getContactoEmail(),
 				agencia.getCiudad(),
 				agencia.getEjecutivoAsignado(),
-				agencia.getLogoUrl(),
+				logoUrl,
 				agencia.isEsPrioritaria(),
 				agencia.isActivo(),
 				agencia.getFechaCreacion());
 	}
 
-	/**
-	 * Proyecta un request sobre la entidad. Los campos booleanos solo se sobrescriben
-	 * cuando vienen informados, para no perder el valor actual en una edicion parcial.
-	 */
 	public static void aplicar(Agencia agencia, AgenciaRequest request) {
 		agencia.setRazonSocial(Textos.sinEspacios(request.razonSocial()));
 		agencia.setNombreComercial(Textos.sinEspacios(request.nombreComercial()));
@@ -84,6 +80,7 @@ public final class AgenciaMapper {
 		agencia.setContactoEmail(Textos.sinEspacios(request.contactoEmail()));
 		agencia.setCiudad(Textos.sinEspacios(request.ciudad()));
 		agencia.setEjecutivoAsignado(Textos.sinEspacios(request.ejecutivoAsignado()));
+
 		if (request.esPrioritaria() != null) {
 			agencia.setEsPrioritaria(request.esPrioritaria());
 		}

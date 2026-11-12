@@ -13,12 +13,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.demo.modulos.gestionAgencias.dto.AgenciaDetalleDTO;
 import com.example.demo.modulos.gestionAgencias.dto.AgenciaRequest;
 import com.example.demo.modulos.gestionAgencias.entity.Agencia;
 import com.example.demo.modulos.gestionAgencias.repository.AgenciaRepository;
+import com.example.demo.modulos.notificaciones.service.NotificacionService;
 
 @ExtendWith(MockitoExtension.class)
 class AgenciaServiceTest {
@@ -26,11 +28,14 @@ class AgenciaServiceTest {
 	@Mock
 	private AgenciaRepository agenciaRepository;
 
+	@Mock
+	private NotificacionService notificacionService;
+
 	private AgenciaService service;
 
 	@Test
 	void crear_guardaCuandoElRucNoExiste() {
-		service = new AgenciaService(agenciaRepository);
+		service = new AgenciaService(agenciaRepository, notificacionService);
 		when(agenciaRepository.existsByRuc("20123456789")).thenReturn(false);
 		when(agenciaRepository.save(any(Agencia.class))).thenAnswer(inv -> {
 			Agencia a = inv.getArgument(0);
@@ -45,7 +50,7 @@ class AgenciaServiceTest {
 
 	@Test
 	void crear_lanza409CuandoElRucYaExiste() {
-		service = new AgenciaService(agenciaRepository);
+		service = new AgenciaService(agenciaRepository, notificacionService);
 		when(agenciaRepository.existsByRuc("20123456789")).thenReturn(true);
 
 		assertThatThrownBy(() -> service.crear(requestConRuc("20123456789")))
@@ -57,7 +62,7 @@ class AgenciaServiceTest {
 
 	@Test
 	void actualizar_excluyeElPropioIdAlValidarElRuc() {
-		service = new AgenciaService(agenciaRepository);
+		service = new AgenciaService(agenciaRepository, notificacionService);
 		Agencia existente = new Agencia();
 		existente.setId(8L);
 		when(agenciaRepository.existsByRucAndIdNot("20123456789", 8L)).thenReturn(false);
@@ -72,21 +77,32 @@ class AgenciaServiceTest {
 
 	@Test
 	void actualizarLogo_asignaElArchivoYGuarda() {
-		service = new AgenciaService(agenciaRepository);
+		service = new AgenciaService(agenciaRepository, notificacionService);
 		Agencia agencia = new Agencia();
 		agencia.setId(2L);
 		when(agenciaRepository.findById(2L)).thenReturn(Optional.of(agencia));
 		when(agenciaRepository.save(any(Agencia.class))).thenAnswer(inv -> inv.getArgument(0));
 
-		String resultado = service.actualizarLogo(2L, "logo_123.png");
+		// Creamos un archivo simulado (MultipartFile)
+		MockMultipartFile archivo = new MockMultipartFile(
+				"logo",
+				"logo_123.png",
+				"image/png",
+				"contenido-de-prueba-bytes".getBytes()
+		);
 
-		assertThat(resultado).isEqualTo("logo_123.png");
-		assertThat(agencia.getLogoUrl()).isEqualTo("logo_123.png");
+		service.actualizarLogo(2L, archivo);
+
+		// Validamos que se hayan asignado correctamente las propiedades binarias
+		assertThat(agencia.getLogo()).isNotNull();
+		assertThat(agencia.getLogoNombre()).isEqualTo("logo_123.png");
+		assertThat(agencia.getLogoContentType()).isEqualTo("image/png");
+		verify(agenciaRepository).save(agencia);
 	}
 
 	@Test
 	void obtener_lanza404CuandoLaAgenciaNoExiste() {
-		service = new AgenciaService(agenciaRepository);
+		service = new AgenciaService(agenciaRepository, notificacionService);
 		when(agenciaRepository.findById(99L)).thenReturn(Optional.empty());
 
 		assertThatThrownBy(() -> service.obtener(99L)).isInstanceOf(ResponseStatusException.class);
@@ -94,7 +110,7 @@ class AgenciaServiceTest {
 
 	@Test
 	void kpis_combinaLosCuatroContadoresDelRepositorio() {
-		service = new AgenciaService(agenciaRepository);
+		service = new AgenciaService(agenciaRepository, notificacionService);
 		when(agenciaRepository.count()).thenReturn(50L);
 		when(agenciaRepository.countByActivoTrue()).thenReturn(45L);
 		when(agenciaRepository.countByEsPrioritariaTrue()).thenReturn(10L);

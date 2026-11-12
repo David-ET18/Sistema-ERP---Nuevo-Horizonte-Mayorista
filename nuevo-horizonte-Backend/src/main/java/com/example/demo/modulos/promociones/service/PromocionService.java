@@ -106,13 +106,13 @@ public class PromocionService {
 		promocion.setActiva(request.getActiva() == null || request.getActiva());
 		promocion.setDestacada(Boolean.TRUE.equals(request.getDestacada()));
 		PromocionMapper.aplicar(promocion, request, resolverServicio(request.getServicioId()));
+		aplicarPrecioOriginalDesdeTarifa(promocion);
 		calcularPrecioPromocional(promocion);
 		aplicarImagen(promocion, imagen, request.getQuitarImagen());
 
 		Promocion guardada = promocionRepository.save(promocion);
-		if (guardada.isActiva()) {
-			notificar(guardada, "Nueva promoción: ", "Nueva promoción disponible");
-		}
+		notificar(guardada, "Nueva promoción: ",
+				guardada.isActiva() ? "Nueva promoción disponible" : "Nueva promoción registrada (inactiva)");
 		return PromocionMapper.toDTO(guardada);
 	}
 
@@ -123,13 +123,15 @@ public class PromocionService {
 		boolean estabaActiva = promocion.isActiva();
 
 		PromocionMapper.aplicar(promocion, request, resolverServicio(request.getServicioId()));
+		aplicarPrecioOriginalDesdeTarifa(promocion);
 		calcularPrecioPromocional(promocion);
 		aplicarImagen(promocion, imagen, request.getQuitarImagen());
 		Promocion guardada = promocionRepository.save(promocion);
 
-		// Solo se notifica cuando la promocion pasa de inactiva a activa.
 		if (!estabaActiva && guardada.isActiva()) {
 			notificar(guardada, "Promoción activada: ", "Promoción reactivada");
+		} else {
+			notificar(guardada, "Promoción actualizada: ", "Promoción actualizada");
 		}
 		return PromocionMapper.toDTO(guardada);
 	}
@@ -152,12 +154,22 @@ public class PromocionService {
 		Promocion promocion = obtener(id);
 		promocion.setActiva(false);
 		promocion.setFechaActualizacion(LocalDateTime.now());
-		return PromocionMapper.toDTO(promocionRepository.save(promocion));
+		Promocion guardada = promocionRepository.save(promocion);
+		notificar(guardada, "Promoción desactivada: ", "Promoción desactivada");
+		return PromocionMapper.toDTO(guardada);
 	}
 
 	@Transactional
 	public void eliminar(Long id) {
-		promocionRepository.delete(obtener(id));
+		Promocion promocion = obtener(id);
+		String nombre = promocion.getNombre();
+		String detalle = detallePromocion(promocion);
+		promocionRepository.delete(promocion);
+		notificacionService.crearParaUsuariosActivos(
+				"Promoción eliminada: " + nombre,
+				"Se eliminó la promoción " + nombre + ".",
+				NotificacionService.TIPO_PROMOCION, "/promociones",
+				notificacionService.actorActual(), detalle);
 	}
 
 	public ImagenPromocionDTO obtenerImagen(Long id) {
@@ -206,6 +218,26 @@ public class PromocionService {
 				&& request.getFechaFin().isBefore(request.getFechaInicio())) {
 			throw new BusinessException("La fecha de fin no puede ser anterior a la fecha de inicio");
 		}
+	}
+
+	/**
+	 * El precio original no se acepta del formulario: siempre se toma de la
+	 * tarifa vigente mas baja del servicio elegido. Una promocion general (sin
+	 * servicio) queda sin precio original.
+	 */
+	private void aplicarPrecioOriginalDesdeTarifa(Promocion promocion) {
+		if (promocion.getServicio() == null || promocion.getServicio().getId() == null) {
+			promocion.setPrecioOriginal(null);
+			return;
+		}
+		Long servicioId = promocion.getServicio().getId();
+		BigDecimal referencia = tarifaRepository.findPrecioMinimoVigentePorServicio().stream()
+				.filter(item -> servicioId.equals(item.getServicioId()))
+				.map(TarifaRepository.PrecioMinimoServicio::getPrecio)
+				.filter(precio -> precio != null)
+				.findFirst()
+				.orElse(null);
+		promocion.setPrecioOriginal(referencia);
 	}
 
 	/**
@@ -291,10 +323,13 @@ public class PromocionService {
 
 	private void notificar(Promocion promocion, String prefijoTitulo, String contexto) {
 		String titulo = prefijoTitulo + promocion.getNombre();
-		StringBuilder mensaje = new StringBuilder(contexto)
-				.append(": ")
-				.append(promocion.getDescuentoPorcentaje().stripTrailingZeros().toPlainString())
-				.append("% de descuento");
+		StringBuilder mensaje = new StringBuilder(contexto).append(": ");
+		if (promocion.getDescuentoPorcentaje() != null) {
+			mensaje.append(promocion.getDescuentoPorcentaje().stripTrailingZeros().toPlainString())
+					.append("% de descuento");
+		} else {
+			mensaje.append("sin descuento definido");
+		}
 		if (promocion.getServicio() != null) {
 			mensaje.append(" en ").append(promocion.getServicio().getNombre());
 		}
@@ -314,9 +349,11 @@ public class PromocionService {
 	private String detallePromocion(Promocion promocion) {
 		StringBuilder detalle = new StringBuilder();
 		detalle.append("Promoción \u00AB").append(promocion.getNombre()).append("\u00BB");
-		detalle.append(" · ")
-				.append(promocion.getDescuentoPorcentaje().stripTrailingZeros().toPlainString())
-				.append("% de descuento");
+		if (promocion.getDescuentoPorcentaje() != null) {
+			detalle.append(" · ")
+					.append(promocion.getDescuentoPorcentaje().stripTrailingZeros().toPlainString())
+					.append("% de descuento");
+		}
 		if (promocion.getServicio() != null) {
 			detalle.append(" en \u00AB").append(promocion.getServicio().getNombre()).append("\u00BB");
 		}

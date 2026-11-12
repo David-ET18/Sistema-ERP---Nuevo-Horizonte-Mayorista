@@ -8,6 +8,7 @@ import com.example.demo.modulos.marketing.dto.MarketingPublicacionDTO;
 import com.example.demo.modulos.marketing.entity.MarketingPublicacion;
 import com.example.demo.modulos.marketing.mapper.MarketingPublicacionMapper;
 import com.example.demo.modulos.marketing.repository.MarketingPublicacionRepository;
+import com.example.demo.modulos.notificaciones.service.NotificacionService;
 import com.example.demo.util.Textos;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,13 +47,16 @@ public class MarketingPublicacionService {
 			.build();
 	private final ObjectMapper objectMapper;
 	private final MarketingPublicacionRepository publicacionRepository;
+	private final NotificacionService notificacionService;
 
 	@Value("${app.n8n.webhook-marketing:}")
 	private String webhookUrl;
 
-	public MarketingPublicacionService(ObjectMapper objectMapper, MarketingPublicacionRepository publicacionRepository) {
+	public MarketingPublicacionService(ObjectMapper objectMapper, MarketingPublicacionRepository publicacionRepository,
+			NotificacionService notificacionService) {
 		this.objectMapper = objectMapper;
 		this.publicacionRepository = publicacionRepository;
+		this.notificacionService = notificacionService;
 	}
 
 	public Page<MarketingPublicacionDTO> listar(String q, MarketingPublicacion.Canal canal,
@@ -150,6 +154,7 @@ public class MarketingPublicacionService {
 			aplicarRespuestaTelegram(publicacion, response.body());
 			publicacionRepository.save(publicacion);
 			log.info("Publicacion enviada a la automatizacion de marketing");
+			notificarPublicacion(publicacion);
 		}
 		catch (IOException ex) {
 			log.error("No se pudo leer la imagen o contactar la automatizacion: {}", ex.getMessage());
@@ -163,6 +168,21 @@ public class MarketingPublicacionService {
 			publicacionRepository.save(publicacion);
 			throw new BusinessException("El envio de la publicacion fue interrumpido.");
 		}
+	}
+
+	private void notificarPublicacion(MarketingPublicacion publicacion) {
+		if (publicacion.getEstado() != MarketingPublicacion.Estado.PUBLICADO) {
+			return;
+		}
+		String texto = Textos.noVacio(publicacion.getTextoPublicado())
+				? publicacion.getTextoPublicado()
+				: publicacion.getTextoOriginal();
+		String resumen = texto != null && texto.length() > 120 ? texto.substring(0, 120) + "…" : texto;
+		notificacionService.crearParaUsuariosActivos(
+				"Publicación de marketing enviada",
+				"Se publicó en Telegram: " + (resumen == null ? "sin texto" : resumen),
+				NotificacionService.TIPO_MARKETING, "/marketing",
+				publicacion.getResponsableNombre(), "Canal: Telegram · Estado: publicado");
 	}
 
 	/**

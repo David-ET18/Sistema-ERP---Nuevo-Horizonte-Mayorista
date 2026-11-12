@@ -4,11 +4,14 @@ import com.example.demo.modulos.gestionAgencias.dto.AgenciaDetalleDTO;
 import com.example.demo.modulos.gestionAgencias.dto.AgenciaListaDTO;
 import com.example.demo.modulos.gestionAgencias.dto.AgenciaRequest;
 import com.example.demo.modulos.gestionAgencias.dto.KpiAgenciasDTO;
+import com.example.demo.modulos.gestionAgencias.entity.Agencia;
+import com.example.demo.modulos.gestionAgencias.repository.AgenciaRepository;
 import com.example.demo.modulos.gestionAgencias.service.AgenciaService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,17 +27,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/gestion-agencias")
@@ -43,13 +42,14 @@ public class AgenciaController {
 
 	private static final Set<String> EXTENSIONES_PERMITIDAS =
 			Set.of("png", "jpg", "jpeg", "webp", "gif");
-	private static final long TAMANO_MAXIMO = 2L * 1024 * 1024;
-	private static final Path CARPETA_LOGOS = Paths.get("uploads", "agencias");
+	private static final long TAMANO_MAXIMO = 2L * 1024 * 1024; // 2 MB
 
 	private final AgenciaService agenciaService;
+	private final AgenciaRepository agenciaRepository;
 
-	public AgenciaController(AgenciaService agenciaService) {
+	public AgenciaController(AgenciaService agenciaService, AgenciaRepository agenciaRepository) {
 		this.agenciaService = agenciaService;
+		this.agenciaRepository = agenciaRepository;
 	}
 
 	@GetMapping
@@ -127,25 +127,30 @@ public class AgenciaController {
 			throw new IllegalArgumentException("Formato no permitido. Usa PNG, JPG, WEBP o GIF");
 		}
 
-		Files.createDirectories(CARPETA_LOGOS);
-		String nombreArchivo = "agencia_" + id + "_" + UUID.randomUUID() + "." + extension;
-		Path destino = CARPETA_LOGOS.resolve(nombreArchivo);
-		Files.copy(archivo.getInputStream(), destino, StandardCopyOption.REPLACE_EXISTING);
+		// Guardamos directamente en la base de datos a través del servicio
+		agenciaService.actualizarLogo(id, archivo);
 
-		return Map.of("logoUrl", agenciaService.actualizarLogo(id, nombreArchivo));
+		return Map.of("mensaje", "Logo actualizado correctamente");
 	}
 
-	@GetMapping("/logo/{nombreArchivo}")
+	/**
+	 * Endpoint para servir la imagen binaria del logo directamente desde la base de datos
+	 */
+	@GetMapping("/{id}/logo")
 	@PreAuthorize("permitAll()")
-	public org.springframework.core.io.Resource verLogo(@PathVariable String nombreArchivo) throws IOException {
-		Path ruta = CARPETA_LOGOS.resolve(nombreArchivo).normalize();
-		if (!ruta.startsWith(CARPETA_LOGOS.normalize()) || !Files.exists(ruta)) {
-			throw new org.springframework.web.server.ResponseStatusException(
-					org.springframework.http.HttpStatus.NOT_FOUND, "Logo no encontrado");
+	public ResponseEntity<byte[]> verLogo(@PathVariable Long id) {
+		Agencia agencia = agenciaRepository.findById(id)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Agencia no encontrada"));
+
+		if (agencia.getLogo() == null) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Logo no encontrado");
 		}
-		org.springframework.core.io.Resource recurso = new org.springframework.core.io.UrlResource(
-				ruta.toUri());
-		return recurso;
+
+		HttpHeaders headers = new HttpHeaders();
+		String contentType = agencia.getLogoContentType();
+		headers.setContentType(MediaType.parseMediaType(contentType != null ? contentType : "application/octet-stream"));
+
+		return new ResponseEntity<>(agencia.getLogo(), headers, HttpStatus.OK);
 	}
 
 	private String extensionDe(String nombreArchivo) {

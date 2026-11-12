@@ -3,7 +3,9 @@ package com.example.demo.modulos.cotizaciones.service;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.NotFoundException;
 import com.example.demo.modulos.gestionAgencias.dto.AgenciaDTO;
+import com.example.demo.modulos.gestionAgencias.mapper.AgenciaMapper;
 import com.example.demo.modulos.gestionAgencias.service.AgenciaService;
+import com.example.demo.modulos.notificaciones.service.NotificacionService;
 import com.example.demo.modulos.catalogo.service.CatalogoService;
 import com.example.demo.modulos.tarifas.service.TarifaService;
 import com.example.demo.modulos.cotizaciones.dto.CambioEstadoRequest;
@@ -68,19 +70,22 @@ public class CotizacionService {
 	private final CatalogoService catalogoService;
 	private final TarifaService tarifaService;
 	private final UsuarioRepository usuarioRepository;
+	private final NotificacionService notificacionService;
 
 	public CotizacionService(CotizacionRepository cotizacionRepository,
 			CotizacionDetalleRepository detalleRepository,
 			AgenciaService agenciaService,
 			CatalogoService catalogoService,
 			TarifaService tarifaService,
-			UsuarioRepository usuarioRepository) {
+			UsuarioRepository usuarioRepository,
+			NotificacionService notificacionService) {
 		this.cotizacionRepository = cotizacionRepository;
 		this.detalleRepository = detalleRepository;
 		this.agenciaService = agenciaService;
 		this.catalogoService = catalogoService;
 		this.tarifaService = tarifaService;
 		this.usuarioRepository = usuarioRepository;
+		this.notificacionService = notificacionService;
 	}
 
 	@Transactional(readOnly = true)
@@ -198,7 +203,12 @@ public class CotizacionService {
 		inicial.setUsuarioCambio(asesor);
 		cotizacion.addHistorial(inicial);
 
-		return toDTO(cotizacionRepository.save(cotizacion));
+		Cotizacion guardada = cotizacionRepository.save(cotizacion);
+		notificar("Nueva cotización: " + guardada.getNumero(),
+				"Se registró la cotización " + guardada.getNumero() + " para "
+						+ AgenciaMapper.nombre(guardada.getAgencia()) + ".",
+				"Estado: PENDIENTE · Agencia: " + AgenciaMapper.nombre(guardada.getAgencia()));
+		return toDTO(guardada);
 	}
 
 	@Transactional
@@ -237,6 +247,10 @@ public class CotizacionService {
 		// Las lineas que ya no estan en el request se borran (orphanRemoval).
 		existentes.values().forEach(cotizacion.getDetalles()::remove);
 
+		notificar("Cotización actualizada: " + cotizacion.getNumero(),
+				"Se actualizaron los datos de la cotización " + cotizacion.getNumero() + ".",
+				"Agencia: " + AgenciaMapper.nombre(cotizacion.getAgencia())
+						+ " · Líneas: " + cotizacion.getDetalles().size());
 		return toDTO(cotizacion);
 	}
 
@@ -269,6 +283,11 @@ public class CotizacionService {
 		historial.setUsuarioCambio(usuarioActual());
 		cotizacion.addHistorial(historial);
 
+		notificar("Cotización " + cotizacion.getNumero() + ": " + nuevoEstado,
+				"La cotización " + cotizacion.getNumero() + " cambió de " + estadoAnterior
+						+ " a " + nuevoEstado + ".",
+				"Agencia: " + AgenciaMapper.nombre(cotizacion.getAgencia())
+						+ " · Estado anterior: " + estadoAnterior + " · Estado nuevo: " + nuevoEstado);
 		return toDTO(cotizacion);
 	}
 
@@ -322,6 +341,12 @@ public class CotizacionService {
 		String username = SecurityContextHolder.getContext().getAuthentication().getName();
 		return usuarioRepository.findByUsername(username)
 				.orElseThrow(() -> new NotFoundException("Usuario no identificado: " + username));
+	}
+
+	private void notificar(String titulo, String mensaje, String detalle) {
+		notificacionService.crearParaUsuariosActivos(titulo, mensaje,
+				NotificacionService.TIPO_COTIZACION, "/cotizaciones",
+				notificacionService.actorActual(), detalle);
 	}
 
 	/**

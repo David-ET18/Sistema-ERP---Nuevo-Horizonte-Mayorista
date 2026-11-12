@@ -55,8 +55,14 @@ public class Agencia {
 	@Column(name = "activo", nullable = false)
 	private boolean activo = true;
 
-	@Column(name = "logo_url", length = 300)
-	private String logoUrl;
+	@Column(name = "logo", columnDefinition = "BYTEA")
+	private byte[] logo;
+
+	@Column(name = "logo_content_type", length = 100)
+	private String logoContentType;
+
+	@Column(name = "logo_nombre", length = 255)
+	private String logoNombre;
 
 	@Column(name = "fecha_creacion", nullable = false)
 	private LocalDateTime fechaCreacion = LocalDateTime.now();
@@ -157,12 +163,28 @@ public class Agencia {
 		this.activo = activo;
 	}
 
-	public String getLogoUrl() {
-		return logoUrl;
+	public byte[] getLogo() {
+		return logo;
 	}
 
-	public void setLogoUrl(String logoUrl) {
-		this.logoUrl = logoUrl;
+	public void setLogo(byte[] logo) {
+		this.logo = logo;
+	}
+
+	public String getLogoContentType() {
+		return logoContentType;
+	}
+
+	public void setLogoContentType(String logoContentType) {
+		this.logoContentType = logoContentType;
+	}
+
+	public String getLogoNombre() {
+		return logoNombre;
+	}
+
+	public void setLogoNombre(String logoNombre) {
+		this.logoNombre = logoNombre;
 	}
 
 	public LocalDateTime getFechaCreacion() {

@@ -1,5 +1,6 @@
 package com.example.demo.modulos.gestionAgencias.service;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -11,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.demo.modulos.gestionAgencias.dto.AgenciaDTO;
@@ -21,6 +23,7 @@ import com.example.demo.modulos.gestionAgencias.dto.KpiAgenciasDTO;
 import com.example.demo.modulos.gestionAgencias.entity.Agencia;
 import com.example.demo.modulos.gestionAgencias.mapper.AgenciaMapper;
 import com.example.demo.modulos.gestionAgencias.repository.AgenciaRepository;
+import com.example.demo.modulos.notificaciones.service.NotificacionService;
 import com.example.demo.util.Specifications;
 
 import jakarta.persistence.criteria.Predicate;
@@ -33,13 +36,15 @@ public class AgenciaService {
 			List.of("razonSocial", "nombreComercial", "ruc", "contactoNombre");
 
 	private final AgenciaRepository agenciaRepository;
+	private final NotificacionService notificacionService;
 
-	public AgenciaService(AgenciaRepository agenciaRepository) {
+	public AgenciaService(AgenciaRepository agenciaRepository, NotificacionService notificacionService) {
 		this.agenciaRepository = agenciaRepository;
+		this.notificacionService = notificacionService;
 	}
 
 	public Page<AgenciaListaDTO> listar(String q, String categoria, Boolean activo,
-			Boolean soloPrioritarias, Pageable pageable) {
+	                                    Boolean soloPrioritarias, Pageable pageable) {
 		Specification<Agencia> spec = construirFiltros(q, categoria, activo, soloPrioritarias);
 		return agenciaRepository.findAll(spec, pageable).map(AgenciaMapper::toListaDTO);
 	}
@@ -90,7 +95,12 @@ public class AgenciaService {
 		validarRuc(request.ruc(), null);
 		Agencia agencia = new Agencia();
 		AgenciaMapper.aplicar(agencia, request);
-		return AgenciaMapper.toDetalleDTO(agenciaRepository.save(agencia));
+		Agencia guardada = agenciaRepository.save(agencia);
+		notificar("Nueva agencia: " + AgenciaMapper.nombre(guardada),
+				"Se registró la agencia " + AgenciaMapper.nombre(guardada) + ".",
+				"RUC: " + guardada.getRuc() + " · Categoría: " + guardada.getCategoria()
+						+ " · Estado: " + (guardada.isActivo() ? "activa" : "inactiva"));
+		return AgenciaMapper.toDetalleDTO(guardada);
 	}
 
 	@Transactional
@@ -98,7 +108,12 @@ public class AgenciaService {
 		validarRuc(request.ruc(), id);
 		Agencia agencia = obtener(id);
 		AgenciaMapper.aplicar(agencia, request);
-		return AgenciaMapper.toDetalleDTO(agenciaRepository.save(agencia));
+		Agencia guardada = agenciaRepository.save(agencia);
+		notificar("Agencia actualizada: " + AgenciaMapper.nombre(guardada),
+				"Se actualizaron los datos de la agencia " + AgenciaMapper.nombre(guardada) + ".",
+				"RUC: " + guardada.getRuc() + " · Categoría: " + guardada.getCategoria()
+						+ " · Estado: " + (guardada.isActivo() ? "activa" : "inactiva"));
+		return AgenciaMapper.toDetalleDTO(guardada);
 	}
 
 	/**
@@ -110,6 +125,9 @@ public class AgenciaService {
 		Agencia agencia = obtener(id);
 		agencia.setActivo(false);
 		agenciaRepository.save(agencia);
+		notificar("Agencia desactivada: " + AgenciaMapper.nombre(agencia),
+				"La agencia " + AgenciaMapper.nombre(agencia) + " fue desactivada.",
+				"RUC: " + agencia.getRuc() + " · Estado: inactiva");
 	}
 
 	@Transactional
@@ -117,14 +135,29 @@ public class AgenciaService {
 		Agencia agencia = obtener(id);
 		agencia.setActivo(true);
 		agenciaRepository.save(agencia);
+		notificar("Agencia reactivada: " + AgenciaMapper.nombre(agencia),
+				"La agencia " + AgenciaMapper.nombre(agencia) + " volvió a estar activa.",
+				"RUC: " + agencia.getRuc() + " · Estado: activa");
 	}
 
 	@Transactional
-	public String actualizarLogo(Long id, String nombreArchivo) {
+	public void actualizarLogo(Long id, MultipartFile archivo) {
 		Agencia agencia = obtener(id);
-		agencia.setLogoUrl(nombreArchivo);
-		agenciaRepository.save(agencia);
-		return nombreArchivo;
+		try {
+			agencia.setLogo(archivo.getBytes());
+			agencia.setLogoContentType(archivo.getContentType());
+			agencia.setLogoNombre(archivo.getOriginalFilename());
+			agenciaRepository.save(agencia);
+		} catch (IOException e) {
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+					"Error al procesar el archivo del logo", e);
+		}
+	}
+
+	private void notificar(String titulo, String mensaje, String detalle) {
+		notificacionService.crearParaUsuariosActivos(titulo, mensaje,
+				NotificacionService.TIPO_AGENCIA, "/gestion-agencias",
+				notificacionService.actorActual(), detalle);
 	}
 
 	private void validarRuc(String ruc, Long idExcluido) {
@@ -138,7 +171,7 @@ public class AgenciaService {
 	}
 
 	private Specification<Agencia> construirFiltros(String q, String categoria, Boolean activo,
-			Boolean soloPrioritarias) {
+	                                                Boolean soloPrioritarias) {
 		return (root, query, cb) -> {
 			List<Predicate> predicates = new ArrayList<>();
 

@@ -56,6 +56,15 @@ export default function CatalogoFormModal({
   )
   const valores = esEdicion ? valoresEdicion : borrador.valor
 
+  // El grupo siempre se elige de la lista predeterminada (paises o
+  // categorias). Si un registro antiguo trae un valor que ya no esta en la
+  // lista, se agrega como opcion para no perderlo al editar.
+  const valorGrupo = valores.grupo.trim()
+  const opcionesGrupo =
+    valorGrupo && !sugerenciasGrupo.some((s) => s.toLowerCase() === valorGrupo.toLowerCase())
+      ? [valorGrupo, ...sugerenciasGrupo]
+      : sugerenciasGrupo
+
   useEffect(() => {
     if (inicial) setValoresEdicion(inicial)
     setError(null)
@@ -149,19 +158,23 @@ export default function CatalogoFormModal({
               {grupoObligatorio && <span className="text-red-500"> *</span>}
               {!grupoObligatorio && <span className="ml-1 text-gray-400">(opcional)</span>}
             </span>
-            <input
-              type="text"
-              list="sugerencias-grupo"
+            <select
               className={inputClase}
               value={valores.grupo}
-              onChange={(e) => set('grupo', soloTexto(e.target.value))}
-              autoComplete="off"
-            />
-            <datalist id="sugerencias-grupo">
-              {sugerenciasGrupo.map((s) => (
-                <option key={s} value={s} />
+              onChange={(e) => set('grupo', e.target.value)}
+            >
+              <option value="">
+                {grupoObligatorio ? `Seleccionar ${etiquetaGrupo.toLowerCase()}` : 'Sin categoría'}
+              </option>
+              {opcionesGrupo.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
               ))}
-            </datalist>
+            </select>
+            <span className="text-[11px] text-gray-400">
+              Lista predeterminada de {etiquetaGrupo.toLowerCase()} disponibles.
+            </span>
           </label>
 
           <label className="flex flex-col gap-1.5">

@@ -42,7 +42,7 @@ public class AgenciaFichaService {
 	private final InteraccionAgenciaRepository interaccionAgenciaRepository;
 
 	public AgenciaFichaService(AgenciaRepository agenciaRepository, VentaRepository ventaRepository,
-			CotizacionRepository cotizacionRepository, InteraccionAgenciaRepository interaccionAgenciaRepository) {
+	                           CotizacionRepository cotizacionRepository, InteraccionAgenciaRepository interaccionAgenciaRepository) {
 		this.agenciaRepository = agenciaRepository;
 		this.ventaRepository = ventaRepository;
 		this.cotizacionRepository = cotizacionRepository;
@@ -52,26 +52,31 @@ public class AgenciaFichaService {
 	public List<AgenciaFichaResumenDTO> listar(String q) {
 		List<Agencia> agencias = StringUtils.hasText(q)
 				? agenciaRepository.findAllByOrderByRazonSocialAsc().stream()
-						.filter(a -> coincide(a, q))
-						.toList()
+				.filter(a -> coincide(a, q))
+				.toList()
 				: agenciaRepository.findAllByOrderByRazonSocialAsc();
 
 		List<Long> ids = agencias.stream().map(Agencia::getId).toList();
 		Map<Long, java.time.LocalDateTime> ultimasInteracciones = ids.isEmpty()
 				? Map.of()
 				: interaccionAgenciaRepository.findUltimaInteraccionPorAgencias(ids).stream()
-						.collect(Collectors.toMap(
-								InteraccionAgenciaRepository.UltimaInteraccion::getAgenciaId,
-								InteraccionAgenciaRepository.UltimaInteraccion::getUltimaFecha));
+				.collect(Collectors.toMap(
+						InteraccionAgenciaRepository.UltimaInteraccion::getAgenciaId,
+						InteraccionAgenciaRepository.UltimaInteraccion::getUltimaFecha));
 
 		return agencias.stream()
-				.map(a -> new AgenciaFichaResumenDTO(
-						a.getId(),
-						AgenciaMapper.nombre(a),
-						a.getLogoUrl(),
-						a.isEsPrioritaria(),
-						a.isActivo(),
-						ultimasInteracciones.get(a.getId())))
+				.map(a -> {
+					// Ruta corregida incluyendo "gestion-agencias" para que coincida con el Controller
+					String logoUrl = (a.getLogo() != null) ? "/api/gestion-agencias/" + a.getId() + "/logo" : null;
+
+					return new AgenciaFichaResumenDTO(
+							a.getId(),
+							AgenciaMapper.nombre(a),
+							logoUrl,
+							a.isEsPrioritaria(),
+							a.isActivo(),
+							ultimasInteracciones.get(a.getId()));
+				})
 				.toList();
 	}
 

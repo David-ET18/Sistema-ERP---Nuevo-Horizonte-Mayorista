@@ -9,7 +9,6 @@ import {
   kpisAgencias,
   listarAgencias,
   listarCategorias,
-  logoAgenciaUrl,
 } from '../services/agenciaService'
 import { extractErrorMessage } from '@/api/http'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -301,7 +300,9 @@ export default function GestionAgenciasPage() {
             <tbody>
               {!loading &&
                 data?.content.map((a) => {
-                  const logo = logoAgenciaUrl(a.logoUrl)
+                  // Apuntamos directamente al endpoint binario del backend
+                  const logo = a.logoUrl ? a.logoUrl : null
+
                   return (
                     <tr key={a.id} className="border-t border-gray-100 hover:bg-gray-50/60">
                       <td className="px-4 py-3">

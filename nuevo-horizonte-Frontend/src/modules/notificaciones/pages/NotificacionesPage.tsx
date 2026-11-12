@@ -37,6 +37,14 @@ const FILTROS_INICIALES: FiltrosNotificaciones = { q: '', leida: '', tipo: '' }
 const TAMANOS_PAGINA = [10, 20, 50]
 const TIPOS = [
   { valor: 'PROMOCION', etiqueta: 'Promociones' },
+  { valor: 'COTIZACION', etiqueta: 'Cotizaciones' },
+  { valor: 'VENTA', etiqueta: 'Ventas' },
+  { valor: 'AGENCIA', etiqueta: 'Agencias' },
+  { valor: 'TARIFA', etiqueta: 'Tarifas' },
+  { valor: 'PROVEEDOR', etiqueta: 'Proveedores' },
+  { valor: 'PAQUETE', etiqueta: 'Paquetes' },
+  { valor: 'CATALOGO', etiqueta: 'Catálogo' },
+  { valor: 'MARKETING', etiqueta: 'Marketing' },
   { valor: 'ROL_PERMISOS', etiqueta: 'Cambios de permisos' },
   { valor: 'ROL_ASIGNADO', etiqueta: 'Roles asignados' },
   { valor: 'ROL_QUITADO', etiqueta: 'Roles retirados' },
@@ -240,7 +248,8 @@ export default function NotificacionesPage() {
         <div>
           <h2 className="text-xl font-semibold text-gray-900">Notificaciones</h2>
           <p className="mt-1 text-sm text-gray-500">
-            Historial completo de promociones y cambios en tus roles y permisos.
+            Historial completo de la actividad del sistema: catálogo, tarifas, paquetes,
+            cotizaciones, ventas, agencias, marketing, promociones y permisos.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -353,7 +362,8 @@ export default function NotificacionesPage() {
           </span>
           <p className="mt-4 text-sm font-semibold text-gray-800">No hay notificaciones para mostrar</p>
           <p className="mt-1 text-[13px] text-gray-500">
-            Aquí llegarán las promociones publicadas y los cambios de permisos de tu cuenta.
+            Aquí llegarán los cambios de catálogo, tarifas, paquetes, ventas, agencias,
+            promociones y permisos de tu cuenta.
           </p>
         </div>
       )}

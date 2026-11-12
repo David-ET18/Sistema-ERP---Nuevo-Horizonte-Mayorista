@@ -25,6 +25,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.example.demo.modulos.catalogo.entity.Destino;
 import com.example.demo.modulos.catalogo.repository.DestinoRepository;
 import com.example.demo.modulos.catalogo.repository.ServicioRepository;
+import com.example.demo.modulos.notificaciones.service.NotificacionService;
 import com.example.demo.modulos.proveedores.dto.KpiProveedoresDTO;
 import com.example.demo.modulos.proveedores.dto.ProveedorDetalleDTO;
 import com.example.demo.modulos.proveedores.dto.ProveedorRequest;
@@ -43,11 +44,15 @@ class ProveedorServiceTest {
 	@Mock
 	private ServicioRepository servicioRepository;
 
+	@Mock
+	private NotificacionService notificacionService;
+
 	private ProveedorService service;
 
 	@BeforeEach
 	void setUp() {
-		service = new ProveedorService(proveedorRepository, destinoRepository, servicioRepository);
+		service = new ProveedorService(proveedorRepository, destinoRepository, servicioRepository,
+				notificacionService);
 	}
 
 	@Test

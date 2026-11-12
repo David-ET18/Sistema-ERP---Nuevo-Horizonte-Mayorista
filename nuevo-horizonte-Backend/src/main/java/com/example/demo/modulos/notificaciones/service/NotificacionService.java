@@ -28,6 +28,14 @@ public class NotificacionService {
 	public static final String TIPO_ROL_QUITADO = "ROL_QUITADO";
 	public static final String TIPO_PROMOCION = "PROMOCION";
 	public static final String TIPO_SISTEMA = "SISTEMA";
+	public static final String TIPO_COTIZACION = "COTIZACION";
+	public static final String TIPO_VENTA = "VENTA";
+	public static final String TIPO_AGENCIA = "AGENCIA";
+	public static final String TIPO_TARIFA = "TARIFA";
+	public static final String TIPO_PROVEEDOR = "PROVEEDOR";
+	public static final String TIPO_PAQUETE = "PAQUETE";
+	public static final String TIPO_CATALOGO = "CATALOGO";
+	public static final String TIPO_MARKETING = "MARKETING";
 
 	private final NotificacionRepository notificacionRepository;
 	private final UsuarioRepository usuarioRepository;

@@ -1,10 +1,18 @@
 import type { ReactElement, SVGProps } from 'react'
 
 import {
+  IconBriefcase,
+  IconBuilding,
+  IconCalendar,
+  IconHandshake,
   IconInfo,
+  IconMail,
+  IconMoney,
   IconPencil,
+  IconSend,
   IconStar,
   IconTrash,
+  IconTrendingUp,
   IconUsers,
 } from '@/components/icons'
 import { formatDate } from '@/utils/format'
@@ -59,6 +67,78 @@ export function estiloTipo(tipo: string): EstiloTipo {
         etiqueta: 'Rol retirado',
         descripcion: 'Se retiró uno de tus roles.',
       }
+    case 'COTIZACION':
+      return {
+        bg: 'bg-sky-100',
+        text: 'text-sky-700',
+        ring: 'ring-sky-200',
+        Icon: IconSend,
+        etiqueta: 'Cotización',
+        descripcion: 'Se creó, actualizó o cambió el estado de una cotización.',
+      }
+    case 'VENTA':
+      return {
+        bg: 'bg-emerald-100',
+        text: 'text-emerald-700',
+        ring: 'ring-emerald-200',
+        Icon: IconMoney,
+        etiqueta: 'Venta',
+        descripcion: 'Se registró, actualizó o cambió el estado de una venta.',
+      }
+    case 'AGENCIA':
+      return {
+        bg: 'bg-indigo-100',
+        text: 'text-indigo-700',
+        ring: 'ring-indigo-200',
+        Icon: IconBuilding,
+        etiqueta: 'Agencia',
+        descripcion: 'Se creó, actualizó o cambió el estado de una agencia.',
+      }
+    case 'TARIFA':
+      return {
+        bg: 'bg-teal-100',
+        text: 'text-teal-700',
+        ring: 'ring-teal-200',
+        Icon: IconTrendingUp,
+        etiqueta: 'Tarifa',
+        descripcion: 'Se creó, actualizó o eliminó una tarifa.',
+      }
+    case 'PROVEEDOR':
+      return {
+        bg: 'bg-cyan-100',
+        text: 'text-cyan-700',
+        ring: 'ring-cyan-200',
+        Icon: IconHandshake,
+        etiqueta: 'Proveedor',
+        descripcion: 'Se creó, actualizó o cambió el estado de un proveedor.',
+      }
+    case 'PAQUETE':
+      return {
+        bg: 'bg-violet-100',
+        text: 'text-violet-700',
+        ring: 'ring-violet-200',
+        Icon: IconBriefcase,
+        etiqueta: 'Paquete',
+        descripcion: 'Se creó, actualizó, eliminó o desactivó un paquete turístico.',
+      }
+    case 'CATALOGO':
+      return {
+        bg: 'bg-slate-100',
+        text: 'text-slate-700',
+        ring: 'ring-slate-200',
+        Icon: IconCalendar,
+        etiqueta: 'Catálogo',
+        descripcion: 'Se creó, actualizó o eliminó un destino o servicio del catálogo.',
+      }
+    case 'MARKETING':
+      return {
+        bg: 'bg-pink-100',
+        text: 'text-pink-700',
+        ring: 'ring-pink-200',
+        Icon: IconMail,
+        etiqueta: 'Marketing',
+        descripcion: 'Se envió una publicación de difusión a Telegram.',
+      }
     default:
       return {
         bg: 'bg-blue-100',
@@ -94,6 +174,12 @@ const NOMBRES_MODULO: Record<string, string> = {
   '/ventas': 'Ventas',
   '/compras': 'Compras',
   '/reportes': 'Reportes',
+  '/catalogo': 'Catálogo Base',
+  '/proveedores': 'Proveedores',
+  '/tarifas': 'Tarifas',
+  '/paquetes': 'Paquetes Turísticos',
+  '/gestion-agencias': 'Gestión de Agencias',
+  '/marketing': 'Difusión y Marketing',
 }
 
 /** Nombre legible de la ruta interna a la que apunta la notificacion. */

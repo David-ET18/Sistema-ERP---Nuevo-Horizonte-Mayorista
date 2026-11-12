@@ -18,6 +18,7 @@ import com.example.demo.modulos.catalogo.entity.Destino;
 import com.example.demo.modulos.catalogo.mapper.DestinoMapper;
 import com.example.demo.modulos.catalogo.repository.DestinoRepository;
 import com.example.demo.modulos.catalogo.repository.ServicioRepository;
+import com.example.demo.modulos.notificaciones.service.NotificacionService;
 import com.example.demo.modulos.proveedores.dto.KpiProveedoresDTO;
 import com.example.demo.modulos.proveedores.dto.ProveedorDTO;
 import com.example.demo.modulos.proveedores.dto.ProveedorDetalleDTO;
@@ -40,12 +41,14 @@ public class ProveedorService {
 	private final ProveedorRepository proveedorRepository;
 	private final DestinoRepository destinoRepository;
 	private final ServicioRepository servicioRepository;
+	private final NotificacionService notificacionService;
 
 	public ProveedorService(ProveedorRepository proveedorRepository, DestinoRepository destinoRepository,
-			ServicioRepository servicioRepository) {
+			ServicioRepository servicioRepository, NotificacionService notificacionService) {
 		this.proveedorRepository = proveedorRepository;
 		this.destinoRepository = destinoRepository;
 		this.servicioRepository = servicioRepository;
+		this.notificacionService = notificacionService;
 	}
 
 	public Page<ProveedorListaDTO> listar(String q, String tipoProveedor, Boolean activo, Long destinoId,
@@ -107,7 +110,11 @@ public class ProveedorService {
 		validarRuc(request.ruc(), null);
 		Proveedor proveedor = new Proveedor();
 		ProveedorMapper.aplicar(proveedor, request, resolverDestino(request.destinoId()));
-		return ProveedorMapper.toDetalleDTO(proveedorRepository.save(proveedor));
+		Proveedor guardado = proveedorRepository.save(proveedor);
+		notificar("Nuevo proveedor: " + ProveedorMapper.nombre(guardado),
+				"Se registró el proveedor " + ProveedorMapper.nombre(guardado) + ".",
+				"RUC: " + guardado.getRuc() + " · Tipo: " + guardado.getTipoProveedor());
+		return ProveedorMapper.toDetalleDTO(guardado);
 	}
 
 	@Transactional
@@ -115,7 +122,11 @@ public class ProveedorService {
 		validarRuc(request.ruc(), id);
 		Proveedor proveedor = obtener(id);
 		ProveedorMapper.aplicar(proveedor, request, resolverDestino(request.destinoId()));
-		return ProveedorMapper.toDetalleDTO(proveedorRepository.save(proveedor));
+		Proveedor guardado = proveedorRepository.save(proveedor);
+		notificar("Proveedor actualizado: " + ProveedorMapper.nombre(guardado),
+				"Se actualizaron los datos del proveedor " + ProveedorMapper.nombre(guardado) + ".",
+				"RUC: " + guardado.getRuc() + " · Tipo: " + guardado.getTipoProveedor());
+		return ProveedorMapper.toDetalleDTO(guardado);
 	}
 
 	/**
@@ -128,6 +139,9 @@ public class ProveedorService {
 		Proveedor proveedor = obtener(id);
 		proveedor.setActivo(false);
 		proveedorRepository.save(proveedor);
+		notificar("Proveedor desactivado: " + ProveedorMapper.nombre(proveedor),
+				"El proveedor " + ProveedorMapper.nombre(proveedor) + " fue desactivado.",
+				"RUC: " + proveedor.getRuc() + " · Estado: inactivo");
 	}
 
 	@Transactional
@@ -135,6 +149,9 @@ public class ProveedorService {
 		Proveedor proveedor = obtener(id);
 		proveedor.setActivo(true);
 		proveedorRepository.save(proveedor);
+		notificar("Proveedor reactivado: " + ProveedorMapper.nombre(proveedor),
+				"El proveedor " + ProveedorMapper.nombre(proveedor) + " volvió a estar activo.",
+				"RUC: " + proveedor.getRuc() + " · Estado: activo");
 	}
 
 	private Destino resolverDestino(Long destinoId) {
@@ -144,6 +161,12 @@ public class ProveedorService {
 		return destinoRepository.findById(destinoId)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
 						"Destino no encontrado"));
+	}
+
+	private void notificar(String titulo, String mensaje, String detalle) {
+		notificacionService.crearParaUsuariosActivos(titulo, mensaje,
+				NotificacionService.TIPO_PROVEEDOR, "/proveedores",
+				notificacionService.actorActual(), detalle);
 	}
 
 	private void validarRuc(String ruc, Long idExcluido) {

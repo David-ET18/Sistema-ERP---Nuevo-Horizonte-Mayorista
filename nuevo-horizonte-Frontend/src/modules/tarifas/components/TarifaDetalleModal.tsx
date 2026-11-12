@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import type { Tarifa } from '../types'
-import { detalleTarifa } from '../services/tarifaService'
+import { archivoRespaldoUrl, detalleTarifa } from '../services/tarifaService'
 import { extractErrorMessage } from '@/api/http'
 import { formatDate } from '@/utils/format'
 import DetalleModal from '@/components/DetalleModal'
@@ -83,6 +83,24 @@ export default function TarifaDetalleModal({ id, onClose }: Props) {
           <p className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-sm text-gray-700">
             {tarifa.observaciones}
           </p>
+        </div>
+      )}
+
+      {tarifa && (
+        <div className="flex flex-col gap-1">
+          <p className="text-[13px] font-medium text-gray-500">Archivo de respaldo</p>
+          {tarifa.archivoRespaldoUrl ? (
+          <a
+            href={archivoRespaldoUrl(tarifa.archivoRespaldoUrl) ?? undefined}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex w-fit items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100"
+          >
+            Ver archivo de respaldo
+          </a>
+        ) : (
+          <p className="text-sm text-gray-400">Esta tarifa no tiene un archivo de respaldo cargado.</p>
+          )}
         </div>
       )}
 

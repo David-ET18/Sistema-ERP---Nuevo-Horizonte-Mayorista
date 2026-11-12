@@ -21,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.example.demo.modulos.catalogo.dto.ServicioRequest;
 import com.example.demo.modulos.catalogo.entity.Servicio;
 import com.example.demo.modulos.catalogo.repository.ServicioRepository;
+import com.example.demo.modulos.notificaciones.service.NotificacionService;
 
 @ExtendWith(MockitoExtension.class)
 class ServicioServiceTest {
@@ -28,11 +29,14 @@ class ServicioServiceTest {
 	@Mock
 	private ServicioRepository servicioRepository;
 
+	@Mock
+	private NotificacionService notificacionService;
+
 	private ServicioService service;
 
 	@BeforeEach
 	void setUp() {
-		service = new ServicioService(servicioRepository);
+		service = new ServicioService(servicioRepository, notificacionService);
 	}
 
 	@Test

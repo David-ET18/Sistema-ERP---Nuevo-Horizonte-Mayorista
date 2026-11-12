@@ -3,6 +3,14 @@ export type TipoNotificacion =
   | 'ROL_PERMISOS'
   | 'ROL_ASIGNADO'
   | 'ROL_QUITADO'
+  | 'COTIZACION'
+  | 'VENTA'
+  | 'AGENCIA'
+  | 'TARIFA'
+  | 'PROVEEDOR'
+  | 'PAQUETE'
+  | 'CATALOGO'
+  | 'MARKETING'
   | 'SISTEMA'
 
 export interface Notificacion {

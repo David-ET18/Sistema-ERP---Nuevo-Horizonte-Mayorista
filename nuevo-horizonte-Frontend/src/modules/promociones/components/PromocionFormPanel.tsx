@@ -114,26 +114,18 @@ export default function PromocionFormPanel({ promocion, servicios, onClose, onSa
   const servicioSeleccionado = servicios.find((s) => String(s.id) === form.servicioId) ?? null
 
   /**
-   * Al elegir un servicio se propone su tarifa vigente mas baja como precio
-   * original. Solo se sobrescribe si el campo estaba vacio o si todavia
-   * contenia el precio sugerido del servicio anterior: un precio escrito a
-   * mano se respeta.
+   * El precio original nunca se escribe a mano: se toma de la tarifa vigente
+   * mas baja del servicio que se elige. Al cambiar de servicio siempre se
+   * reemplaza por el precio de referencia del nuevo servicio.
    */
   function cambiarServicio(valor: string) {
-    const anterior = servicios.find((s) => String(s.id) === form.servicioId) ?? null
     const nuevo = servicios.find((s) => String(s.id) === valor) ?? null
     const referencia = nuevo?.precioReferencia ?? null
-    const actual = form.precioOriginal.trim()
-    const eraSugerido =
-      anterior?.precioReferencia != null &&
-      actual !== '' &&
-      Math.abs(Number(actual) - anterior.precioReferencia) < 0.005
-    const usarReferencia = (actual === '' || eraSugerido) && referencia != null
 
     setForm((prev) => ({
       ...prev,
       servicioId: valor,
-      precioOriginal: usarReferencia ? String(referencia) : prev.precioOriginal,
+      precioOriginal: referencia != null ? String(referencia) : '',
     }))
     setErrores((prev) => {
       if (!('precioOriginal' in prev)) return prev
@@ -142,6 +134,19 @@ export default function PromocionFormPanel({ promocion, servicios, onClose, onSa
       return next
     })
   }
+
+  // Si los servicios llegan despues de abrir el formulario (o cambia la
+  // tarifa del servicio elegido), el precio original se sincroniza igual.
+  useEffect(() => {
+    if (!form.servicioId) return
+    const servicio = servicios.find((s) => String(s.id) === form.servicioId)
+    const referencia = servicio?.precioReferencia
+    if (referencia == null) return
+    setForm((prev) => {
+      const valor = String(referencia)
+      return prev.precioOriginal === valor ? prev : { ...prev, precioOriginal: valor }
+    })
+  }, [servicios, form.servicioId])
 
   function setCampo<K extends keyof FormState>(campo: K, valor: FormState[K]) {
     setForm((prev) => ({ ...prev, [campo]: valor }))
@@ -364,19 +369,38 @@ export default function PromocionFormPanel({ promocion, servicios, onClose, onSa
                 onChange={(e) => cambiarServicio(e.target.value)}
               >
                 <option value="">Promoción general (todos los servicios)</option>
-                {servicios.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.nombre}
-                    {s.categoria ? ` · ${s.categoria}` : ''}
-                  </option>
-                ))}
+                {servicios.map((s) => {
+                  const referencia = s.precioReferencia
+                  return (
+                    <option
+                      key={s.id}
+                      value={s.id}
+                      style={{ color: referencia != null ? '#15803d' : '#9ca3af' }}
+                    >
+                      {`▌ ${s.nombre}${s.categoria ? ` · ${s.categoria}` : ''}`}
+                      {referencia != null
+                        ? ` — S/ ${referencia.toFixed(2)}`
+                        : ' — sin tarifa vigente'}
+                    </option>
+                  )
+                })}
               </select>
             </Campo>
+            <p className="-mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-400">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-3 w-1 rounded-full bg-emerald-500" />
+                Con tarifa vigente
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-3 w-1 rounded-full bg-gray-300" />
+                Sin tarifa vigente
+              </span>
+            </p>
             {servicioSeleccionado && (
               <p className="-mt-2 text-[11px] text-gray-400">
                 {servicioSeleccionado.precioReferencia != null
                   ? `Precio de referencia: S/ ${servicioSeleccionado.precioReferencia.toFixed(2)} (tarifa vigente más baja).`
-                  : 'Este servicio no tiene tarifas vigentes; ingresa el precio original manualmente.'}
+                  : 'Este servicio no tiene tarifas vigentes; no se puede calcular el precio original.'}
               </p>
             )}
 
@@ -394,15 +418,17 @@ export default function PromocionFormPanel({ promocion, servicios, onClose, onSa
               </Campo>
 
               <Campo label="Precio original">
-                <input
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  className={errores.precioOriginal ? inputClaseError : inputClase}
-                  value={form.precioOriginal}
-                  onChange={(e) => setCampo('precioOriginal', e.target.value)}
-                  placeholder="0.00"
-                />
+                <div
+                  className={`${inputClase} flex items-center justify-between gap-2 bg-gray-50`}
+                  title="Se toma automáticamente de la tarifa vigente más baja del servicio"
+                >
+                  <span className={form.precioOriginal ? 'font-medium text-gray-900' : 'text-gray-400'}>
+                    {form.precioOriginal ? `S/ ${Number(form.precioOriginal).toFixed(2)}` : 'Sin tarifa vigente'}
+                  </span>
+                  <span className="shrink-0 text-[10px] font-medium tracking-wide text-gray-400 uppercase">
+                    Desde Tarifas
+                  </span>
+                </div>
               </Campo>
             </div>
 

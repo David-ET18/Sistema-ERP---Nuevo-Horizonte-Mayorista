@@ -11,6 +11,7 @@ import type {
   TarifaLista,
 } from '../types'
 import {
+  descargarTarifas,
   detalleTarifa,
   eliminarTarifa,
   kpisTarifas,
@@ -20,6 +21,7 @@ import {
   listarServicios,
   listarTarifas,
   listarTiposTarifa,
+  type FormatoExportacionTarifas,
 } from '../services/tarifaService'
 import { extractErrorMessage } from '@/api/http'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -91,6 +93,7 @@ export default function TarifasPage() {
   const [expandidoId, setExpandidoId] = useState<number | null>(null)
   const [detalleExpandido, setDetalleExpandido] = useState<Tarifa | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [exportando, setExportando] = useState<FormatoExportacionTarifas | null>(null)
 
   const puedeCrear = canCreateModule(MODULO)
   const puedeEditar = canUpdateModule(MODULO)
@@ -166,6 +169,18 @@ export default function TarifasPage() {
     } catch (err) {
       setError(extractErrorMessage(err))
       toast(`No se pudo eliminar la tarifa: ${extractErrorMessage(err)}`, 'error')
+    }
+  }
+
+  async function exportar(formato: FormatoExportacionTarifas) {
+    setExportando(formato)
+    try {
+      await descargarTarifas(filtros, formato)
+      toast(`Descarga ${formato === 'csv' ? 'CSV' : 'Excel'} generada correctamente`, 'success')
+    } catch (err) {
+      toast(`No se pudo descargar el archivo: ${extractErrorMessage(err)}`, 'error')
+    } finally {
+      setExportando(null)
     }
   }
 
@@ -325,11 +340,19 @@ export default function TarifasPage() {
           )}
           <button
             type="button"
-            disabled
-            title="Disponible próximamente"
-            className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-400"
+            onClick={() => void exportar('csv')}
+            disabled={exportando !== null}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Importar Excel/CSV
+            {exportando === 'csv' ? 'Generando…' : 'Descargar CSV'}
+          </button>
+          <button
+            type="button"
+            onClick={() => void exportar('excel')}
+            disabled={exportando !== null}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-emerald-300 bg-white px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {exportando === 'excel' ? 'Generando…' : 'Descargar Excel'}
           </button>
         </div>
       </div>

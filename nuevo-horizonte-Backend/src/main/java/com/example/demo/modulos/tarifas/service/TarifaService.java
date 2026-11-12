@@ -25,7 +25,9 @@ import com.example.demo.modulos.catalogo.mapper.DestinoMapper;
 import com.example.demo.modulos.catalogo.mapper.ServicioMapper;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.entity.Usuario;
 import com.example.demo.modulos.gestionUsuariosRolesPermisos.repository.UsuarioRepository;
+import com.example.demo.modulos.notificaciones.service.NotificacionService;
 import com.example.demo.modulos.proveedores.entity.Proveedor;
+import com.example.demo.modulos.proveedores.mapper.ProveedorMapper;
 import com.example.demo.modulos.proveedores.repository.ProveedorRepository;
 import com.example.demo.modulos.tarifas.dto.KpiTarifasDTO;
 import com.example.demo.modulos.tarifas.dto.TarifaDTO;
@@ -58,12 +60,14 @@ public class TarifaService {
 	private final UsuarioRepository usuarioRepository;
 	private final com.example.demo.modulos.ventas.repository.VentaRepository ventaRepository;
 	private final com.example.demo.modulos.cotizaciones.repository.CotizacionDetalleRepository cotizacionDetalleRepository;
+	private final NotificacionService notificacionService;
 
 	public TarifaService(TarifaRepository tarifaRepository, ProveedorRepository proveedorRepository,
 			ServicioRepository servicioRepository, DestinoRepository destinoRepository,
 			UsuarioRepository usuarioRepository,
 			com.example.demo.modulos.ventas.repository.VentaRepository ventaRepository,
-			com.example.demo.modulos.cotizaciones.repository.CotizacionDetalleRepository cotizacionDetalleRepository) {
+			com.example.demo.modulos.cotizaciones.repository.CotizacionDetalleRepository cotizacionDetalleRepository,
+			NotificacionService notificacionService) {
 		this.tarifaRepository = tarifaRepository;
 		this.proveedorRepository = proveedorRepository;
 		this.servicioRepository = servicioRepository;
@@ -71,6 +75,7 @@ public class TarifaService {
 		this.usuarioRepository = usuarioRepository;
 		this.ventaRepository = ventaRepository;
 		this.cotizacionDetalleRepository = cotizacionDetalleRepository;
+		this.notificacionService = notificacionService;
 	}
 
 	public List<TarifaDTO> listarVigentes() {
@@ -134,7 +139,15 @@ public class TarifaService {
 		TarifaMapper.aplicar(tarifa, request, obtenerProveedor(request.proveedorId()),
 				obtenerServicio(request.servicioId()), obtenerDestino(request.destinoId()));
 		registrarHistorial(tarifa, null, request.precio());
-		return TarifaMapper.toDetalleDTO(tarifaRepository.save(tarifa));
+		Tarifa guardada = tarifaRepository.save(tarifa);
+		notificar("Nueva tarifa: " + descripcionTarifa(guardada),
+				"Se registró una tarifa de " + guardada.getMoneda() + " "
+						+ guardada.getPrecio().toPlainString() + " para "
+						+ descripcionTarifa(guardada) + ".",
+				descripcionTarifa(guardada) + " · Vigencia: " + guardada.getFechaDesde()
+						+ " a " + guardada.getFechaHasta() + " · Precio: " + guardada.getMoneda()
+						+ " " + guardada.getPrecio().toPlainString());
+		return TarifaMapper.toDetalleDTO(guardada);
 	}
 
 	@Transactional
@@ -146,7 +159,16 @@ public class TarifaService {
 		if (precioAnterior == null || precioAnterior.compareTo(request.precio()) != 0) {
 			registrarHistorial(tarifa, precioAnterior, request.precio());
 		}
-		return TarifaMapper.toDetalleDTO(tarifaRepository.save(tarifa));
+		Tarifa guardada = tarifaRepository.save(tarifa);
+		String detalle = descripcionTarifa(guardada) + " · Precio: " + guardada.getMoneda() + " "
+				+ guardada.getPrecio().toPlainString();
+		if (precioAnterior != null && precioAnterior.compareTo(guardada.getPrecio()) != 0) {
+			detalle += " (antes " + precioAnterior.toPlainString() + ")";
+		}
+		notificar("Tarifa actualizada: " + descripcionTarifa(guardada),
+				"Se actualizó la tarifa de " + descripcionTarifa(guardada) + ".",
+				detalle);
+		return TarifaMapper.toDetalleDTO(guardada);
 	}
 
 	/**
@@ -158,9 +180,13 @@ public class TarifaService {
 	@Transactional
 	public void eliminar(Long id) {
 		Tarifa tarifa = obtener(id);
+		String descripcion = descripcionTarifa(tarifa);
 		boolean enUso = ventaRepository.existsByTarifaId(id) || cotizacionDetalleRepository.existsByTarifaId(id);
 		if (!enUso) {
 			tarifaRepository.delete(tarifa);
+			notificar("Tarifa eliminada: " + descripcion,
+					"Se eliminó la tarifa de " + descripcion + ".",
+					"La tarifa no tenía ventas ni cotizaciones asociadas.");
 			return;
 		}
 		LocalDate ayer = LocalDate.now().minusDays(1);
@@ -168,6 +194,9 @@ public class TarifaService {
 			tarifa.setFechaHasta(ayer);
 			tarifaRepository.save(tarifa);
 		}
+		notificar("Tarifa vencida: " + descripcion,
+				"La tarifa de " + descripcion + " se marcó como vencida porque ya estaba en uso.",
+				"Se conserva el historial de ventas y cotizaciones. Vigencia hasta " + ayer + ".");
 	}
 
 	@Transactional
@@ -175,7 +204,22 @@ public class TarifaService {
 		Tarifa tarifa = obtener(id);
 		tarifa.setArchivoRespaldoUrl(nombreArchivo);
 		tarifaRepository.save(tarifa);
+		notificar("Archivo de respaldo actualizado: " + descripcionTarifa(tarifa),
+				"Se cargó un nuevo archivo de respaldo para la tarifa de "
+						+ descripcionTarifa(tarifa) + ".",
+				"Archivo: " + nombreArchivo);
 		return nombreArchivo;
+	}
+
+	private String descripcionTarifa(Tarifa tarifa) {
+		return ProveedorMapper.nombre(tarifa.getProveedor()) + " · "
+				+ tarifa.getServicio().getNombre() + " · " + tarifa.getDestino().getNombre();
+	}
+
+	private void notificar(String titulo, String mensaje, String detalle) {
+		notificacionService.crearParaUsuariosActivos(titulo, mensaje,
+				NotificacionService.TIPO_TARIFA, "/tarifas",
+				notificacionService.actorActual(), detalle);
 	}
 
 	private void registrarHistorial(Tarifa tarifa, java.math.BigDecimal precioAnterior,

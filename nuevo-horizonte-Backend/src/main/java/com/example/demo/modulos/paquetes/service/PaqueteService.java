@@ -17,6 +17,7 @@ import com.example.demo.modulos.catalogo.dto.DestinoDTO;
 import com.example.demo.modulos.catalogo.entity.Destino;
 import com.example.demo.modulos.catalogo.mapper.DestinoMapper;
 import com.example.demo.modulos.catalogo.repository.DestinoRepository;
+import com.example.demo.modulos.notificaciones.service.NotificacionService;
 import com.example.demo.modulos.paquetes.dto.KpiPaquetesDTO;
 import com.example.demo.modulos.paquetes.dto.PaqueteDTO;
 import com.example.demo.modulos.paquetes.dto.PaqueteDetalleDTO;
@@ -42,12 +43,15 @@ public class PaqueteService {
 	private final PaqueteRepository paqueteRepository;
 	private final DestinoRepository destinoRepository;
 	private final com.example.demo.modulos.ventas.repository.VentaRepository ventaRepository;
+	private final NotificacionService notificacionService;
 
 	public PaqueteService(PaqueteRepository paqueteRepository, DestinoRepository destinoRepository,
-			com.example.demo.modulos.ventas.repository.VentaRepository ventaRepository) {
+			com.example.demo.modulos.ventas.repository.VentaRepository ventaRepository,
+			NotificacionService notificacionService) {
 		this.paqueteRepository = paqueteRepository;
 		this.destinoRepository = destinoRepository;
 		this.ventaRepository = ventaRepository;
+		this.notificacionService = notificacionService;
 	}
 
 	public List<PaqueteDTO> listarActivos() {
@@ -106,7 +110,11 @@ public class PaqueteService {
 		Paquete paquete = new Paquete();
 		PaqueteMapper.aplicar(paquete, request, resolverDestino(request.destinoId()));
 		sincronizarHijos(paquete, request);
-		return PaqueteMapper.toDetalleDTO(paqueteRepository.save(paquete));
+		Paquete guardado = paqueteRepository.save(paquete);
+		notificar("Nuevo paquete: " + guardado.getNombre(),
+				"Se creó el paquete " + guardado.getNombre() + ".",
+				"Categoría: " + guardado.getCategoria() + " · Estado: " + guardado.getEstado());
+		return PaqueteMapper.toDetalleDTO(guardado);
 	}
 
 	@Transactional
@@ -115,7 +123,11 @@ public class PaqueteService {
 		Paquete paquete = obtener(id);
 		PaqueteMapper.aplicar(paquete, request, resolverDestino(request.destinoId()));
 		sincronizarHijos(paquete, request);
-		return PaqueteMapper.toDetalleDTO(paqueteRepository.save(paquete));
+		Paquete guardado = paqueteRepository.save(paquete);
+		notificar("Paquete actualizado: " + guardado.getNombre(),
+				"Se actualizaron los datos del paquete " + guardado.getNombre() + ".",
+				"Categoría: " + guardado.getCategoria() + " · Estado: " + guardado.getEstado());
+		return PaqueteMapper.toDetalleDTO(guardado);
 	}
 
 	/**
@@ -126,12 +138,25 @@ public class PaqueteService {
 	@Transactional
 	public void eliminar(Long id) {
 		Paquete paquete = obtener(id);
+		String nombre = paquete.getNombre();
 		if (ventaRepository.existsByProductoId(id)) {
 			paquete.setEstado("INACTIVO");
 			paqueteRepository.save(paquete);
+			notificar("Paquete desactivado: " + nombre,
+					"El paquete " + nombre + " fue desactivado porque ya tiene ventas asociadas.",
+					"Estado: INACTIVO · Se conserva el historial de ventas.");
 			return;
 		}
 		paqueteRepository.delete(paquete);
+		notificar("Paquete eliminado: " + nombre,
+				"Se eliminó el paquete " + nombre + ".",
+				"El paquete no tenía ventas asociadas.");
+	}
+
+	private void notificar(String titulo, String mensaje, String detalle) {
+		notificacionService.crearParaUsuariosActivos(titulo, mensaje,
+				NotificacionService.TIPO_PAQUETE, "/paquetes",
+				notificacionService.actorActual(), detalle);
 	}
 
 	/**

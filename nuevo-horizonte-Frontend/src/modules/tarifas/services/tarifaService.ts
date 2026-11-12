@@ -67,6 +67,39 @@ export function eliminarTarifa(id: number): Promise<void> {
   return http.delete(`${BASE}/${id}`).then(() => undefined)
 }
 
+export type FormatoExportacionTarifas = 'csv' | 'excel'
+
+function paramsExportacion(filtros: FiltrosTarifas): Record<string, string> {
+  const params: Record<string, string> = {}
+  if (filtros.q.trim()) params.q = filtros.q.trim()
+  if (filtros.proveedorId) params.proveedorId = filtros.proveedorId
+  if (filtros.destinoId) params.destinoId = filtros.destinoId
+  if (filtros.servicioId) params.servicioId = filtros.servicioId
+  if (filtros.estado) params.estado = filtros.estado
+  return params
+}
+
+/** Descarga las tarifas que cumplen los filtros actuales en CSV o Excel (.xls). */
+export async function descargarTarifas(
+  filtros: FiltrosTarifas,
+  formato: FormatoExportacionTarifas,
+): Promise<void> {
+  const response = await http.get(`${BASE}/exportar/${formato}`, {
+    params: paramsExportacion(filtros),
+    responseType: 'blob',
+  })
+  const extension = formato === 'csv' ? 'csv' : 'xls'
+  const fecha = new Date().toISOString().slice(0, 10)
+  const url = URL.createObjectURL(new Blob([response.data]))
+  const enlace = document.createElement('a')
+  enlace.href = url
+  enlace.download = `tarifas_${fecha}.${extension}`
+  document.body.appendChild(enlace)
+  enlace.click()
+  enlace.remove()
+  URL.revokeObjectURL(url)
+}
+
 export function archivoRespaldoUrl(nombreArchivo: string | null): string | null {
   if (!nombreArchivo) return null
   return `${http.defaults.baseURL}${BASE}/archivo-respaldo/${nombreArchivo}`

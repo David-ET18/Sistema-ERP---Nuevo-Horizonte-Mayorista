@@ -3,6 +3,8 @@ package com.example.demo.modulos.ventas.service;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.NotFoundException;
 import com.example.demo.modulos.gestionAgencias.dto.AgenciaDTO;
+import com.example.demo.modulos.gestionAgencias.mapper.AgenciaMapper;
+import com.example.demo.modulos.notificaciones.service.NotificacionService;
 import com.example.demo.modulos.tarifas.dto.TarifaDTO;
 import com.example.demo.modulos.gestionAgencias.entity.Agencia;
 import com.example.demo.modulos.cotizaciones.entity.Cotizacion;
@@ -60,19 +62,22 @@ public class VentaService {
 	private final TarifaRepository tarifaRepository;
 	private final PaqueteRepository paqueteRepository;
 	private final UsuarioRepository usuarioRepository;
+	private final NotificacionService notificacionService;
 
 	public VentaService(VentaRepository ventaRepository,
 			CotizacionRepository cotizacionRepository,
 			AgenciaRepository agenciaRepository,
 			TarifaRepository tarifaRepository,
 			PaqueteRepository paqueteRepository,
-			UsuarioRepository usuarioRepository) {
+			UsuarioRepository usuarioRepository,
+			NotificacionService notificacionService) {
 		this.ventaRepository = ventaRepository;
 		this.cotizacionRepository = cotizacionRepository;
 		this.agenciaRepository = agenciaRepository;
 		this.tarifaRepository = tarifaRepository;
 		this.paqueteRepository = paqueteRepository;
 		this.usuarioRepository = usuarioRepository;
+		this.notificacionService = notificacionService;
 	}
 
 	@Transactional(readOnly = true)
@@ -149,7 +154,15 @@ public class VentaService {
 		inicial.setUsuarioCambio(venta.getUsuarioRegistro());
 		venta.addHistorial(inicial);
 
-		return toDTO(ventaRepository.save(venta));
+		Venta guardada = ventaRepository.save(venta);
+		notificar("Nueva venta: " + guardada.getNumero(),
+				"Se registró la venta " + guardada.getNumero() + " para "
+						+ AgenciaMapper.nombre(guardada.getAgencia()) + " por S/ "
+						+ guardada.getMontoAPagar().toPlainString() + ".",
+				"Estado: " + guardada.getEstado() + " · Agencia: "
+						+ AgenciaMapper.nombre(guardada.getAgencia()) + " · Monto: S/ "
+						+ guardada.getMontoAPagar().toPlainString());
+		return toDTO(guardada);
 	}
 
 	@Transactional
@@ -157,6 +170,10 @@ public class VentaService {
 		validarRequest(request);
 		Venta venta = obtenerConRelaciones(id);
 		aplicarRequest(venta, request, false);
+		notificar("Venta actualizada: " + venta.getNumero(),
+				"Se actualizaron los datos de la venta " + venta.getNumero() + ".",
+				"Agencia: " + AgenciaMapper.nombre(venta.getAgencia())
+						+ " · Monto: S/ " + venta.getMontoAPagar().toPlainString());
 		return toDTO(venta);
 	}
 
@@ -188,6 +205,12 @@ public class VentaService {
 		historial.setUsuarioCambio(usuarioActual());
 		venta.addHistorial(historial);
 
+		notificar("Venta " + venta.getNumero() + ": " + nuevoEstado,
+				"La venta " + venta.getNumero() + " cambió de " + estadoAnterior
+						+ " a " + nuevoEstado + ".",
+				"Agencia: " + AgenciaMapper.nombre(venta.getAgencia())
+						+ " · Estado anterior: " + estadoAnterior + " · Estado nuevo: " + nuevoEstado
+						+ " · Monto: S/ " + venta.getMontoAPagar().toPlainString());
 		return toDTO(venta);
 	}
 
@@ -342,6 +365,12 @@ public class VentaService {
 		String username = SecurityContextHolder.getContext().getAuthentication().getName();
 		return usuarioRepository.findByUsername(username)
 				.orElseThrow(() -> new NotFoundException("Usuario no identificado: " + username));
+	}
+
+	private void notificar(String titulo, String mensaje, String detalle) {
+		notificacionService.crearParaUsuariosActivos(titulo, mensaje,
+				NotificacionService.TIPO_VENTA, "/ventas",
+				notificacionService.actorActual(), detalle);
 	}
 
 	private String siguienteNumero() {
